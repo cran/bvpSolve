@@ -1,0 +1,457 @@
+\documentclass[article,nojss]{jss}
+\DeclareGraphicsExtensions{.pdf,.eps}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Add-on packages and fonts
+\usepackage{amsmath}
+\usepackage{xspace}
+\usepackage{verbatim}
+\usepackage[english]{babel}
+%\usepackage{mathptmx}
+%\usepackage{helvet}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\newcommand{\R}{\proglang{R }\xspace}
+\newcommand{\bvp}{\pkg{bvpSolve }\xspace}
+\newcommand{\ds}{\pkg{deSolve } \xspace}
+\newcommand{\rs}{\pkg{rootSolve }\xspace}
+
+\title{ Package \pkg{bvpSolve}, solving boundary value problems in \proglang{R}}
+
+\Plaintitle{Package bvpSolve, solving boundary value problemns in R }
+
+\Keywords{ordinary differential equations, boundary value problems,
+  shooting method, mono-implicit Runge-Kutta,
+  \proglang{R}}
+
+\Plainkeywords{ordinary differential equations, boundary value problems,
+  shooting method, mono-implicit Runge-Kutta, R}
+
+
+\author{Karline Soetaert\\
+  Centre for Estuarine and Marine Ecology\\
+  Netherlands Institute of Ecology\\
+  The Netherlands
+}
+
+\Plainauthor{Karline Soetaert}
+
+\Abstract{This document is about package \bvp \citep{bvpSolve},
+  designed for the numerical
+  solution of boundary value problems for ordinary differential
+  equations (ODE) in \R.
+
+  Package \bvp contains:
+  \begin{itemize}
+    \item function \code{bvpshoot} which implements the shooting method.
+      This method makes use of the initial value problem solvers from
+      packages \pkg{deSolve} \citep{deSolve} and the root-finding solver
+      from package \pkg{rootSolve} \citep{rootSolve}.
+    \item function \code{bvptwp}, the mono-implicit Runge-Kutta (MIRK)
+      method with deferred corrections, code TWPBVP
+      \citep{Cash91}, for solving two-point  boundary value problems
+  \end{itemize}
+
+  The \R functions have an interface which is similar to the interface of
+  the solvers in package \ds
+}
+
+%% The address of (at least) one author should be given
+%% in the following format:
+\Address{
+  Karline Soetaert\\
+  Centre for Estuarine and Marine Ecology (CEME)\\
+  Netherlands Institute of Ecology (NIOO)\\
+  4401 NT Yerseke, Netherlands
+  E-mail: \email{k.soetaert@nioo.knaw.nl}\\
+  URL: \url{http://www.nioo.knaw.nl/users/ksoetaert}\\
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% R/Sweave specific LaTeX commands.
+%% need no \usepackage{Sweave}
+%\VignetteIndexEntry{Solving Boundary Value Problems of Ordinary Differential Equations}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Begin of the document
+\begin{document}
+\SweaveOpts{engine=R,eps=FALSE}
+\SweaveOpts{keep.source=TRUE}
+
+<<preliminaries,echo=FALSE,results=hide>>=
+library("bvpSolve")
+options(prompt = "> ")
+options(width=70)
+@ 
+
+\maketitle
+
+\section{Introduction}
+
+  \pkg{bvpSolve} numerically solves boundary value problems (BVP) of
+  ordinary differential equations (ODE), which for one (second-order) ODE
+  can be written as:
+
+  \begin{eqnarray*}
+    \frac{d^2y}{dx^2}=f(x,y,\frac{dy}{dx})\\
+    a \leq x\leq b \\
+    g_1(y) |_a = 0 \\
+    g_2(y) |_b = 0
+  \end{eqnarray*}
+  where \code{y} is the dependent, \code{x} the independent variable,
+  function \code{f} is the differential equation, $g_a$ and $g_b$ the
+  boundary conditions at the end points a and b.
+
+  The problem must be specified as a first-order system. Thus, higher-order
+  ODEs need to be rewritten as a set of first-order systems. For instance:
+  \begin{eqnarray*}
+    \frac{d^2y}{dx^2}=f(x,y,\frac{dy}{dx})
+  \end{eqnarray*}
+  can be rewritten as:
+  \begin{eqnarray*}
+    \frac{dy}{dx}=z \\
+    \frac{dz}{dx}=f(x,y,z)
+  \end{eqnarray*}
+
+  Note that in the current implementation, the boundary conditions must be
+  defined at the end of the interval over which the ODE is specified (i.e.
+  at \code{a} and/or \code{b}).
+  
+  More examples of boundary value problems can be found in the packages
+  \url{examples} subdirector. They include a.o. all problems found in
+  \url{http://www.ma.ic.ac.uk/~jcash/BVP_software}.
+
+\clearpage
+
+\section{A simple BVP example}
+
+  Here is a simple ODE (which is problem 7 from a test problem available
+  from \url{http://www.ma.ic.ac.uk/~jcash/BVP_software/readme.php} ):
+
+  \begin{eqnarray*}
+    \xi y'' + x y' - y &=&  -(1 + \xi \pi ^2) \cos(\pi x) -\pi x \sin(\pi x)\\
+    y(-1) &=& -1 \\
+    y(1) &=& 1
+  \end{eqnarray*}
+  The second-order ODE is expanded as two first-order ODEs as:
+  \begin{eqnarray*}
+    y_1' &=& y_2 \\
+    y_2' &=& 1/\xi \cdot (-x y_2 +y_1 -(1 + \xi \pi ^2) \cos(\pi x) -\pi x \sin(\pi x))\\
+  \end{eqnarray*}
+  with boundary conditions
+  \begin{eqnarray*}
+    y_1(-1) &=& -1 \\
+    y_1(1) &=& 1
+  \end{eqnarray*}
+  This is implemented as:
+<<>>=
+fun<- function(x,y,pars)
+{
+ list(c(y[2],
+   1/ks*(-x*y[2]+y[1]-(1+ks*pi*pi)*cos(pi*x)-pi*x*sin(pi*x)))
+     )
+}
+@
+  and solved, using the two methods, as:
+<<>>=
+ks <- 0.1
+x  <- seq(-1,1,by=0.01)
+print(system.time(
+sol1  <- bvpshoot(yini=c(-1,NA),yend=c(1,NA),x=x,func=fun,guess=0)
+))
+
+print(system.time(
+sol2  <- bvptwp(yini=c(-1,NA),yend=c(1,NA),x=x,func=fun, guess=0)
+))
+@
+  Note how the boundary conditions at the start (\code{yini}) and
+  end \code{yend} of the integration interval are specified, where
+  \code{NA} is used for boundary conditions that are not known.
+  
+  A reasonable \code{guess} of the unknown initial condition is
+  also inputted.
+
+  As is often the case, the shooting method is faster than the other
+  method. However, there are particular problems where
+  \code{bvpshoot} does not lead to a solution, whereas the MIRK
+  method does (see below).
+
+  The plot shows that the two methods give the same solution:
+<<label=pr7a,include=FALSE>>=
+plot(sol2[,1],sol2[,3],type="l",main="test problem 7, ksi=0.1",
+     lwd=2,col="red")
+points(sol1[,1],sol1[,3],col="green",pch="x")
+legend("topright",c("bvptwp", "bvpshoot"),
+        lty=c(1,NA,NA), pch=c(NA,1,3),col=c("red", "green") )
+@
+
+\setkeys{Gin}{width=0.4\textwidth}
+\begin{figure}
+\begin{center}
+<<label=pr7a,fig=TRUE,echo=FALSE>>=
+<<pr7a>>
+@
+\end{center}
+\caption{Solution of the simple BVP, for ksi=0.1 - see text for \R-code}
+\label{fig:ode}
+\end{figure}
+
+When the parameter  $\xi$ is decreased, \code{bvpshoot} cannot solve the problem
+anymore, due to the presence of a zone of rapid change near x=0.
+
+However, it can still easily be solved with the MIRK method:
+<<>>=
+ks <-0.0001
+
+print(system.time(
+sol2  <- bvptwp(yini=c(-1,NA),yend=c(1,NA),x=seq(-1,1,by=0.01),
+           func=fun, guess=0)
+))
+@
+<<label=pr7b,include=FALSE>>=
+plot(sol2[,1],sol2[,3],type="l",main="test problem 7, ksi=0.0001",
+     lwd=2,col="red")
+
+@
+
+\setkeys{Gin}{width=0.4\textwidth}
+\begin{figure}
+\begin{center}
+<<label=pr7b,fig=TRUE,echo=FALSE>>=
+<<pr7b>>
+@
+\end{center}
+\caption{Solution of the simple BVP, for ksi=0.0001 - see text for \R-code.
+  Note that this problem cannot be solved with \code{bvpshoot}}
+\label{fig:ode2}
+\end{figure}
+\clearpage
+
+\section{A more complex BVP example}
+
+  Here the test problem referred to as "swirling flow III" is solved
+  \citep{Asher95}.
+  
+  The original problem definition is:
+  \begin{eqnarray*}
+    g''&=&(g f' - f g')/ \xi \\
+    f''''&=&(-ff'''-gg')/ \xi
+  \end{eqnarray*}
+  on the interval [0,1] and subject to boundary conditions:
+  \begin{eqnarray*}
+    g(0)=-1, f(0)= 0, f'(0)= 0 \\
+    g(1)=1, f(1)= 0, f'(1)= 0 \\
+  \end{eqnarray*}
+
+  This is rewritten as a set of 1st order ODEs as follows:
+  \begin{eqnarray*}
+    y_1' = y_2                       \\
+    y_2' = (y_1*y_4 -y_3*y_2)/ \xi   \\
+    y_3' = y_4                       \\
+    y_4' = y_5                       \\
+    y_5' = y_6                       \\
+    y_6' = (-y_3 y_6 - y_1 y_2)/ \xi
+  \end{eqnarray*}
+
+  Its implementation in R is:
+<<>>=
+fsub <- function (t,Y,pars)
+{ return(list(c(f1 = Y[2],
+                f2 = (Y[1]*Y[4] - Y[3]*Y[2])/eps,
+	              f3 = Y[4],
+              	f4 = Y[5],
+              	f5 = Y[6],
+	              f6 = (-Y[3]*Y[6] - Y[1]*Y[2])/eps)))
+}
+eps <- 0.001
+x <- seq(0,1,len=100)
+@
+This model cannot be solved with the shooting method. However, it can be
+solved using \code{bvptwp}:
+<<>>=
+print(system.time(
+Soltwp <- bvptwp(x=x,func=fsub,guess= c(2,0,0),
+                  yini=c(-1,NA,0,0,NA,NA), yend=c(1,NA,0,0,NA,NA))
+))
+@
+where the reported system time is in seconds
+
+The problem cannot be solved with too small values of eps:
+<<>>=
+eps <- 1e-9
+Soltwp2 <- NA
+Soltwp2 <- try(bvptwp(x=x,func=fsub,guess= c(2,0,0),
+                  yini=c(-1,NA,0,0,NA,NA), yend=c(1,NA,0,0,NA,NA)),
+    silent = TRUE)
+
+cat(Soltwp2)
+
+@
+<<label=swirl,include=FALSE>>=
+pairs(Soltwp, main="swirling flow III, eps=0.01", col="blue")
+@
+
+\setkeys{Gin}{width=0.8\textwidth}
+\begin{figure}
+\begin{center}
+<<label=swirl,fig=TRUE,echo=FALSE>>=
+<<swirl>>
+@
+\end{center}
+\caption{Solution of the swirling flow III problem - see text for \R-code.
+  Note that this problem cannot be solved with \code{bvpshoot}}
+\label{fig:ode3}
+\end{figure}
+
+The problem is more efficiently solved if an initial guess of the solution
+is given:
+<<>>=
+eps <- 0.001
+xguess <- x
+yguess <- matrix(nr=6, nc=length(xguess), data=0.)
+slope  <- 0.375-0.9129
+yguess[1,] <- 2*xguess -1
+yguess[2,] <- 2
+print(system.time(Sol2 <- bvptwp(x=x,func=fsub,guess= c(2,0,0),
+  xguess=xguess,yguess=yguess,yini=c(-1,NA,0,0,NA,NA),
+  yend=c(1,NA,0,0,NA,NA))))
+@
+\clearpage
+
+\section{More complex initial or end conditions}
+  Problem \code{musn} was described in \citep{Asher95}.
+
+  The problem is:
+  \begin{eqnarray*}
+    u'&=&0.5u(w-u)/v\\
+    v'&=&-0.5(w-u)  \\
+    w'&=&(0.9-1000(w-y)-0.5w(w-u))/z\\
+    z'&=&0.5(w-u)\\
+    y'&=&-100(y-w)
+  \end{eqnarray*}
+  on the interval [0,1] and subject to boundary conditions:
+  \begin{eqnarray*}
+    u(0)=v(0)=w(0)&=&1\\
+    z(0)&=&-10\\
+    w(1)&=&y(1)
+  \end{eqnarray*}
+
+Note the last boundary conditions which expresses \code{w} as a function
+of \code{y}.
+
+  Implementation of the ODE function is simple:
+<<>>=
+musn <- function(x,Y,pars)
+{
+  with (as.list(Y),
+  {
+   du=0.5*u*(w-u)/v
+   dv=-0.5*(w-u)
+   dw=(0.9-1000*(w-y)-0.5*w*(w-u))/z
+   dz=0.5*(w-u)
+   dy=-100*(y-w)
+   return(list(c(du,dv,dw,dz,dy)))
+  })
+}
+@
+  There are 4 boundary values specified at the start of the interval; a value
+  for \code{y} is lacking:
+<<>>=
+init <- c(u=1,v=1,w=1,z=-10,y=NA)
+@
+
+  The boundary condition at the end of the integration interval (1) specifies
+  the value of \code{w} as a function of  \code{y}.
+
+  Because of that, \code{yend} cannot be simply inputted as a vector.
+  It is rather implemented as a function that has as input
+  the values at the end of the integration interval
+  (\code{Y}), the values at the start (\code{yini}) and the parameters, and
+  that returns the residual function (\code{w-y}):
+<<>>=
+yend  <- function (Y,yini,pars)  with (as.list(Y), w-y)
+@
+  This problem is most efficiently solved with \code{bvpshoot}:
+  \footnote{Note that there are at least two solutions to this problem,
+  the second solution can simply be found by setting \code{guess}
+  equal to 0.9.}
+<<>>=
+print(system.time(
+sol   <-bvpshoot(yini= init, x=seq(0,1,by=0.05),func=musn,
+           yend=yend,guess=1,atol=1e-10,rtol=0)
+))
+@
+<<label=musn,include=FALSE>>=
+pairs(sol,main="musn")
+@
+
+\setkeys{Gin}{width=0.8\textwidth}
+\begin{figure}
+\begin{center}
+<<label=musn,fig=TRUE,echo=FALSE>>=
+<<musn>>
+@
+\end{center}
+\caption{Solution of the musn model, using \code{bvpshoot} -
+   see text for \R-code.}
+\label{fig:musn}
+\end{figure}
+\clearpage
+
+\section{a BVP problem including an unknown parameter}
+  In the next BVP problem, a parameter $\lambda$ is to be found such that:
+  \[
+    \frac{d^2y}{dt^2}+(\lambda-10 \cos(2t))\cdot y=0
+  \]
+  on [0,$\pi$] with boundary conditions
+  $\frac{dy}{dt}(0)=0$ and $\frac{dy}{dt}(\pi)=0$ and $y(0)=1$
+
+  Here all the initial values (at t=0) are prescribed. If $\lambda$ would
+  be known the problem would be overdetermined.
+
+  The $2^{nd}$ order differential equation is first rewritten as two
+  $1^{st}$-order equations:
+  \begin{eqnarray*}
+    \frac{dy}{dt}&=& y2\\
+    \frac{dy2}{dt}&=& -(\lambda-10 \cos(2t)) \cdot y
+  \end{eqnarray*}
+  and the function that estimates these derivatives is written (\code{derivs}).
+<<>>=
+mathieu <- function(x,y,lambda)
+    list(c(y[2],
+        -(lambda-10*cos(2*x))*y[1]))
+@
+which is easily solved using \code{bvpshoot}:
+<<>>=
+init <- c(1,0)
+sol  <- bvpshoot(yini=init,yend=c(NA,0),x=seq(0,pi,by=0.01),
+        func=mathieu, guess=NULL, extra=15)
+@
+and plotted:
+<<label=mat,include=FALSE>>=
+plot(sol)
+@
+\setkeys{Gin}{width=0.4\textwidth}
+\begin{figure}
+\begin{center}
+<<label=mat,fig=TRUE,echo=FALSE>>=
+<<mat>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem including an unknown parameter,
+  see text for R-code}
+\label{fig:mat}
+\end{figure}
+  Note how the extra parameter to be fitted is passed (\code{extra}). The
+  value of \code{lam} can be printed:
+<<>>=
+attr(sol,"roots")  # root gives the value of "lam" (17.10684)
+@
+\clearpage
+
+\clearpage
+
+\bibliography{docs}
+
+\end{document}
+
