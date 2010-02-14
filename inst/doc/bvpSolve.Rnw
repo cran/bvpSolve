@@ -30,31 +30,49 @@
 
 
 \author{Karline Soetaert\\
-  Centre for Estuarine and Marine Ecology\\
+  CEME\\
   Netherlands Institute of Ecology\\
   The Netherlands
+  \And
+  Jeff Cash\\
+  Department of mathematics\\
+  Imperial College London\\
+  U.K.
+  \And
+  Francesca Mazzia\\
+  Dipartimento di Matematica \\
+  Universita' di Bari \\
+  Italy   
 }
 
-\Plainauthor{Karline Soetaert}
+\Plainauthor{Karline Soetaert, Jeff Cash and Francesca Mazzia}
 
-\Abstract{This document is about package \bvp \citep{bvpSolve},
-  designed for the numerical
-  solution of boundary value problems for ordinary differential
-  equations (ODE) in \R.
+\Abstract{\R package \bvp \citep{bvpSolve} is designed for the numerical
+  solution of boundary value problems (BVP) for ordinary differential
+  equations (ODE).
 
-  Package \bvp contains:
+  It comprizes:
   \begin{itemize}
     \item function \code{bvpshoot} which implements the shooting method.
       This method makes use of the initial value problem solvers from
       packages \pkg{deSolve} \citep{deSolve} and the root-finding solver
       from package \pkg{rootSolve} \citep{rootSolve}.
     \item function \code{bvptwp}, the mono-implicit Runge-Kutta (MIRK)
-      method with deferred corrections, code TWPBVP
-      \citep{Cash91}, for solving two-point  boundary value problems
+      method with deferred corrections, using conditioning in the mesh 
+      selection,  based on FORTRAN code TWPBVPC
+      \citep{Cash91, CashMazz}, for solving two-point  boundary value problems
   \end{itemize}
 
   The \R functions have an interface which is similar to the interface of
-  the solvers in package \ds
+  the solvers in package \ds      \\
+  
+  The default input to the solvers is very simple, requiring specification 
+  of only one function, that calculates the derivatives. 
+
+  However, in order to speed-up the simulations, and to increase the number of 
+  problems that can be solved, it is also possible to specify the
+  boundary conditions by means of a function and provide analytical solutions 
+  for the derivative and boundary gradients.
 }
 
 %% The address of (at least) one author should be given
@@ -63,9 +81,25 @@
   Karline Soetaert\\
   Centre for Estuarine and Marine Ecology (CEME)\\
   Netherlands Institute of Ecology (NIOO)\\
-  4401 NT Yerseke, Netherlands
+  4401 NT Yerseke, Netherlands \\
   E-mail: \email{k.soetaert@nioo.knaw.nl}\\
   URL: \url{http://www.nioo.knaw.nl/users/ksoetaert}\\
+   \\
+  Jeff Cash\\
+  Imperial College London\\
+  South Kensington Campus\\
+  London SW7 2AZ, U.K.\\
+  E-mail: \email{j.cash@imperial.ac.uk}\\
+  URL: \url{http://www.ma.ic.ac.uk/\~jcash}\\
+  \\
+  Francesca Mazzia           \\
+  Dipartimento di Matematica \\
+  Universita' di Bari        \\
+  Via Orabona 4,             \\
+  70125 BARI                 \\
+  Italy 
+  E-mail: \email{mazzia@dm.uniba.it}\\
+  URL: \url{http://pitagora.dm.uniba.it/\~mazzia}\\
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% R/Sweave specific LaTeX commands.
@@ -88,6 +122,7 @@ options(width=70)
 
 \section{Introduction}
 
+\subsection{Boundary value problems}
   \pkg{bvpSolve} numerically solves boundary value problems (BVP) of
   ordinary differential equations (ODE), which for one (second-order) ODE
   can be written as:
@@ -99,11 +134,18 @@ options(width=70)
     g_2(y) |_b = 0
   \end{eqnarray*}
   where \code{y} is the dependent, \code{x} the independent variable,
-  function \code{f} is the differential equation, $g_a$ and $g_b$ the
-  boundary conditions at the end points a and b.
+  function \code{f} is the differential equation, and $g_1(y) |_a $ and 
+  $g_2(y) |_b$ the boundary conditions at the end points a and b.
 
-  The problem must be specified as a first-order system. Thus, higher-order
-  ODEs need to be rewritten as a set of first-order systems. For instance:
+  In the current implementation, the boundary conditions must be
+  defined at the end of the interval over which the ODE is specified (i.e.
+  at \code{a} and/or \code{b}).
+
+\subsection{package bvpSolve}
+  \bvp can only solve sets of \emph{first-order} ODEs.
+  Thus, higher-order ODEs need to be rewritten as a set of first-order ODEs.
+
+  For instance:
   \begin{eqnarray*}
     \frac{d^2y}{dx^2}=f(x,y,\frac{dy}{dx})
   \end{eqnarray*}
@@ -112,20 +154,89 @@ options(width=70)
     \frac{dy}{dx}=z \\
     \frac{dz}{dx}=f(x,y,z)
   \end{eqnarray*}
+  where \code{y} and \code{z} are now the two dependent variables. 
+  
+  Two BVP solvers are included in \bvp:
+  \begin{itemize}
+    \item \code{bvpshoot}, implementing the shooting method. This method
+      combines solutions of initial value problems (IVP) with solutions
+      of nonlinear algebraic equations; it makes use of solvers from
+      packages \ds and \rs.
+    \item \code{bvptwp}, a mono-implicit Runge-Kutta (MIRK)
+      method with deferred corrections, and using conditioning in the mesh 
+      selection, based on FORTRAN code TWPBVPC
+      \citep{Cash91, CashMazz}.
+  \end{itemize}
+  
+  An S3 method for plotting is included. This will plot all variables in 
+  separate figures.
 
-  Note that in the current implementation, the boundary conditions must be
-  defined at the end of the interval over which the ODE is specified (i.e.
-  at \code{a} and/or \code{b}).
+\subsection{Simple and more complex input}
+  When using \code{bvptwp}, the problem can be specified in several ways. 
+  
+  \begin{itemize}
+  \item
+  By default, the partial derivatives of the differential equations and of 
+  the boundary conditions are approximated using \emph{finite differences} by the
+  solver. Then, the user need not be concerned with supplying functions
+  that calculate the analytical partial derivatives. 
+  This makes the definition of the problem very simple: only one
+  function, estimating the derivatives needs to be provided.
+  However, some problems cannot be specified this way. It is also the slowest
+  method.
+  \item
+  The \code{bvptwp} function is much more efficient if
+  \emph{analytical} partial derivatives of the differential 
+  equations and of boundary conditions are given.  
+  \item
+  Even more simulation time will be gained if the problem is specified in
+  \emph{compiled code} (\proglang{FORTRAN, C}). In this case, \R is used to trigger
+  the solver \code{bvptwp}, and for post-processing (graphics), while
+  solving the BVP itself entirely takes place in compiled code.
+  \end {itemize}
+
+\subsection{Examples in this vignette}
+  In this package vignette it is shown how to formulate and solve BVPs. We
+  use well-known test cases as examples.
+  \begin{itemize}
+    \item We start with a simple example, comprising a second-order ODE (
+      test problem 7 from the website of Jeff Cash 
+      (\url{http://www.ma.ic.ac.uk/~jcash/BVP_software/readme.php})
+    \item This is followed by a more complex example, which consists of 
+      6 first-order ODEs, the "swirling flow III" problem \citep{Asher95}. 
+      This example is used to demonstrate how to
+      continuate a solution, i.e. use the solution for one problem as initial
+      guess for solving another, more complex problem.
+    \item How to implement more complex initial conditions is then exemplified by
+      means of problem "musn"  \citep{Asher95}.
+    \item Next, solving for the fourth eigenvalue of
+      "Mathieu's equation" \citep{shampine}, illustrates how to solve a BVP
+      including an unknown parameter.
+    \item The "nerve impulse" model  \citep{Seidel}, is an example including 
+      periodic boundary conditions. 
+    \item The "elastica" problem (Jeff Cash's website) is used to demonstrate how
+      to specify the analytic jacobians, and how to implement
+      problems in \proglang{FORTRAN} or \proglang{C}.
+    \item Finally, a standard linear testcase \citep{shampine} which has a 
+      steep boundary layer is implemented in \proglang{FORTRAN},
+      and run with several values of a model parameter.
+  \end{itemize}
   
   More examples of boundary value problems can be found in the packages
-  \url{examples} subdirector. They include a.o. all problems found in
-  \url{http://www.ma.ic.ac.uk/~jcash/BVP_software}.
+  \url{examples} subdirectory. 
+  
+  The \url{dynload} subdirectory includes models specified in compiled code.
+  
+  See also document "bvpSolve: a set of 35 test Problems", which can be
+  accessed as \code{vignette("bvpTests")} or is available from the package's
+  site on CRAN:
+  \url{http://cran.r-project.org/package=bvpSolve/}
 
 \clearpage
 
 \section{A simple BVP example}
 
-  Here is a simple ODE (which is problem 7 from a test problem available
+  Here is a simple BVP ODE (which is problem 7 from the test problems available
   from \url{http://www.ma.ic.ac.uk/~jcash/BVP_software/readme.php} ):
 
   \begin{eqnarray*}
@@ -145,14 +256,14 @@ options(width=70)
   \end{eqnarray*}
   This is implemented as:
 <<>>=
-fun<- function(x,y,pars)
-{
+fun<- function(x,y,pars) {
  list(c(y[2],
    1/ks*(-x*y[2]+y[1]-(1+ks*pi*pi)*cos(pi*x)-pi*x*sin(pi*x)))
      )
 }
 @
-  and solved, using the two methods, as:
+  and solved, using the two methods, as \footnote{the system time, in seconds
+  is printed}:
 <<>>=
 ks <- 0.1
 x  <- seq(-1,1,by=0.01)
@@ -165,16 +276,16 @@ sol2  <- bvptwp(yini=c(-1,NA),yend=c(1,NA),x=x,func=fun, guess=0)
 ))
 @
   Note how the boundary conditions at the start (\code{yini}) and
-  end \code{yend} of the integration interval are specified, where
+  at the end (\code{yend}) of the integration interval are specified, where
   \code{NA} is used for boundary conditions that are not known.
   
   A reasonable \code{guess} of the unknown initial condition is
   also inputted.
 
-  As is often the case, the shooting method is faster than the other
+  The shooting method is often faster than the MIRK
   method. However, there are particular problems where
-  \code{bvpshoot} does not lead to a solution, whereas the MIRK
-  method does (see below).
+  \code{bvpshoot} does not lead to a solution, whereas \code{bvptwp}
+  does (see below).
 
   The plot shows that the two methods give the same solution:
 <<label=pr7a,include=FALSE>>=
@@ -196,28 +307,30 @@ legend("topright",c("bvptwp", "bvpshoot"),
 \label{fig:ode}
 \end{figure}
 
-When the parameter  $\xi$ is decreased, \code{bvpshoot} cannot solve the problem
-anymore, due to the presence of a zone of rapid change near x=0.
+For very small values of the parameter  $\xi$, \code{bvpshoot} cannot solve 
+the problem anymore, due to the presence of a zone of rapid change near x=0.
 
-However, it can still easily be solved with the MIRK method:
+However, it can still be solved with the MIRK method, provided that good 
+initial guesses are provided:
 <<>>=
-ks <-0.0001
+ks <-0.0005
 
 print(system.time(
-sol2  <- bvptwp(yini=c(-1,NA),yend=c(1,NA),x=seq(-1,1,by=0.01),
-           func=fun, guess=0)
+sol3  <- bvptwp(yini=c(-1,NA),yend=c(1,NA),x=seq(-1,1,by=0.01),
+           func=fun, xguess=sol2[,1], yguess=t(sol2[,-1]))
 ))
 @
+Here we produce the output with the S3 \code{plot} method, which depicts both 
+dependent variables:
 <<label=pr7b,include=FALSE>>=
-plot(sol2[,1],sol2[,3],type="l",main="test problem 7, ksi=0.0001",
-     lwd=2,col="red")
+plot(sol3,type="l", lwd=2,col="red")
 
 @
 
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.8\textwidth}
 \begin{figure}
 \begin{center}
-<<label=pr7b,fig=TRUE,echo=FALSE>>=
+<<label=pr7b,fig=TRUE,echo=FALSE,height=6,width=13>>=
 <<pr7b>>
 @
 \end{center}
@@ -255,13 +368,13 @@ plot(sol2[,1],sol2[,3],type="l",main="test problem 7, ksi=0.0001",
 
   Its implementation in R is:
 <<>>=
-fsub <- function (t,Y,pars)
-{ return(list(c(f1 = Y[2],
+fsub <- function (t,Y,pars)  { 
+  return(list(c(f1 = Y[2],
                 f2 = (Y[1]*Y[4] - Y[3]*Y[2])/eps,
-	              f3 = Y[4],
-              	f4 = Y[5],
-              	f5 = Y[6],
-	              f6 = (-Y[3]*Y[6] - Y[1]*Y[2])/eps)))
+                f3 = Y[4],
+                f4 = Y[5],
+                f5 = Y[6],
+                f6 = (-Y[3]*Y[6] - Y[1]*Y[2])/eps)))
 }
 eps <- 0.001
 x <- seq(0,1,len=100)
@@ -271,51 +384,87 @@ solved using \code{bvptwp}:
 <<>>=
 print(system.time(
 Soltwp <- bvptwp(x=x,func=fsub,guess= c(2,0,0),
-                  yini=c(-1,NA,0,0,NA,NA), yend=c(1,NA,0,0,NA,NA))
+                      yini=c(y1=-1,y2=NA,y3=0,y4=0,y5=NA,y6=NA),
+                      yend=c(1,NA,0,0,NA,NA))
 ))
 @
 where the reported system time is in seconds
 
-The problem cannot be solved with too small values of eps:
-<<>>=
-eps <- 1e-9
-Soltwp2 <- NA
-Soltwp2 <- try(bvptwp(x=x,func=fsub,guess= c(2,0,0),
-                  yini=c(-1,NA,0,0,NA,NA), yend=c(1,NA,0,0,NA,NA)),
-    silent = TRUE)
-
-cat(Soltwp2)
-
-@
+A \code{pairs} plot produces a pretty picture.
 <<label=swirl,include=FALSE>>=
 pairs(Soltwp, main="swirling flow III, eps=0.01", col="blue")
 @
 
-\setkeys{Gin}{width=0.8\textwidth}
+\setkeys{Gin}{width=0.6\textwidth}
 \begin{figure}
 \begin{center}
 <<label=swirl,fig=TRUE,echo=FALSE>>=
 <<swirl>>
 @
 \end{center}
-\caption{Solution of the swirling flow III problem - see text for \R-code.
+\caption{pairs plot of the swirling flow III problem - see text for \R-code.
   Note that this problem cannot be solved with \code{bvpshoot}}
 \label{fig:ode3}
 \end{figure}
 
-The problem is more efficiently solved if an initial guess of the solution
-is given:
+Using the same input as above, the problem cannot be solved with too 
+small values of eps (but see next section):
+\begin{Schunk}
+\begin{Sinput}
+> eps <- 1e-9
+> Soltwp2 <- NA
+> Soltwp2 <- try(bvptwp(x=x,func=fsub,guess= c(2,0,0),
++                       yini=c(y1=-1,y2=NA,y3=0,y4=0,y5=NA,y6=NA),
++                       yend=c(1,NA,0,0,NA,NA)),
++     silent = TRUE)
+> cat(Soltwp2)
+\end{Sinput}
+\begin{Soutput}
+Error in bvptwp(x = x, func = fsub, guess = c(2, 0, 0), yini = c(y1 = -1,  : 
+  The Expected No. Of mesh points Exceeds Storage Specifications.
+\end{Soutput}
+\end{Schunk}
+
+\clearpage
+\section{Solving a boundary value problem using continuation}
+The previous -swirl- problem can be solved for small values of \code{eps}
+if the previous solution (\code{Soltwp}) with eps = 0.001,
+is used as an initial guess for smaller value of eps, e.g. 0.0001:
 <<>>=
-eps <- 0.001
-xguess <- x
-yguess <- matrix(nr=6, nc=length(xguess), data=0.)
-slope  <- 0.375-0.9129
-yguess[1,] <- 2*xguess -1
-yguess[2,] <- 2
-print(system.time(Sol2 <- bvptwp(x=x,func=fsub,guess= c(2,0,0),
-  xguess=xguess,yguess=yguess,yini=c(-1,NA,0,0,NA,NA),
-  yend=c(1,NA,0,0,NA,NA))))
+eps <- 0.0001
+xguess <- Soltwp[,1]
+yguess <- t(Soltwp[,2:7])
 @
+<<>>=
+print(system.time(
+  Sol2 <- bvptwp(x=x,func=fsub,guess= c(2,0,0),
+  xguess=xguess,yguess=yguess,yini=c(y1=-1,y2=NA,y3=0,y4=0,y5=NA,y6=NA),
+  yend=c(1,NA,0,0,NA,NA))
+))
+@
+
+We use the S3 \code{plot} method to plot all dependent variables at once:
+These plots are to be compared with the first column of the "pairs" plot
+(figure 3).
+
+<<label=swirl2,include=FALSE>>=
+plot(Sol2, col="darkred", type="l", lwd=2)
+mtext(outer=TRUE, side=3, line=-1.5, cex=1.5,
+   "swirling flow III, eps=0.0001")
+@
+\setkeys{Gin}{width=0.6\textwidth}
+\begin{figure}
+\begin{center}
+<<label=swirl2,fig=TRUE,echo=FALSE>>=
+<<swirl2>>
+@
+\end{center}
+\caption{Solution of the swirling flow III problem with small eps,
+ using continuation - see text for \R-code.
+}
+\label{fig:ode3b}
+\end{figure}
+
 \clearpage
 
 \section{More complex initial or end conditions}
@@ -336,42 +485,50 @@ print(system.time(Sol2 <- bvptwp(x=x,func=fsub,guess= c(2,0,0),
     w(1)&=&y(1)
   \end{eqnarray*}
 
-Note the last boundary conditions which expresses \code{w} as a function
+Note the last boundary condition which expresses \code{w} as a function
 of \code{y}.
 
-  Implementation of the ODE function is simple:
+Implementation of the ODE function is simple:
 <<>>=
-musn <- function(x,Y,pars)
-{
-  with (as.list(Y),
-  {
-   du=0.5*u*(w-u)/v
-   dv=-0.5*(w-u)
-   dw=(0.9-1000*(w-y)-0.5*w*(w-u))/z
-   dz=0.5*(w-u)
-   dy=-100*(y-w)
-   return(list(c(du,dv,dw,dz,dy)))
+musn <- function(x,Y,pars) {
+  with (as.list(Y),  {
+    du=0.5*u*(w-u)/v
+    dv=-0.5*(w-u)
+    dw=(0.9-1000*(w-y)-0.5*w*(w-u))/z
+    dz=0.5*(w-u)
+    dy=-100*(y-w)
+    return(list(c(du,dv,dw,dz,dy)))
   })
 }
 @
-  There are 4 boundary values specified at the start of the interval; a value
-  for \code{y} is lacking:
+
+This model is solved differently whether \code{bvpshoot} or \code{bvptwp}
+is used.
+
+\subsection{solving musn with bvpshoot}
+It is easiest to solve the musn model with \code{bvpshoot}:
+
+There are 4 boundary values specified at the start of the interval; a value
+for \code{y} is lacking (and set to \code{NA}):
 <<>>=
 init <- c(u=1,v=1,w=1,z=-10,y=NA)
 @
 
-  The boundary condition at the end of the integration interval (1) specifies
-  the value of \code{w} as a function of  \code{y}.
+The boundary condition at the end of the integration interval (1) specifies
+the value of \code{w} as a function of  \code{y}.
 
-  Because of that, \code{yend} cannot be simply inputted as a vector.
-  It is rather implemented as a function that has as input
-  the values at the end of the integration interval
+Because of that, \code{yend} cannot be simply inputted as a vector.
+It is rather implemented as a function that has as input
+the values at the end of the integration interval
   (\code{Y}), the values at the start (\code{yini}) and the parameters, and
   that returns the residual function (\code{w-y}):
 <<>>=
 yend  <- function (Y,yini,pars)  with (as.list(Y), w-y)
 @
-  This problem is most efficiently solved with \code{bvpshoot}:
+Note that the specification of the boundaries for \code{bvptwp} are rather 
+different (next section).
+
+The solution, using \code{bvpshoot} is obtained by:
   \footnote{Note that there are at least two solutions to this problem,
   the second solution can simply be found by setting \code{guess}
   equal to 0.9.}
@@ -381,11 +538,13 @@ sol   <-bvpshoot(yini= init, x=seq(0,1,by=0.05),func=musn,
            yend=yend,guess=1,atol=1e-10,rtol=0)
 ))
 @
+and plotted as:
 <<label=musn,include=FALSE>>=
-pairs(sol,main="musn")
+plot(sol,type="l", lwd=2)
+mtext(outer=TRUE, side=3, line=-1.5, cex=1.5, "musn")
 @
 
-\setkeys{Gin}{width=0.8\textwidth}
+\setkeys{Gin}{width=0.6\textwidth}
 \begin{figure}
 \begin{center}
 <<label=musn,fig=TRUE,echo=FALSE>>=
@@ -396,40 +555,84 @@ pairs(sol,main="musn")
    see text for \R-code.}
 \label{fig:musn}
 \end{figure}
+
+\subsection{solving musn with bvptwp}
+Here the boundary function \code{bound} must be specified:
+
+<<>>=
+bound <- function(i,y,pars) {
+  with (as.list(y), {
+    if (i ==1) return (u-1)
+    if (i ==2) return (v-1)
+    if (i ==3) return (w-1)
+    if (i ==4) return (z+10)
+    if (i ==5) return (w-y)
+ })
+}
+@
+
+Moreover, this problem can only be solved if good initial
+conditions are given:
+<<>>=
+xguess <- seq(0, 1, len=5)
+yguess <- matrix(ncol = 5, (rep(c(1,1,1,-10,0.91),5)) )
+rownames(yguess) <- c("u","v","w","z","y")
+xguess
+yguess
+@
+
+
+Note that the rows of \code{yguess} have been given a name, such
+that this name can be used in the derivative and boundary function.
+
+We specify that there are 4 left boundary conditions (\code{leftbc}).
+<<>>=
+print(system.time(
+Sol <- bvptwp(yini= NULL, x=x, func=musn, bound=bound,
+              xguess=xguess, yguess=yguess, leftbc = 4,
+              guess=1,atol=1e-10)
+))
+@
+
 \clearpage
 
 \section{a BVP problem including an unknown parameter}
-  In the next BVP problem, a parameter $\lambda$ is to be found such that:
+  In the next BVP problem \citep{shampine}, the fourth eigenvalue of the 
+  Mathieus equation (parameter $\lambda$) is computed. The equation is
   \[
     \frac{d^2y}{dt^2}+(\lambda-10 \cos(2t))\cdot y=0
   \]
-  on [0,$\pi$] with boundary conditions
+  defined on [0,$\pi$], and with boundary conditions
   $\frac{dy}{dt}(0)=0$ and $\frac{dy}{dt}(\pi)=0$ and $y(0)=1$
 
-  Here all the initial values (at t=0) are prescribed. If $\lambda$ would
+  Here all the initial values (at t=0) are prescribed, in addition to one
+  condition at the end of the interval. If $\lambda$ would
   be known the problem would be overdetermined.
 
   The $2^{nd}$ order differential equation is first rewritten as two
   $1^{st}$-order equations:
   \begin{eqnarray*}
-    \frac{dy}{dt}&=& y2\\
-    \frac{dy2}{dt}&=& -(\lambda-10 \cos(2t)) \cdot y
+    \frac{dy}{dt}&=& y_2\\
+    \frac{dy_2}{dt}&=& -(\lambda-10 \cos(2t)) \cdot y
   \end{eqnarray*}
-  and the function that estimates these derivatives is written (\code{derivs}).
+  and the function that estimates these derivatives is written (\code{mathieu}).
 <<>>=
 mathieu <- function(x,y,lambda)
     list(c(y[2],
         -(lambda-10*cos(2*x))*y[1]))
 @
-which is easily solved using \code{bvpshoot}:
+\subsection{Solving for an unknown parameter using bvpshoot}
+This problem is most easily solved using \code{bvpshoot}; an initial guess of 
+the extra parameter to be solved is simply passed via argument \code{extra}.
 <<>>=
 init <- c(1,0)
 sol  <- bvpshoot(yini=init,yend=c(NA,0),x=seq(0,pi,by=0.01),
         func=mathieu, guess=NULL, extra=15)
 @
-and plotted:
+The result is plotted:
 <<label=mat,include=FALSE>>=
-plot(sol)
+plot(sol[,1:2])
+mtext(outer=TRUE, side=3, line=-1.5, cex=1.5, "mathieu")
 @
 \setkeys{Gin}{width=0.4\textwidth}
 \begin{figure}
@@ -442,13 +645,718 @@ plot(sol)
   see text for R-code}
 \label{fig:mat}
 \end{figure}
-  Note how the extra parameter to be fitted is passed (\code{extra}). The
-  value of \code{lam} can be printed:
+The  value of \code{lambda} can be printed:
 <<>>=
-attr(sol,"roots")  # root gives the value of "lam" (17.10684)
+attr(sol,"roots")  # root gives the value of "lambda" (17.10683)
 @
-\clearpage
+\subsection{Solving for an unknown parameter using bvptwp}
+To use \code{bvptwp}, we treat the unknown parameter as an extra 
+variable, whose derivative = 0 (it is a parameter, and by definition 
+does not change over the integration interval). This is, the equations are:
+  \begin{eqnarray*}
+    \frac{dy}{dt}&=& y_2\\
+    \frac{dy_2}{dt}&=& -(\lambda-10 \cos(2t)) \cdot y \\
+    \frac{d\lambda}{dt}&=& 0
+  \end{eqnarray*}
+for dependent variables \code{y, y_2} and $\lambda$
 
+The model definition in \R becomes:
+<<>>=
+mathieu2 <- function(x,y,p)
+    list(c(y[2],
+        -(y[3]-10*cos(2*x))*y[1],
+        0) )
+@
+Note the third derivative, and the parameter \code{lambda} from previous
+chapter which is now \code{y[3]}, the third variable.
+
+The initial condition, \code{yini} and final condition, \code{yend} now also 
+provides a value, \code{NA}, for the parameter (y3) that is unknown.
+We also provide initial guesses for the x- and y-values (\code{xguess, yguess}).
+\footnote{This problem is not solved if the initial guess for 
+ the y-values is 0; yet any value different from 0 works}
+<<>>=
+Sol <- bvptwp (yini= c(y=1,dy=0,lambda=NA), yend = c(NA,0,NA),
+        x=seq(0,pi,by=0.01), func=mathieu2, xguess = c(0,pi),
+        yguess = matrix(nr=3,rep(15,6)) )
+@
+The y-value, its derivative, and \code{lambda}, are plotted
+<<label=mat2,include=FALSE>>=
+plot(Sol, type = "l", lwd=2)
+mtext(outer=TRUE, side=3, line=-1.5, cex=1.5, "mathieu - solved using bvptwp")
+@
+\setkeys{Gin}{width=0.8\textwidth}
+\begin{figure}
+\begin{center}
+<<label=mat2,fig=TRUE,echo=FALSE>>=
+<<mat2>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem including an unknown parameter,
+  and using method bvptwp - see text for R-code}
+\label{fig:mat}
+\end{figure}
+
+
+\clearpage
+\section{A boundary value problem with periodic boundary conditions}
+A BVP with cyclic boundary conditions is the nerve impulse model, a problem 
+described in \citep{Seidel}.  The equations are:
+
+\begin{eqnarray*}
+ y_1' = 3 T (y_1+y_2-1/3 y_1^3-1.3)\\
+ y_2' = -T (y_1 - 0.7 + 0.8 y_2)/3
+\end{eqnarray*}
+defined on the interval [0,1] and subject to boundary conditions:
+\begin{eqnarray*}
+ y_1(0) = y_1(1) \\
+ y_2(0) = y_2(1) \\
+ 1= -T (y_1(0)-0.7+0.8*y_2(0))/3
+\end{eqnarray*}
+
+\subsection{Cyclic boundary conditions solved using bvpshoot}
+The problem is first solved using \code{bvpshoot}:
+
+The derivative function (where \code{T} is the parameter) is:
+<<>>=
+nerve <- function (t,y,T)
+  list(c( 3*T*(y[1] + y[2] - 1/3*(y[1]^3) - 1.3),
+        (-1/3)*T*(y[1] - 0.7 + 0.8*y[2]) ))
+@
+and the residual function, at the end of the interval is:
+<<>>=
+res<- function (Y,yini,T)
+  c(Y[1]-yini[1],
+    Y[2]-yini[2],
+    T*(-1/3)*(yini[1] - 0.7 + 0.8*yini[2]) - 1)
+@
+There are no initial conditions (\code{yini}); to solve this model, a reasonable
+\code{guess} of the missing initial conditions is necessary; the initial guess for the 
+unknown parameter is set to $2 \pi$ (\code{extra}):
+<<>>=  
+yini <- c(y1=NA,y2=NA)
+sol  <- bvpshoot(yini=yini, x=seq(0,1,by=0.01),
+        func=nerve, guess=c(0.5,0.5), yend=res, extra=2*pi)
+@
+T is estimated to be 10.710809; the root has been found in 11 iterations:
+<<>>=
+attributes(sol)$root
+@
+
+\subsection{Cyclic boundary conditions solved using bvptwp}
+Function \code{bvptwp} accepts only problems with separated boundary 
+conditions, however, it is possible to use it also for solving boundary value
+problems with periodic boundary conditions. 
+
+This is done by considering the boundary conditions as "parameters", and using the 
+strategy of defining these parameters as extra variables, with derivatives = 0,
+similar as in previous section.
+
+The augmented derivative function is, with variable
+3 the unknown parameter \code{T}, variables 4 and 5 the initial conditions of 
+\code{y_1}, and \code{y_2} respectively, is:
+<<>>=
+nerve3 <- function (t,y,p)
+  list(c( 3*y[3]*(y[1] + y[2] - 1/3*(y[1]^3) - 1.3),
+        (-1/3)*y[3]*(y[1] - 0.7 + 0.8*y[2]) ,
+        0,
+        0,
+        0)
+  )
+@ 
+The required boundary function, with the first 3 boundary conditions at the 
+left boundary is:
+<<>>=
+bound <- function(i,y,p) {
+ if (i ==1) return ( y[3]*(-1/3)*(y[1] - 0.7 + 0.8*y[2]) - 1 )
+ if (i ==2) return ( y[1]-y[4] )           
+ if (i ==3) return ( y[2]-y[5] )           # left bnd
+ if (i ==4) return ( y[1]-y[4] )           # right bnd
+ if (i ==5) return ( y[2]-y[5] )
+}
+@
+boundary condition 2 sets the left boundary of \code{y_1} 
+equal to parameter \code{y_4}, boundary condition 4 does the same for the 
+right boundary of \code{y_1}.
+
+
+Solving this also requires good initial conditions to find a solution:
+<<>>=
+xguess = seq(0,1,by=0.1)
+yguess = matrix(nr=5,nc=length(xguess),5.)
+yguess[1,] <- sin(2*pi*xguess)
+yguess[2,] <- cos(2*pi*xguess)
+rownames(yguess) <- c("y1", "y2", "T", "y1ini", "y2ini")
+@
+
+<<>>=
+Sol  <- bvptwp(func=nerve3, bound=bound, x=seq(0,1,by=0.01), 
+        guess = c(y=0.5, dy=0.5, T=2*pi, yi=0.5, yj=0.5),
+        leftbc=3, xguess=xguess, yguess=yguess)
+@
+The first row of \code{Sol} shows the initial conditions:
+<<>>=
+Sol[1,]
+@
+<<label=nerve,include=FALSE>>=
+plot(Sol, type="l", lwd=2, col="darkblue")
+@
+\setkeys{Gin}{width=0.6\textwidth}
+\begin{figure}
+\begin{center}
+<<label=nerve,fig=TRUE,echo=FALSE>>=
+<<nerve>>
+@
+\end{center}
+\caption{Solution of the nerve impulse problem, comprising two state
+variables and 3 parameters - see text for R-code}
+\label{fig:nerve}
+\end{figure}
+
+\clearpage
+\section{Specifying the analytic jacobians}
+By default, the Jacobians of the derivative function and of the boundary
+conditions, are estimated numerically. It is however possible - and faster -
+to provide the analytical solution of the Jacobian.
+
+As an example, the \code{elastica} problem is implemented
+(\url{http://www.ma.ic.ac.uk/~jcash/BVP_software}).
+
+First implementation uses the default specification:
+<<>>=
+Elastica <- function (x, y, pars) {
+
+  list( c(cos(y[3]),
+          sin(y[3]),
+          y[4],
+          y[5]*cos(y[3]),
+          0))
+}
+
+Sol <- bvptwp(func=Elastica,
+              yini = c(x=0, y=0, p=NA,   k=0, F=NA),
+              yend = c(x=NA,y=0, p=-pi/2,k=NA,F=NA),
+              x = seq(0,0.5,len=16),
+              guess=c(0,0) )
+@
+<<label=elastica,include=FALSE>>=
+plot(Sol)
+@
+\setkeys{Gin}{width=0.6\textwidth}
+\begin{figure}
+\begin{center}
+<<label=elastica,fig=TRUE,echo=FALSE>>=
+<<elastica>>
+@
+\end{center}
+\caption{Solution of the elastica problem - see text for R-code}
+\label{fig:elastica}
+\end{figure}
+
+Now several extra functions are defined, specifying
+\begin{enumerate}
+ \item the analytic Jacobian for the derivative function (\code{jacfunc})
+ \item the boundary function (\code{bound}). Here \code{i} is the boundary
+   condition "number". The conditions at the left are enumerated first,
+   then the ones at the right.  For instance, i = 1 specifies the boundary
+   for y(0) = 0, or $BC_1 = y[1]-0$; the fifth boundary condition is y[3] = -pi/2 or
+   $BC_3 = y[3] + \pi/2$
+ \item the analytic Jacobian for the boundary function (\code{jacbound})
+\end{enumerate}
+
+This is done in the \R-code below:
+<<>>=
+
+
+jacfunc <- function (x, y, pars) {
+      Jac <- matrix(nrow=5, ncol=5, 0)
+      Jac[3,4]=1.0
+      Jac[4,4]=1.0
+      Jac[1,3]=-sin(y[3])
+      Jac[2,3]=cos(y[3])
+      Jac[4,3]=-y[5]*sin(y[3])
+      Jac[4,5]=Jac[2,3]
+      Jac
+}
+@
+
+<<>>=
+bound <- function (i, y, pars)  {
+    if (i <=2) return(y[i])
+    else if (i == 3) return(y[4])
+    else if (i == 4) return(y[2])
+    else if (i == 5) return(y[3]+pi/2)
+}
+@
+<<>>=
+jacbound <- function(i, y, pars)  {
+    JJ <- rep(0,5)
+         if (i <=2) JJ[i] =1.0
+    else if (i ==3) JJ[4] =1.0
+    else if (i ==4) JJ[2] =1.0
+    else if (i ==5) JJ[3] =1.0
+    JJ
+}
+@
+If this input is used, the number of left boundary conditions \code{leftbc}
+needs to be specified.
+<<>>=
+Sol4 <- bvptwp(leftbc = 3,
+              func=Elastica, jacfunc = jacfunc,
+              bound = bound, jacbound = jacbound,
+              x = seq(0,0.5,len=16),
+              guess=c(0,0) )
+@
+
+Solving the model this way is about 3 times faster than the default.
+
+\clearpage
+\section{implementing a BVP problem in compiled code}
+Even more computing time is saved by specifying the problem in lower-level
+languages such as \proglang{FORTRAN} or \proglang{C}, or \proglang{C}$^{++}$,
+which are compiled into a dynamically linked library (DLL) and loaded
+into \R.
+
+This is similar as the differential equations from package \ds \citep{deSolve}.
+
+Its vignette ("compiledCode") can be consulted for more information.
+(\url{http://cran.r-project.org/package=deSolve/})
+
+In order to create compiled models (.DLL = dynamic link libraries on Windows
+or .so = shared objects on other systems) you must have a recent version of
+the GNU compiler suite installed, which is quite standard for Linux.
+
+Windows users find all the required tools on
+\url{http://www.murdoch-sutherland.com/Rtools/}.
+Getting DLLs produced by other compilers to communicate with R is much more
+complicated and therefore not recommended. More details can be found on
+\url{http://cran.r-project.org/doc/manuals/R-admin.html}.
+
+The call to the derivative, boundary and Jacobian functions is more complex
+for compiled code compared to \R-code, because it has to comply with the
+interface needed by the integrator source codes.
+
+\subsection{The elastica problem in FORTRAN}
+Below is an implementation of the elastica model in \proglang{FORTRAN}:
+(slightly modified from \url{http://www.ma.ic.ac.uk/~jcash/BVP_software}):
+
+\begin{verbatim}
+c  The differential system:
+      SUBROUTINE fsub(NCOMP,X,Z,F,RPAR,IPAR)
+      IMPLICIT NONE
+      INTEGER NCOMP, IPAR  , I
+      DOUBLE PRECISION F, Z, RPAR, X
+      DIMENSION Z(*),F(*)
+      DIMENSION RPAR(*), IPAR(*)
+
+      F(1)=cos(Z(3))
+      F(2)=sin(Z(3))
+      F(3)=Z(4)
+      F(4)=Z(5)*cos(Z(3))
+      F(5)=0
+
+      RETURN
+      END
+
+c The analytic Jacobian for the F-function:
+      SUBROUTINE dfsub(NCOMP,X,Z,DF,RPAR,IPAR)
+      IMPLICIT NONE
+      INTEGER NCOMP, IPAR, I, J
+      DOUBLE PRECISION X, Z, DF, RPAR
+      DIMENSION Z(*),DF(NCOMP,*)
+      DIMENSION RPAR(*), IPAR(*)
+      CHARACTER (len=50) str
+
+      DO I=1,5
+         DO J=1,5
+            DF(I,J)=0.D0
+         END DO
+      END DO
+
+      DF(1,3)=-sin(Z(3))
+      DF(2,3)=cos(Z(3))
+      DF(3,4)=1.0D0
+      DF(4,3)=-Z(5)*sin(Z(3))
+      DF(4,4)=1.0D0
+      DF(4,5)=cos(Z(3))
+
+      RETURN
+      END
+
+c The boundary conditions:
+      SUBROUTINE gsub(I,NCOMP,Z,G,RPAR,IPAR)
+      IMPLICIT NONE
+      INTEGER I, NCOMP, IPAR
+      DOUBLE PRECISION Z, RPAR, G
+      DIMENSION Z(*)
+      DIMENSION RPAR(*), IPAR(*)
+
+
+      IF (I.EQ.1) G=Z(1)
+      IF (I.EQ.2) G=Z(2)
+      IF (I.EQ.3) G=Z(4)
+      IF (I.EQ.4) G=Z(2)
+      IF (I.EQ.5) G=Z(3)+1.5707963267948966192313216916397514D0
+
+      RETURN
+      END
+
+c The analytic Jacobian for the boundaries:
+      SUBROUTINE dgsub(I,NCOMP,Z,DG,RPAR,IPAR)
+      IMPLICIT NONE
+      INTEGER I, NCOMP, IPAR
+      DOUBLE PRECISION Z, DG, RPAR
+      DIMENSION Z(*),DG(*)
+      DIMENSION RPAR(*), IPAR(*)
+
+      DG(1)=0.D0
+      DG(2)=0.D0
+      DG(3)=0.D0
+      DG(4)=0.D0
+      DG(5)=0.D0
+
+C     dG1/dZ1
+      IF (I.EQ.1) DG(1)=1.D0
+C     dG2/dZ2
+      IF (I.EQ.2) DG(2)=1.D0
+C     dG3/dZ4
+      IF (I.EQ.3) DG(4)=1.D0
+C     dG4/dZ2
+      IF (I.EQ.4) DG(2)=1.D0
+C     dG5/dZ3
+      IF (I.EQ.5) DG(3)=1.D0
+
+      RETURN
+      END
+
+\end{verbatim}
+
+\subsection{The elastica problem in C}
+The same model, implemented in \proglang{C} is:
+\begin{verbatim}
+#include <math.h>
+
+//  The differential system:
+
+  void fsub(int *n, double *x, double *z, double *f,
+        double * RPAR, int * IPAR)  {
+
+      f[0]=cos(z[2]);
+      f[1]=sin(z[2]);
+      f[2]=z[3]     ;
+      f[3]=z[4]*cos(z[2]);
+      f[4]=0;
+  }
+
+// The analytic Jacobian for the F-function:
+
+  void dfsub(int * n, double *x, double *z, double * df,
+      double *RPAR, int *IPAR)  {
+
+      int j;
+      for (j = 0; j< *n * *n; j++) df[j] = 0;
+
+      df[*n *2]    = -sin(z[2]);
+      df[*n *2 +1] = cos(z[2]);
+      df[*n *3 +2] = 1.0;
+      df[*n *2 +3] = -z[4]*sin(z[2]);
+      df[*n *3 +3] = 1.0;
+      df[*n *4 +3] = cos(z[2]);
+  }
+
+// The boundary conditions:
+
+  void gsub(int *i, int *n, double *z, double *g,
+      double *RPAR, int *IPAR)  {
+
+      if (*i==1) *g=z[0];
+      else if (*i==2) *g=z[1];
+      else if (*i==3) *g=z[3];
+      else if (*i==4) *g=z[1];
+      else if (*i==5) *g=z[2]+1.5707963267948966192313216916397514;
+  }
+
+// The analytic Jacobian for the G-function:
+
+  void dgsub(int *i, int *n, double *z, double *dg,
+      double *RPAR, int *IPAR)  {
+
+      int j;
+      for (j = 0; j< *n; j++) dg[j] = 0;
+
+      if (*i == 1) dg[0] = 1.;
+      else if (*i == 2) dg[1] = 1.;
+      else if (*i == 3) dg[3] = 1.;
+      else if (*i == 4) dg[1] = 1.;
+      else if (*i == 5) dg[2] = 1.;
+  }
+
+\end{verbatim}
+
+\subsection{Solving the elastica problem specified in compiled code}
+
+In what follows, it is assumed that the codes are saved in a file called
+\code{elastica.f}, and \code{elasticaC.c} and that these files are in the
+working directory of \R. (if not, use \code{setwd()} )
+
+Before the functions can be executed, the \proglang{FORTRAN} or \proglang{C}-
+code has to be compiled
+
+This can simply be done in R:
+
+\begin{verbatim}
+ system("R CMD SHLIB elastica.f")
+ system("R CMD SHLIB elasticaC.c")
+\end{verbatim}
+or
+
+\begin{verbatim}
+system("gfortran -shared -o elastica.dll elastica.f")
+system("gcc -shared -o elasticaC.dll elasticaC.c")
+\end{verbatim}
+
+This will create a file called \code{elastica.dll} and \code{elasticaC.dll}
+respectively (on windows).
+
+After loading the DLL, the model can be run, after which the DLL is unloaded.
+For the FORTRAN version, this is done as follows (the C code is similar, except for
+the name of the DLL):
+\begin{verbatim}
+
+dyn.load("elastica.dll")
+
+outF <- bvptwp(ncomp=5,
+               x = seq(0,0.5,len=16), leftbc = 3,
+               func="fsub",jacfunc="dfsub",bound="gsub",jacbound="dgsub",
+               dllname="elastica")
+
+dyn.unload("elastica.dll")
+
+\end{verbatim}
+%% the elastica problem implemented in C has been made a part of the package
+<<include=FALSE, echo = FALSE>>=
+outF <- bvptwp(ncomp=5,
+               x = seq(0,0.5,len=16), leftbc = 3,
+               func="fsub",jacfunc="dfsub",bound="gsub",jacbound="dgsub",
+               dllname="bvpSolve")
+@
+
+Note that the number of components (equations) needs to be explicitly
+inputted (\code{ncomp}).
+
+This model is about 8-10 times faster than the pure \R implementation from
+previous section.
+
+The solver recognizes that the model is specified as a DLL due to
+the fact that arguments \code{func}, \code{jacfunc}, \code{bound} and
+\code{jacbound} are not regular \R-functions but character strings.
+
+Thus, the solver will check whether these functions are loaded in the DLL
+with name "elastica.dll".  Note that the name of the DLL should be
+specified without extension.
+
+This DLL should contain all the compiled function or subroutine definitions
+needed.
+
+Also, if \code{func} is specified in compiled code, then \code{jacfunc},
+\code{bound} and \code{jacbound} should also be specified in a compiled
+language. It is not allowed to mix R-functions and compiled functions.
+
+\clearpage
+\section{Passing parameters and external data to compiled code}
+
+When using compiled code, it is possible to
+\begin{itemize}
+ \item pass \emph{parameters} from \R to the compiled functions
+ \item pass \emph{forcing functions} from \R to compiled functions.
+   These are then updated to the correct value of the independent variable
+   (\code{x}) at each step.
+\end{itemize}
+
+The implementation of this is similar as in package \pkg{deSolve}. How to do
+it has been extensively explained in deSolve's vignette, which can be
+consulted for details.
+
+See \url{http://cran.r-project.org/package=deSolve}.
+
+Here we implement a simple linear boundary value problem, which is
+a standard test problem for BVP code (\citep{scott}). The model has a
+boundary layer at x=0.
+
+The differential equation depends on a parameter \code{a} and \code{p}:
+\[
+  y'' + \frac{-a p y}{(p+x^2)^2}=0
+\]
+and is solved on [-0.1, +0.1] with boundary conditions:
+\begin{eqnarray*}
+y(-0.1) = -0.1 \sqrt{p+0.01} \\
+y(+0.1) = 0.1 \sqrt{p+0.01} \\
+\end{eqnarray*}
+where \code{a} = 3 and \code{p} is taken small.
+
+This differential equation is written as a system of two first-order ODEs.
+
+The implementation in pure \R is given first:
+<<>>=
+fun <- function(t,y,pars)
+  list(c( y[2],
+        - a*p*y[1]/(p+t*t)^2
+        ))
+@
+with parameter values:
+<<>>=
+p    <- 1e-5
+a    <- 3
+@
+It is solved using \code{bvptwp}; note that the initial condition (\code{yini})
+gives names to the variables; these names are used by the solver to label
+the output:
+<<>>=
+sol  <- bvptwp(yini = c(y=-0.1/sqrt(p+0.01), dy=NA),
+               yend = c(   0.1/sqrt(p+0.01),    NA),
+               x = seq(-0.1, 0.1, by=0.001),
+               func = fun, guess = 1)
+@
+<<label=linear,include=FALSE>>=
+plot(sol,type="l")
+@
+\setkeys{Gin}{width=0.8\textwidth}
+\begin{figure}
+\begin{center}
+<<label=linear,fig=TRUE,echo=FALSE, width=13, height=6>>=
+<<linear>>
+@
+\end{center}
+\caption{Solution of the linear boundary problem - see text for R-code}
+\label{fig:linear}
+\end{figure}
+
+Next the FORTRAN implementation is given, which requires writing the
+boundary and jacobian functions (\code{bound}, \code{jacfunc} and \code{jacbound})
+
+The two parameters are initialised in a function called \code{initbnd}; its
+name is passed to function \code{bvptwp} via argument \code{initfunc}.
+
+\begin{verbatim}
+c FORTRAN implementation of the boundary problem
+c Initialiser for parameter common block
+      SUBROUTINE initbnd(bvpparms)
+      EXTERNAL bvpparms
+
+      DOUBLE PRECISION parms(2)
+      COMMON / pars / parms
+
+       CALL bvpparms(2, parms)
+      END
+
+c derivative function
+      SUBROUTINE funbnd(NCOMP,X,Y,F,RPAR,IPAR)
+      IMPLICIT NONE
+      INTEGER NCOMP, IPAR(*), I
+      DOUBLE PRECISION F(2), Y(2), RPAR(*), X
+      DOUBLE PRECISION a, p
+      COMMON / pars / a, p
+
+        F(1)= Y(2)
+        F(2)= - a * p *Y(1)/(p+ x*x)**2
+      END
+
+c The analytic Jacobian for the derivative-function:
+      SUBROUTINE dfbnd(NCOMP,X,Y,DF,RPAR,IPAR)
+      IMPLICIT NONE
+      INTEGER NCOMP, IPAR(*), I, J
+      DOUBLE PRECISION X, Y(2), DF(2,2), RPAR(*)
+      DOUBLE PRECISION a, p
+      COMMON / pars / a, p
+
+        DF(1,1)=0.D0
+        DF(1,2)=1.D0
+        DF(2,1)= - a *p /(p+x*x)**2
+        DF(2,2)=0.D0
+      END
+
+c The boundary conditions:
+      SUBROUTINE gbnd(I,NCOMP,Y,G,RPAR,IPAR)
+      IMPLICIT NONE
+      INTEGER I, NCOMP, IPAR(*)
+      DOUBLE PRECISION Y(2), RPAR(*), G
+      DOUBLE PRECISION a, p
+      COMMON / pars / a, p
+
+        IF (I.EQ.1) THEN
+          G=Y(1) + 0.1 / sqrt(p+0.01)
+        ELSE IF (I.EQ.2) THEN
+          G=Y(1) - 0.1 / sqrt(p+0.01)
+        ENDIF
+      END
+
+c The analytic Jacobian for the boundaries:
+      SUBROUTINE dgbnd(I,NCOMP,Y,DG,RPAR,IPAR)
+      IMPLICIT NONE
+      INTEGER I, NCOMP, IPAR(*)
+      DOUBLE PRECISION Y(2), DG(2), RPAR(*)
+
+        DG(1)=1.D0
+        DG(2)=0.D0
+      END
+\end{verbatim}
+
+
+Before running the model, the parameters are defined:
+<<>>=
+parms <- c(a=3, p=1e-7)
+@
+
+and the DLL created and loaded; This model has been made part of package \bvp,
+so it is available in DLL \code{bvpSolve}.
+
+Assuming that this was not the case, and the code is in a file called
+\code{"boundary_for.f"}, this is how to compile this code and load the DLL
+(on windows):
+\begin{verbatim}
+system("R CMD SHLIB boundary_for.f")
+dyn.load("boundary_for.dll")
+\end{verbatim}
+
+We execute the model several times, for different values of parameter \code{p};
+we create a sequence of parameter values (\code{pseq}), over which the model
+then iterates (\code{for (pp in pseq)}); the resulting \code{y}-values
+($2^{nd}$) column) of each iteration are added to matrix \code{Out}.
+
+<<>>=
+Out  <- NULL
+x    <- seq(-0.1,0.1,by=0.001)
+pseq <- 10^-seq(0,6,0.5)
+
+for (pp in pseq) {
+  parms[2] <- pp
+  outFor <- bvptwp(ncomp=2,
+               x = x, leftbc = 1, initfunc="initbnd", parms=parms, guess=1,
+               func="funbnd",jacfunc="dfbnd",bound="gbnd",jacbound="dgbnd",
+               allpoints=FALSE,dllname="bvpSolve")
+  Out <- cbind(Out, outFor[,2])
+}
+@
+It takes less than 0.06 seconds to do this.
+
+Results are plotted, using \R-function \code{matplot}:
+<<>>=
+@
+<<label=linf,include=FALSE>>=
+matplot(x,Out,type="l")
+legend("topleft", legend=log10(pseq), title="logp",
+  col=1:length(pseq), lty=1:length(pseq), cex=0.6)
+@
+\setkeys{Gin}{width=0.6\textwidth}
+\begin{figure}
+\begin{center}
+<<label=linf,fig=TRUE,echo=FALSE>>=
+<<linf>>
+@
+\end{center}
+\caption{Multiple solutions of the linear problem - see text for R-code}
+\label{fig:linp}
+\end{figure}
 \clearpage
 
 \bibliography{docs}

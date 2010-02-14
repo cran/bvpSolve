@@ -1,4 +1,4 @@
-F
+
 @ARTICLE{Brown89,
   author = {Brown, P N and Byrne, G D and Hindmarsh, A C},
   title = {\pkg{VODE}, A Variable-Coefficient ODE Solver},
@@ -100,6 +100,14 @@ F
     year = {2009},
     note = {R package version 1.3},
   }
+  
+@BOOK{Seidel,
+  title ={From equilibrium to Chaos},
+  publisher={Elsevier, New York},
+  author={Seydel, R.},
+  year={1988}  
+}
+
 @BOOK{Soetaert08,
   title = {A Practical Guide to Ecological Modelling. Using R as a Simulation Platform},
   publisher = {Springer},
@@ -139,9 +147,19 @@ singularly perturbed linear two-point boundary value problems},
      year={1995},
      pages = {266-279}
 }
+@ARTICLE{CashMazz,
+author = {Cash, J. R. and Mazzia, F.},
+title={A new mesh selection algorithm, based on conditioning, for two-point 
+ boundary value codes.}, 
+journal={ J. Comput. Appl. Math.}, 
+volume={184}, 
+year={2005}, 
+pages={362--381}
+} 
+
 
 @ARTICLE{Cash91,
-author={Cash, J.R. and Wright, M.H.} ,
+author={Cash, J. R. and Wright, M. H.} ,
 title={A deferred correction method for nonlinear
 two-point boundary value problems: implementation and numerical evaluation},
 journal={SIAM J. Sci. Stat. Comput.},
@@ -157,10 +175,28 @@ title={Numerical Solution of Boundary Value Problems for Ordinary Differential
  address= {Philadelphia, PA},
  year={1995}
  }
-  @Manual{bvpSolve,
+
+@Manual{bvpSolve,
     title = {bvpSolve: solvers for boundary value problems of ordinary differential equations},
-    author = {Karline Soetaert},
+    author = {Soetaert, K. and Cash, J. and Mazzia, F.},
     year = {2009},
-    note = {R package version 1.0},
-  }
-  
+    note = {R package version 1.1},
+}
+
+@ARTICLE{scott,
+author={Scott, M. and Watts, H.} ,
+title={Computational solution of linear two point boundary value problems
+ via orthonormalization},
+journal={SIAM J. Numer. Anal.},
+volume={14},
+pages={40-70},
+year={1977}
+}
+
+@MANUAL{shampine,
+author={Shampine, LF. and Kierzenka, J. and Reichelt, M.W.},
+title={solving boundary value problems for ordinary differential equations
+in MATLAB with bvp4c},
+year={2000}
+}
+

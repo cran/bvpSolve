@@ -29,12 +29,22 @@
 
 
 \author{Karline Soetaert\\
-  Centre for Estuarine and Marine Ecology\\
+  CEME\\
   Netherlands Institute of Ecology\\
   The Netherlands
+  \And
+  Jeff Cash\\
+  Department of mathematics\\
+  Imperial College London\\
+  U.K.
+  \And
+  Francesca Mazzia\\
+  Dipartimento di Matematica \\
+  Universita' di Bari \\
+  Italy   
 }
 
-\Plainauthor{Karline Soetaert}
+\Plainauthor{Karline Soetaert, Jeff Cash and Francesca Mazzia}
 
 \Abstract{
   This document implements several testproblems
@@ -48,9 +58,25 @@
   Karline Soetaert\\
   Centre for Estuarine and Marine Ecology (CEME)\\
   Netherlands Institute of Ecology (NIOO)\\
-  4401 NT Yerseke, Netherlands
+  4401 NT Yerseke, Netherlands \\
   E-mail: \email{k.soetaert@nioo.knaw.nl}\\
   URL: \url{http://www.nioo.knaw.nl/users/ksoetaert}\\
+   \\
+  Jeff Cash\\
+  Imperial College London\\
+  South Kensington Campus\\
+  London SW7 2AZ, U.K.\\
+  E-mail: \email{j.cash@imperial.ac.uk}\\
+  URL: \url{http://www.ma.ic.ac.uk/\~jcash}\\
+  \\
+  Francesca Mazzia           \\
+  Dipartimento di Matematica \\
+  Universita' di Bari        \\
+  Via Orabona 4,             \\
+  70125 Bari                 \\
+  Italy 
+  E-mail: \email{mazzia@dm.uniba.it}\\
+  URL: \url{http://pitagora.dm.uniba.it/\~mazzia}\\
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% R/Sweave specific LaTeX commands.
@@ -73,18 +99,18 @@ options(width=70)
 \section{introduction}
 
   \pkg{bvpSolve} numerically solves boundary value problems (BVP) of
-  first-order ordinary differential equations (ODE), which for one ODE
-  can be written as:
+  first-order ordinary differential equations (ODE), which for one 
+  (second-order) ODE can be written as:
 
   \begin{eqnarray*}
-    \frac{d^2y}{dx^2}=f(x,y,\frac{dy}{dx})
+    \frac{d^2y}{dx^2}=f(x,y,\frac{dy}{dx}) \\
     a \leq x\leq b \\
     g_1(y) |_a = 0 \\
     g_2(y) |_b = 0
   \end{eqnarray*}
   where \code{y} is the dependent, \code{x} the independent variable,
-  function \code{f} is the differential equation, $g_a$ and $g_b$ the
-  boundary conditions at the end points a and b.
+  function \code{f} is the differential equation, $g_1(y) |_a $ and 
+  $g_2(y) |_b$ the boundary conditions at the end points a and b.
 
   The problem must be specified as a first-order system. Thus, higher-order
   ODEs need to be rewritten as a set of first-order systems. For instance:
@@ -114,8 +140,9 @@ options(width=70)
   provided at the initial boundary point only.
 
   Package \rs \citep{rootSolve} has functions to solve certain
-  boundary value problems, using the method of lines approach.
-  This is usually more efficient than the boundary value solvers from \bvp
+  boundary value problems, using the method of lines (MOL) approach.
+  This is usually more efficient (but less precise) than the boundary value 
+  solvers from \bvp, but many problems cannot be solved using the MOL.
 
 \section{Linear problems}
 \subsection{problem 1}
@@ -249,11 +276,13 @@ Prob3 <- function(x, y, pars) {
           (1+xi*pi*pi)*cos(pi*x)-(2+cos(pi*x))*pi*sin(pi*x))
       ))
 }
-
-#-------------------------------------------------------------------------------
+@
+<<>>=
 xi <-0.1
 shoot  <- bvpshoot(yini=c(-1,NA),yend=c(-1,NA),x=seq(-1,1,by=0.01),
            func=Prob3, guess=0)
+@
+<<>>=
 xi <-0.01
 twp    <- bvptwp(yini=c(-1,NA),yend=c(-1,NA),x=seq(-1,1,by=0.01),
            func=Prob3, guess=0)
@@ -287,19 +316,22 @@ curve(cos(pi*x),-1,1,type="p",add=TRUE)
 Prob4 <- function(t, y, pars) {
   list(c( y[2], (-y[2]+(1+xi)*y[1])/xi ))
 }
-
+@
+<<>>=
 yini <- c(1+exp(-2),NA)
 
 xi   <-0.5
 yend <- c(1+exp(-2*(1+xi)/xi),NA)
 shoot  <- bvpshoot(yini=yini,yend=yend,x=seq(-1,1,by=0.01),
           func=Prob4, guess=0)
-
+@
+<<>>=
 xi <-0.1
 yend <- c(1+exp(-2*(1+xi)/xi),NA)
 twp    <- bvptwp(yini=yini,yend=yend,x=seq(-1,1,by=0.01),
           func=Prob4, guess=0)
-
+@
+<<>>=
 xi <-0.01
 yend <- c(1+exp(-2*(1+xi)/xi),NA)
 twp2    <- bvptwp(yini=yini,yend=yend,x=seq(-1,1,by=0.01),
@@ -336,10 +368,13 @@ Prob5 <- function(x, y, pars) {
   list(c( y[2],
           x*y[2]+y[1]-(1+pi*pi)*cos(pi*x)+pi*x*sin(pi*x) ))
 }
-
+@
+<<>>=
 xi <-0.1
 shoot  <- bvpshoot(yini=c(-1,NA),yend=c(-1,NA),x=seq(-1,1,by=0.01),
            func=Prob5, guess=0)
+@
+<<>>=
 twp    <- bvptwp(yini=c(-1,NA),yend=c(-1,NA),x=seq(-1,1,by=0.01),
            func=Prob5, guess=0)
 @
@@ -377,13 +412,18 @@ Prob6 <- function(t, y, pars) {
   list(c( y[2],
           1/xi*(-t*y[2]-xi*pi*pi*cos(pi*t)-pi*t*sin(pi*t)) ))
 }
-
+@
+<<>>=
 xi <-0.1
 shoot  <- bvpshoot(yini=c(-2,NA),yend=c(0,NA),x=seq(-1,1,by=0.01),
            func=Prob6, guess=0)
+@
+<<>>=
 xi <-0.01
 twp  <- bvptwp(yini=c(-2,NA),yend=c(0,NA),x=seq(-1,1,by=0.01),
            func=Prob6, guess=0)
+@
+<<>>=
 xi <-0.001
 twp2  <- bvptwp(yini=c(-2,NA),yend=c(0,NA),x=seq(-1,1,by=0.01),
            func=Prob6, guess=0)
@@ -426,15 +466,21 @@ prob7 <- function(x, y, pars) {
 }
 
 x  <- seq(-1,1,by=0.01)
+@
+<<>>=
 
 xi <- 0.01
 twp  <- bvptwp(yini=c(-1,NA),yend=c(1,NA),x=x,func=prob7, guess=0)
-
+@
+<<>>=
 xi <- 0.001
 twp2  <- bvptwp(yini=c(-1,NA),yend=c(1,NA),x=x,func=prob7, guess=0)
-
-xi <- 0.0001
-twp3  <- bvptwp(yini=c(-1,NA),yend=c(1,NA),x=x,func=prob7, guess=0)
+@
+For even smaller $\xi$, we need to provide good initial guesses:
+<<>>=
+xi <- 0.0005
+twp3  <- bvptwp(yini=c(-1,NA),yend=c(1,NA),x=x,func=prob7,xguess=twp2[,1],
+  yguess = t(twp2[,-1]))
 
 @
 <<label=prob7,include=FALSE>>=
@@ -477,15 +523,18 @@ prob8 <- function(x, y, pars) {
 }
 
 x  <- seq(0,1,by=0.01)
+@
+<<>>=
 xi <- 0.2
 shoot  <- bvpshoot(yini=c(1,NA),yend=c(2,NA),x=x,func=prob8,guess=0)
-
+@
+<<>>=
 xi <- 0.1
 twp  <- bvptwp(yini=c(1,NA),yend=c(2,NA),x=x,func=prob8, guess=0)
-
+@
+<<>>=
 xi <- 0.01
 twp2  <- bvptwp(yini=c(1,NA),yend=c(2,NA),x=x,func=prob8, guess=0)
-
 @
 <<label=prob8,include=FALSE>>=
 plot(shoot[,1],shoot[,2],type="l",main="test problem 8",
@@ -522,20 +571,21 @@ This problem cannot be solved by the shooting method
 Prob9 <- function(x, y, pars) {
   list(c( y[2], -1/(xi+x^2)*(4*x*y[2]+2*y[1]) ))
 }
-
-
+@
+<<>>=
 xi <-0.05
 twp  <- bvptwp(yini=c(1/(1+xi),NA),yend=c(1/(1+xi),NA),x=seq(-1,1,by=0.01),
            func=Prob9, guess=0)
-
+@
+<<>>=
 xi <-0.02
 twp2  <- bvptwp(yini=c(1/(1+xi),NA),yend=c(1/(1+xi),NA),x=seq(-1,1,by=0.01),
            func=Prob9, guess=0)
-
+@
+<<>>=
 xi <-0.01
 twp3  <- bvptwp(yini=c(1/(1+xi),NA),yend=c(1/(1+xi),NA),x=seq(-1,1,by=0.01),
            func=Prob9, guess=0)
-
 @
 
 <<label=prob9,include=FALSE>>=
@@ -570,13 +620,18 @@ curve(1/(xi+x^2),-1,1,type="p",add=TRUE)
 Prob10 <- function(x, y, pars) {
   list(c( y[2], -1/xi*x*y[2] ))
 }
-
+@
+<<>>=
 xi <-0.1
 shoot  <- bvpshoot(yini=c(0,NA),yend=c(2,NA),x=seq(-1,1,by=0.01),
         func=Prob10, guess=0,atol=1e-10)
+@
+<<>>=
 xi <- 0.05
 twp  <- bvptwp(yini=c(0,NA),yend=c(2,NA),x=seq(-1,1,by=0.01),
            func=Prob10, guess=0)
+@
+<<>>=
 xi <- 0.01
 twp2  <- bvptwp(yini=c(0,NA),yend=c(2,NA),x=seq(-1,1,by=0.01),
            func=Prob10, guess=0)
@@ -613,27 +668,24 @@ All xi give the same result
 Prob11 <- function(x, y, pars) {
   list(c(y[2], 1/xi*(y[1]-(xi*pi*pi+1)*cos(pi*x)) ))
 }
-
+@
+<<>>=
 xi <-0.1
 # Shooting
 print(system.time(
 shoot  <- bvpshoot(yini=c(-1,NA),yend=c(-1,NA),x=seq(-1,1,by=0.01),
         func=Prob11, guess=0,atol=1e-10)
 ))
-
+@
+<<>>=
 print(system.time(
 twp  <- bvptwp(yini=c(-1,NA),yend=c(-1,NA),x=seq(-1,1,by=0.01),
-        func=Prob11, guess=0,atol=1e-10)
-))
-print(system.time(
-twp2  <- bvptwp(yini=c(-1,NA),yend=c(-1,NA),x=seq(-1,1,by=0.01),
         func=Prob11, guess=0,atol=1e-10)
 ))
 @
 <<label=prob11,include=FALSE>>=
 plot(shoot[,1],shoot[,2],type="l",main="test problem 11",
   col="blue",xlab="x",ylab="y")
-lines(twp2[,1],twp2[,2],col="red")
 lines(twp[,1],twp[,2],col="green")
 
 curve(cos(pi*x),-1,1,type="p",add=TRUE)
@@ -663,13 +715,18 @@ curve(cos(pi*x),-1,1,type="p",add=TRUE)
 Prob12 <- function(x, y, pars) {
   list(c(y[2],1/xi*(y[1]-(xi*pi*pi+1)*cos(pi*x))))
 }
-
+@
+<<>>=
 xi <-0.01
 shoot  <- bvpshoot(yini=c(-1,NA),yend=c(0,NA),x=seq(-1,1,by=0.01),
         func=Prob12, guess=0)
+@
+<<>>=
 xi <-0.0025
 twp  <- bvptwp(yini=c(-1,NA),yend=c(0,NA),x=seq(-1,1,by=0.01),
         func=Prob12, guess=0)
+@
+<<>>=
 xi <-0.0001
 twp2  <- bvptwp(yini=c(-1,NA),yend=c(0,NA),x=seq(-1,1,by=0.01),
         func=Prob12, guess=0)
@@ -708,13 +765,18 @@ curve(cos(pi*x)+exp((x-1)/sqrt(xi)),-1,1,type="p",add=TRUE)
 Prob13 <- function(x, y, pars)  {
   list(c( y[2], 1/xi*(y[1]-(xi*pi*pi+1)*cos(pi*x)) ))
 }
-
+@
+<<>>=
 xi <-0.01
 shoot  <- bvpshoot(yini=c(0,NA),yend=c(-1,NA),x=seq(-1,1,by=0.01),
         func=Prob13, guess=0)
+@
+<<>>=
 xi <-0.0025
 twp  <- bvptwp(yini=c(0,NA),yend=c(-1,NA),x=seq(-1,1,by=0.01),
         func=Prob13, guess=0)
+@
+<<>>=
 xi <-0.0001
 twp2  <- bvptwp(yini=c(0,NA),yend=c(-1,NA),x=seq(-1,1,by=0.01),
         func=Prob13, guess=0)
@@ -751,13 +813,18 @@ curve(cos(pi*x)+exp(-(x+1)/sqrt(xi)),-1,1,type="p",add=TRUE)
 Prob14 <- function(x, y, pars)  {
   list(c( y[2], 1/xi*(y[1]-(xi*pi*pi+1)*cos(pi*x))))
 }
-
+@
+<<>>=
 xi <-0.01
 shoot  <- bvpshoot(yini=c(0,NA),yend=c(0,NA),x=seq(-1,1,by=0.01),
         func=Prob14, guess=0)
+@
+<<>>=
 xi <-0.0025
 twp  <- bvptwp(yini=c(0,NA),yend=c(0,NA),x=seq(-1,1,by=0.01),
         func=Prob14, guess=0)
+@
+<<>>=
 xi <-0.0001
 twp2  <- bvptwp(yini=c(0,NA),yend=c(0,NA),x=seq(-1,1,by=0.01),
         func=Prob14, guess=0)
@@ -793,18 +860,22 @@ Prob15 <- function(x, y, pars)  {
   list(c( y[2], 1/xi*x*y[1] ))
 }
 
+@
+<<>>=
 xi <-0.003
-# Shooting
 print(system.time(
 shoot  <- bvpshoot(yini=c(1,NA),yend=c(1,NA),x=seq(-1,1,by=0.01),
            func=Prob15, guess=0)
 ))
+@
+<<>>=
 xi <- 0.005
-
 print(system.time(
 twp  <- bvptwp(yini=c(1,NA),yend=c(1,NA),x=seq(-1,1,by=0.01),
            func=Prob15, guess=0)
 ))
+@
+<<>>=
 xi <- 0.01
 print(system.time(
 twp2  <- bvptwp(yini=c(1,NA),yend=c(1,NA),x=seq(-1,1,by=0.01),
@@ -840,9 +911,9 @@ lines(twp2[,1],twp2[,2],col="green")
 Prob16 <- function(x, y, pars) {
   list(c( y[2], -1/xi^2*pi^2*y[1]/4 ))
 }
-
+@
+<<>>=
 xi <-0.11
-# Shooting
 print(system.time(
 shoot  <- bvpshoot(yini=c(0,NA),yend=c(sin(pi/2/xi),NA),x=seq(0,1,by=0.01),
            func=Prob16, guess=0,atol=1e-10)
@@ -879,17 +950,20 @@ Prob17 <- function(x, y, pars)  {
 }
 
 xseq<-seq(-0.1,0.1,by=0.001)
-
+@
+<<>>=
 xi <-0.01
 twp1  <- bvptwp(yini=c(-0.1/sqrt(xi+0.01),NA),
                    yend=c(0.1/sqrt(xi+0.01),NA),x=xseq,
                    func=Prob17, guess=0,atol=1e-10)
-
+@
+<<>>=
 xi <- 0.001
 twp2  <- bvptwp(yini=c(-0.1/sqrt(xi+0.01),NA),
                    yend=c(0.1/sqrt(xi+0.01),NA),x=xseq,
                    func=Prob17, guess=0,atol=1e-8)
-
+@
+<<>>=
 xi <- 0.0001
 twp3  <- bvptwp(yini=c(-0.1/sqrt(xi+0.01),NA),
                    yend=c(0.1/sqrt(xi+0.01),NA),x=xseq,
@@ -928,12 +1002,18 @@ Prob18 <- function(x, y, pars) {
 }
 
 xseq<-seq(0,1,by=0.01)
+@
+<<>>=
 xi <-0.2
 shoot  <- bvpshoot(yini=c(1,NA),yend=c(exp(-1/xi),NA),x=xseq,
            func=Prob18, guess=0,atol=1e-10)
+@
+<<>>=
 xi <- 0.1
 twp  <- bvptwp(yini=c(1,NA),yend=c(exp(-1/xi),NA),x=xseq,
            func=Prob18, guess=0,atol=1e-10)
+@
+<<>>=
 xi <- 0.01
 twp2  <- bvptwp(yini=c(1,NA),yend=c(exp(-1/xi),NA),x=xseq,
            func=Prob18, guess=0,atol=1e-10)
@@ -971,12 +1051,18 @@ Prob19 <- function(t, y, pars, ksi) {
   list(c(y[2],(pi/2*sin(pit/2)*exp(2*y[1])-exp(y[1])*y[2])/ksi))
 }
 
+@
+<<>>=
 xi <-0.05
 shoot  <- bvpshoot(yini=c(0,NA),yend=c(0,NA),x=seq(0,1,by=0.01),
         func=Prob19, guess=0,ksi=xi)
+@
+<<>>=
 xi <- 0.03
 twp  <- bvptwp(yini=c(0,NA),yend=c(0,NA),x=seq(0,1,by=0.01),
            func=Prob19, guess=0,ksi=xi,atol=1e-15)
+@
+<<>>=
 xi <- 0.005
 print(system.time(
 
@@ -1016,18 +1102,24 @@ Prob20 <- function(x, y, pars) {
   list(c( y[2] , 1/xi *(1-y[2]^2) ))
 }
 
+@
+<<>>=
 xi <-0.5
 ini <- c(1+xi * log(cosh(0.745/xi)),NA)
 end <- c(1+xi * log(cosh(0.255/xi)),NA)
 twp1  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob20, guess=0)
 
+@
+<<>>=
 xi <-0.3
 ini <- c(1+xi * log(cosh(0.745/xi)),NA)
 end <- c(1+xi * log(cosh(0.255/xi)),NA)
 twp2  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob20, guess=0)
 
+@
+<<>>=
 xi <-0.01
 ini <- c(1+xi * log(cosh(0.745/xi)),NA)
 end <- c(1+xi * log(cosh(0.255/xi)),NA)
@@ -1070,16 +1162,20 @@ Prob21 <- function(x, y, pars, xi) {
 
 ini <- c(1,NA)
 
+@
+<<>>=
 xi <-0.2
 end <- c(exp(-1/sqrt(xi)),NA)
 shoot  <- bvpshoot(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob21, guess=0, xi=xi)
-
+@
+<<>>=
 xi <-0.1
 end <- c(exp(-1/sqrt(xi)),NA)
 twp  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob21, guess=0, xi=xi)
-
+@
+<<>>=
 xi <-0.01
 end <- c(exp(-1/sqrt(xi)),NA)
 twp2  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
@@ -1111,22 +1207,24 @@ curve(exp(-x/sqrt(xi)),0,1,add=TRUE,type="p")
   \end{eqnarray*}
 
 <<>>=
-
 Prob22 <- function(t, y, pars, xi) {
   list(c( y[2], -1/xi *(y[2]+y[1]^2) ))
 }
 
 ini <- c(0,NA)
 end <- c(1/2,NA)
-
+@
+<<>>=
 xi <-0.1
 shoot  <- bvpshoot(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob22, guess=0, xi=xi)
-
+@
+<<>>=
 xi <-0.05
 twp  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob22, guess=0, xi=xi)
-
+@
+<<>>=
 xi <- 0.01
 twp2  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob22, guess=0,xi=xi)
@@ -1158,22 +1256,24 @@ This is a difficult problem that cannot be solved with bvpshoot
   \end{eqnarray*}
 
 <<>>=
-
 Prob23 <- function(t, y, pars, xi) {
   list(c( y[2], sinh(y[1]/xi)/xi) )
 }
 
 ini <- c(0,NA)
 end <- c(1,NA)
-
+@
+<<>>=
 xi <- 1/5
 twp1  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob23, guess=c(0),xi=xi)
-
+@
+<<>>=
 xi <- 1/7
 twp  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob23, guess=0,xi=xi)
-
+@
+<<>>=
 xi <- 1/9
 twp2  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob23, guess=0,xi=xi)
@@ -1218,23 +1318,43 @@ Prob24 <- function(t, y, pars, xi) {
 
 ini <- c(0.9129,NA)
 end <- c(0.375,NA)
-
+@
+<<>>=
 xi <-0.05
 mod1  <- bvpshoot(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob24, guess=0.9 ,xi=xi)
+@
+<<>>=
 xi <-0.025
 mod2  <- bvpshoot(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob24, guess=0.9 ,xi=xi)
+@
+<<>>=
 xi <-0.02
 mod3  <- bvpshoot(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob24, guess=0.9 ,xi=xi)
-attributes(mod3)         # has FAILED: f.root too large!
+attributes(mod3)$roots         # has FAILED: f.root too large!
 @
-Neither bvpshoot nor bvptwp can solve this problem for small $\xi$
+Function \code{bvpshoot} cannot solve this problem for small $\xi$
+
+Function \code{bvptwp} can solve it for small $\xi$ if initiated with good
+initial guesses:
+<<>>=
+xi <- 0.01
+mod3  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
+        func=Prob24, xi=xi, xguess = mod2[,1], yguess = t(mod2[,2:3]))
+@
+<<>>=
+xi <- 0.005
+mod4  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
+        func=Prob24, xi=xi, xguess = mod3[,1], yguess = t(mod3[,2:3]))
+@
 <<label=prob24,include=FALSE>>=
 plot(mod1[,1],mod1[,2],type="l",main="test problem 24",
-  col="blue",xlab="x",ylab="y",ylim=c(0,1.5))
+  col="blue",xlab="x",ylab="y",ylim=c(0.35,1.4))
 lines(mod2[,1],mod2[,2],col="red")
+lines(mod3[,1],mod3[,2],col="green")
+lines(mod4[,1],mod4[,2],col="yellow")
 @
 \setkeys{Gin}{width=0.4\textwidth}
 \begin{figure}
@@ -1269,10 +1389,13 @@ Prob25 <- function(t, y, pars, xi) {
 
 ini <- c(-1/3,NA)
 end <- c(1/3,NA)
+@
+<<>>=
 xi  <-0.1
 twp1  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob25, guess=0, xi=xi)
-
+@
+<<>>=
 xi <-0.01
 twp2  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob25, guess=0,xi=xi)
@@ -1317,12 +1440,18 @@ Prob26 <- function(t, y, pars, xi)  {
 ini <- c(1,NA)
 end <- c(-1/3,NA)
 
+@
+<<>>=
 xi <-0.1
 twp1  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob26, guess=0,xi=xi)
+@
+<<>>=
 xi <-0.02
 twp2  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob26, guess=0,xi=xi)
+@
+<<>>=
 xi <-0.005
 twp3  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob26, guess=0,xi=xi)
@@ -1361,13 +1490,18 @@ Prob27 <- function(t, y, pars, xi) {
 
 ini <- c(1,NA)
 end <- c(1/3,NA)
-
+@
+<<>>=
 xi   <-0.1
 twp1 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob27, guess=0,xi=xi)
+@
+<<>>=
 xi   <-0.02
 twp2 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob27, guess=0,xi=xi)
+@
+<<>>=
 xi <-0.005
 twp3 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob27, guess=0,xi=xi)
@@ -1405,13 +1539,18 @@ Prob28 <- function(t, y, pars, xi)  {
 
 ini <- c(1,NA)
 end <- c(3/2,NA)
-
+@
+<<>>=
 xi   <-0.1
 twp1 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob28, guess=0,xi=xi)
+@
+<<>>=
 xi   <-0.02
 twp2 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob28, guess=0,xi=xi)
+@
+<<>>=
 xi <-0.005
 twp3 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob28, guess=0,xi=xi)
@@ -1451,13 +1590,18 @@ Prob29 <- function(t, y, pars, xi)  {
 
 ini <- c(0,NA)
 end <- c(3/2,NA)
-
+@
+<<>>=
 xi   <-0.1
 twp1 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob29, guess=0,xi=xi)
+@
+<<>>=
 xi   <-0.02
 twp2 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob29, guess=0,xi=xi)
+@
+<<>>=
 xi <-0.005
 twp3 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob29, guess=0,xi=xi)
@@ -1496,13 +1640,18 @@ Prob30 <- function(t, y, pars, xi)  {
 
 ini <- c(-7/6,NA)
 end <- c(3/2,NA)
-
+@
+<<>>=
 xi   <-0.1
 twp1 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob30, guess=0,xi=xi)
+@
+<<>>=
 xi   <-0.02
 twp2 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob30, guess=0,xi=xi)
+@
+<<>>=
 xi <-0.01
 twp3 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
         func=Prob30, guess=0,xi=xi)
@@ -1559,11 +1708,13 @@ But the mono-implicit Runge-Kutta method does...
 xi <-0.1
 twp  <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
            func=Prob31, guess=c(0,0),atol=1e-10)
-
+@
+<<>>=
 xi <- 0.05
 twp2 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
            func=Prob31, guess=c(0,0),atol=1e-10)
-
+@
+<<>>=
 xi <- 0.01
 twp3 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
            func=Prob31, guess=c(0,0),atol=1e-10)
@@ -1604,15 +1755,18 @@ Prob32 <- function(t, y, pars, xi) {
 }
 ini <- c(0,0,NA,NA)
 end <- c(1,0,NA,NA)
-
+@
+<<>>=
 xi <-0.01
 twp <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
            func=Prob32, guess=c(0,0), xi=xi)
-
+@
+<<>>=
 xi <-0.002
 twp2 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
            func=Prob32, guess=c(0,0), xi=xi)
-
+@
+<<>>=
 xi <-0.0001
 twp3 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
            func=Prob32, guess=c(0,0), xi=xi)
@@ -1654,15 +1808,18 @@ Prob33 <- function(t, z, pars, xi) {
 }
 ini <- c(0,0,NA,NA,-1,NA)
 end <- c(0,0,NA,NA,1,NA)
-
+@
+<<>>=
 xi <-0.1
 twp <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
            func=Prob33, guess=c(0,0,0), xi=xi)
-
+@
+<<>>=
 xi <-0.01
 twp2 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
            func=Prob33, guess=c(0,0,0), xi=xi)
-
+@
+<<>>=
 xi <-0.001
 twp3 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
            func=Prob33, guess=c(0,0,0), xi=xi)
@@ -1700,15 +1857,18 @@ Prob34 <- function(t, y, pars, xi) {
 }
 ini <- c(0,NA)
 end <- c(0,NA)
-
+@
+<<>>=
 xi <-0.1
 twp <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
            func=Prob34, guess=c(0), xi=xi)
-
+@
+<<>>=
 xi <-0.01
 twp2 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
            func=Prob34, guess=c(0), xi=xi)
-
+@
+<<>>=
 xi <-0.001
 twp3 <- bvptwp(yini=ini,yend=end,x=seq(0,1,by=0.01),
            func=Prob34, guess=c(0), xi=xi)
@@ -1745,15 +1905,18 @@ Prob35 <- function(x, y, pars, xi) {
 }
 ini <- c(1,NA)
 end <- c(2,NA)
-
+@
+<<>>=
 xi <-1
 twp <- bvptwp(yini=ini,yend=end,x=seq(-1,1,by=0.05),
            func=Prob35, guess=c(0), xi=xi)
-
+@
+<<>>=
 xi <-0.1
 twp2 <- bvptwp(yini=ini,yend=end,x=seq(-1,1,by=0.05),
            func=Prob35, guess=c(0), xi=xi)
-
+@
+<<>>=
 xi <-0.01
 twp3 <- bvptwp(yini=ini,yend=end,x=seq(-1,1,by=0.05),
            func=Prob35, guess=c(0), xi=xi)
