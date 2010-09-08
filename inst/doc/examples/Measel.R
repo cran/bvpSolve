@@ -12,24 +12,24 @@ require(bvpSolve)
 ## Simple implementation, solved with bvpshoot
 ## =============================================================================
 
-measel2<-function(t,y,pars,vv)   {
-  bet<- 1575*(1+cos(2*pi*t))
-  dy1<- mu-bet*y[1]*y[3]
-  dy2<- bet*y[1]*y[3]-y[2]/lam
-  dy3<-y[2]/lam-y[3]/vv
+measel2<-function(t, y, pars, vv)   {
+  bet <- 1575*(1+cos(2*pi*t))
+  dy1 <- mu-bet*y[1]*y[3]
+  dy2 <- bet*y[1]*y[3]-y[2]/lam
+  dy3 <- y[2]/lam-y[3]/vv
   
-  list(c(dy1,dy2,dy3))
+  list(c(dy1, dy2, dy3))
 }
 mu  <- 0.02
 lam <- 0.0279
 v   <- 0.1
 
-guess <- c(0.01,0.01,0.01)
+guess <- c(0.01, 0.01, 0.01)
 
-res <- function(y,yini,parms,vv) y-yini
+res <- function(y, yini, parms, vv) y - yini
 
-Sol <- bvpshoot(fun=measel2, yini=c(y1=NA,y2=NA,y3=NA), yend=res, 
-    x=(0:100)/100,vv=v, guess=rep(0.01,3))
+Sol <- bvpshoot(fun = measel2, yini=c(y1 = NA, y2 = NA, y3 = NA), yend = res, 
+    x=(0:100)/100, vv = v, guess = rep(0.01,3))
 
 plot(Sol)
 
@@ -37,27 +37,27 @@ plot(Sol)
 ## Complex implementation
 ## =============================================================================
 
-measel<-function(t,y,pars,vv)  {
-  bet<- 1575*(1+cos(2*pi*t))
-  dy1<- mu-bet*y[1]*y[3]
-  dy2<- bet*y[1]*y[3]-y[2]/lam
-  dy3<-y[2]/lam-y[3]/vv
+measel<-function(t, y, pars, vv)  {
+  bet <- 1575*(1+cos(2*pi*t))
+  dy1 <- mu-bet*y[1]*y[3]
+  dy2 <- bet*y[1]*y[3]-y[2]/lam
+  dy3 <-y[2]/lam-y[3]/vv
   dy4 <- 0
-  dy5<-0
-  dy6<-0
+  dy5 <-0
+  dy6 <-0
   
-  list(c(dy1,dy2,dy3,dy4,dy5,dy6))
+  list(c(dy1, dy2, dy3, dy4, dy5, dy6))
 }
 mu  <- 0.02
 lam <- 0.0279
 v   <- 0.1
 
-guess <- c(0.01,0.01,0.01,0.01, 0.01, 0.01)
+guess <- c(0.01, 0.01, 0.01, 0.01, 0.01, 0.01)
 
-dmeasel<-function(t,y,pars,vv)
+dmeasel<-function(t, y, pars, vv)
 {
-  df <- matrix (data=0,nrow=6,ncol=6)
-  bet<- 1575*(1+cos(2*pi*t))
+  df <- matrix (data = 0, nrow = 6, ncol = 6)
+  bet <- 1575*(1+cos(2*pi*t))
   df[1,1] <-  -bet*y[3]
   df[1,3] <-  -bet*y[1]
 
@@ -84,23 +84,27 @@ dbound <- function(i, y, pars,vv) {
   }
 
 print(system.time(
-sola <- bvpshoot(fun=measel, bound=bound, 
-    x=(0:100)/100,leftbc=3,vv=v, ncomp=6)
+sola <- bvpshoot(fun = measel, bound = bound, 
+    x=(0:100)/100, leftbc = 3, vv = v, ncomp = 6)
 ))
 
-sol <- bvptwp(fun=measel, bound=bound, xguess=sola[,1], yguess=t(sola[,-1]),
-    x=(0:100)/100,leftbc=3,vv=v, ncomp=6, nmax=100000, atol=1e-4)
+sol <- bvptwp(fun = measel, bound = bound, 
+    xguess = sola[,1], yguess = t(sola[,-1]),
+    x=(0:100)/100, leftbc = 3,vv = v, ncomp = 6, 
+    nmax = 100000, atol = 1e-4)
 
 plot(sol)
 
 print(system.time(
-Sol <- bvpshoot(fun=measel, bound=bound, jacbound = dbound, jacfunc=dmeasel, 
-    x=(0:100)/100,leftbc=3,vv=v, ncomp=6)
+Sol <- bvpshoot(fun = measel, bound = bound, 
+     jacbound = dbound, jacfunc = dmeasel, 
+      x=(0:100)/100, leftbc = 3, vv = v, ncomp = 6)
 ))
 
 print(system.time(
-Sol2 <- bvpshoot(fun=measel, bound=bound, jacbound = dbound, jacfunc=dmeasel, 
-    x=(0:100)/100,leftbc=3,vv=v, guess=rep(1,6))
+Sol2 <- bvpshoot(fun = measel, bound = bound, 
+    jacbound = dbound, jacfunc = dmeasel, 
+    x=(0:100)/100, leftbc = 3, vv = v, guess = rep(1, 6))
 ))
 
 plot(Sol2)

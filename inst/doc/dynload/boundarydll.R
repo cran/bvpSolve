@@ -22,7 +22,7 @@
 #--------------------------------
 # Derivative function
 #--------------------------------
-fun <- function(t,y,pars) {
+fun <- function(t, y, pars) {
   dy1 <- y[2]
   dy2 <- - 3*p*y[1]/(p+t*t)^2
   return(list(c(dy1,
@@ -30,21 +30,21 @@ fun <- function(t,y,pars) {
 }
 
 # parameter value
-p    <-1e-5
+p    <- 1e-5
 
 # initial and final condition; second conditions unknown
 init <- c(-0.1/sqrt(p+0.01), NA)
-end  <- c(0.1/sqrt(p+0.01), NA)
-x    <- seq(-0.1,0.1,by=0.001)
+end  <- c( 0.1/sqrt(p+0.01), NA)
+x    <- seq(-0.1, 0.1, by = 0.001)
 
 #---------------------
 # Solution method 1
 #  **  shooting  **
 #---------------------
 
-print(system.time(sol  <- as.data.frame(bvpshoot(yini=init,x=x,
-       func=fun, yend=end, guess=1, atol=1e-10))))
-plot(sol$x,sol[,2],type="l")
+print(system.time(sol  <- as.data.frame(bvpshoot(yini = init, x = x,
+       func = fun, yend = end, guess = 1, atol = 1e-10))))
+plot(sol$x, sol[,2], type = "l")
 
 # add analytical solution
 curve(x/sqrt(p+x*x),add=TRUE,type="p")
@@ -54,9 +54,9 @@ curve(x/sqrt(p+x*x),add=TRUE,type="p")
 # bvptwp method -simple input
 #---------------------
 
-print(system.time(Sol2<- as.data.frame(bvptwp(yini=init,x=x,
-      func=fun, yend=end, guess=1,atol=1e-10))))
-lines(Sol2[,1],Sol2[,2],type="l",col="red")
+print(system.time(Sol2<- as.data.frame(bvptwp(yini = init, x = x,
+      func = fun, yend = end, atol = 1e-10))))
+lines(Sol2[,1], Sol2[,2], type = "l", col = "red")
 
 #-------------------------------
 # Solution method 3
@@ -64,15 +64,15 @@ lines(Sol2[,1],Sol2[,2],type="l",col="red")
 #--------------------------------
 
 # the jacobian
-jacfun <- function(t,y,pars) {
-  return(matrix(nr=2, nc=2, byrow=TRUE,
+jacfun <- function(t, y, pars) {
+  return(matrix(nr = 2, nc = 2, byrow = TRUE,
              data=c(0               ,1,
                     -3*p/(p+t*t)^2,  0))
          )
 }
 
 # the boundaries
-boundfun <- function (i,y,pars) {
+boundfun <- function (i, y, pars) {
   if (i ==1)
      return(y[1] +0.1/sqrt(p+0.01))
   else
@@ -80,13 +80,14 @@ boundfun <- function (i,y,pars) {
 }
 
 # the jacobian of the boundaries
-boundjac <- function (i,y,pars)
-  return(c(1,0))
+boundjac <- function (i, y, pars)
+  return(c(1, 0))
 
 
-print(system.time(Sol <- as.data.frame(bvptwp(x=x,leftbc=1,func=fun, guess=1,
-        bound=boundfun,jacbound=boundjac,jacfunc=jacfun), verbose=TRUE)))
-lines(Sol[,1],Sol[,2],type="l",col="blue")
+print(system.time(Sol <- as.data.frame(bvptwp(x = x, leftbc = 1, 
+        func = fun, bound = boundfun, ncomp = 2,
+        jacbound = boundjac, jacfunc = jacfun), verbose = TRUE)))
+lines(Sol[,1], Sol[,2],type = "l", col = "blue")
 
 #-------------------------------
 # Solution method 4
@@ -104,17 +105,18 @@ dyn.load("boundary_for.dll")
 ## run the model several times
 Out <- NULL
 
-parms <- c(a=3, p=1e-7)
+parms <- c(a = 3, p = 1e-7)
 
-p <- 10^-seq(0,6,0.5)
+p <- 10^-seq(0, 6, 0.5)
 for (pp in p) {
   parms[2] <- pp
-  outFor <- bvptwp(ncomp=2,
-               x = x, leftbc = 1, initfunc="initbnd", parms=parms, guess=1,
-               func="funbnd",jacfunc="dfbnd",bound="gbnd",jacbound="dgbnd",
-               allpoints=FALSE,dllname="boundary_for")
+  outFor <- bvptwp(ncomp = 2,
+           x = x, leftbc = 1, initfunc = "initbnd", parms = parms,
+           func = "funbnd", jacfunc = "dfbnd", bound = "gbnd",
+           jacbound = "dgbnd", allpoints = FALSE, dllname = "boundary_for")
   Out <- cbind(Out, outFor[,2])
 }
-matplot(x,Out,type="l")
-legend("topleft",legend=log10(p),title="logp",col=1:length(p), lty=1:length(p),cex=0.6)
+matplot(x, Out, type = "l")
+legend("topleft", legend = log10(p), title = "logp",
+   col = 1:length(p), lty = 1:length(p), cex = 0.6)
 

@@ -1,0 +1,7 @@
+todos:
+
+compiled code and bvpcol
+
+changed from version 1.2
+- added bvpcol
+- removed "guess" as input parameter for bvptwp - added "ynames" instead.

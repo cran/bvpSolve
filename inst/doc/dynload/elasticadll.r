@@ -3,7 +3,7 @@
 ## before trying this code, the fortran code has to be compiled
 ## this can be done in R:
 ## system("R CMD SHLIB elastica.f")
-## or
+## or system("R CMD SHLIB elasticaC.c") or
 ## system("gfortran -shared -o elastica.dll elastica.f")
 ## do make sure that the file is in the working directory...
 ## (if not, use setwd() )
@@ -52,10 +52,10 @@ bound <- function (i, y, pars)  {
 # The analytic Jacobian for the G-function:
 jacbound <- function(i, y, pars)  {
     JJ <- rep(0,5)
-         if (i <=2) JJ[i] =1.0
-    else if (i ==3) JJ[4] =1.0
-    else if (i ==4) JJ[2] =1.0
-    else if (i ==5) JJ[3] =1.0
+         if (i <= 2) JJ[i] =1.0
+    else if (i == 3) JJ[4] =1.0
+    else if (i == 4) JJ[2] =1.0
+    else if (i == 5) JJ[3] =1.0
     JJ
 }
 
@@ -67,11 +67,10 @@ niter <- 100
 # Only the F-function is supplied, jacobians estimated by perturbation
 print(system.time(
 for ( i in 1:niter)
-Sol <- bvptwp(func=Elastica,
-              yini = c(x=0, y=0, p=NA,   k=0, F=NA),
-              yend = c(x=NA,y=0, p=-pi/2,k=NA,F=NA),
-              x = seq(0,0.5,len=16),
-              guess=c(0,0) )
+Sol <- bvptwp(func = Elastica,
+              yini = c(x = 0,  y = 0, p = NA,   k = 0,  F = NA),
+              yend = c(x = NA, y = 0, p = -pi/2,k = NA, F = NA),
+              x = seq(0, 0.5, len = 16) )
 )/niter)
 
 # the model with the F-function and analytical F-jacobian
@@ -79,29 +78,26 @@ Sol <- bvptwp(func=Elastica,
 print(system.time(
 for ( i in 1:niter)
 Sol2 <- bvptwp(func=Elastica, jacfunc = dfsub,
-              yini = c(x=0, y=0, p=NA,   k=0, F=NA),
-              yend = c(x=NA,y=0, p=-pi/2,k=NA,F=NA),
-              x = seq(0,0.5,len=16),
-              guess=c(0,0) )
+              yini = c(x = 0, y = 0, p = NA,    k = 0,  F = NA),
+              yend = c(x = NA,y = 0, p = -pi/2, k = NA, F = NA),
+              x = seq(0, 0.5, len = 16) )
 )/niter)
 
 # the model with the F-function, analytical F- and G-jacobian
 print(system.time(
 for ( i in 1:niter)
-Sol3 <- bvptwp(func=Elastica, jacfunc = dfsub, jacbound=jacbound,
-              yini = c(x=0, y=0, p=NA,   k=0, F=NA),
-              yend = c(x=NA,y=0, p=-pi/2,k=NA,F=NA),
-              x = seq(0,0.5,len=16),
-              guess=c(0,0) )
+Sol3 <- bvptwp(func = Elastica, jacfunc = dfsub, jacbound = jacbound,
+              yini = c(x = 0,  y = 0, p = NA,    k = 0,  F = NA),
+              yend = c(x = NA, y = 0, p = -pi/2, k = NA, F = NA),
+              x = seq(0, 0.5, len = 16) )
 )/niter)
 
 # the model with the F- and G-function, analytical F- and G-jacobian
 print(system.time(
 for ( i in 1:niter)
-Sol4 <- bvptwp(leftbc = 3,
-              func=Elastica, jacfunc = dfsub, bound = bound, jacbound=jacbound,
-              x = seq(0,0.5,len=16),
-              guess=c(0,0) )
+Sol4 <- bvptwp(leftbc = 3, ncomp = 5,
+              func = Elastica, jacfunc = dfsub, bound = bound, jacbound = jacbound,
+              x = seq(0, 0.5, len = 16) )
 )/niter)
 
 # This model cannot be solved with the shooting method...
@@ -111,10 +107,11 @@ dyn.load("elastica.dll")
 
 print(system.time(
 for (i in 1:niter)
-outF <- bvptwp(ncomp=5,
-               x = seq(0,0.5,len=16), leftbc = 3,
-               func="fsub",jacfunc="dfsub",bound="gsub",jacbound="dgsub",
-               dllname="elastica")
+outF <- bvptwp(ncomp = 5,
+               x = seq(0, 0.5, len = 16), leftbc = 3,  
+               func = "fsub", jacfunc = "dfsub", bound = "gsub",
+               jacbound = "dgsub",
+               dllname = "elastica")
 )/niter)
 
 dyn.unload("elastica.dll")
@@ -124,10 +121,11 @@ dyn.load("elasticaC.dll")
 
 print(system.time(
 for (i in 1:niter)
-outC <- bvptwp(ncomp=5,
-               x = seq(0,0.5,len=16), leftbc = 3,
-               func="fsub",jacfunc="dfsub",bound="gsub",jacbound="dgsub",
-               dllname="elasticaC")
+outC <- bvptwp(ncomp = 5,
+               x = seq(0, 0.5, len = 16), leftbc = 3,
+               func = "fsub", jacfunc = "dfsub",
+               bound = "gsub", jacbound = "dgsub",
+               dllname = "elasticaC")
 )/niter)
 
 dyn.unload("elasticaC.dll")

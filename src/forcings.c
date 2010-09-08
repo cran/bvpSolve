@@ -1,7 +1,7 @@
 /* deals with forcing functions that are passed via arguments in the call
 to the integration routines */
 
-#include "twpbvpc.h"
+#include "bvpSolve.h"
 
 int    finit = 0;
 

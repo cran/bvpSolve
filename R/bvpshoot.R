@@ -4,9 +4,11 @@
 ## using the shooting method
 ##==============================================================================
 
-bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL, guess=NULL, 
-    extra=NULL, jacfunc=NULL, bound=NULL, jacbound=NULL, 
-    leftbc=NULL, ncomp = NULL, atol=1e-8, rtol=1e-8, maxiter=100, 
+bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL, 
+    order = NULL,  guess=NULL, 
+    jacfunc=NULL, bound=NULL, jacbound=NULL, 
+    leftbc=NULL, posbound = NULL, ncomp = NULL, 
+    atol=1e-8, rtol=1e-8, extra=NULL, maxiter=100, 
     positive =FALSE, method="lsoda", ...)  {
 
 ## ---------------------
@@ -16,12 +18,50 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL, guess=NULL,
     stop("either 'yini' and 'yend' or 'bound' should be inputted")
   if (!is.null(yini)  && is.null(yend))
     stop("if 'yini' is given, 'yend' should also be given")
+  if (!is.null(bound) && is.null(posbound)&& is.null(leftbc))
+    stop("if 'bound' is given, 'posbound' or 'leftbc' should also be given")
   if (!is.null(yini)  && !is.null(bound))
     stop("either 'yini' or bound should be given, not both")
   if (!is.null(bound)  && !is.null(extra))
     stop("cannot combine 'bound' with 'extra'; use 'yini' and 'yend' ")
+  if (is.character(func) | is.character(jacfunc) |
+      is.character(bound) | is.character(jacbound))
+    stop("cannot use 'bvpshoot' with compiled code")
 
   lex      <- length(extra)
+## ---------------------------
+## The order of the equations
+## ---------------------------
+  Func <- func
+  testit <- FALSE
+  attrib <- rep(0,4) # number of steps, number of fn evaluations, # jacobians ,nr ivp
+
+  if (! is.null(order)) {
+    mstar <- sum(order)
+    neq   <- length(order)
+    if (! is.null(ncomp)) 
+      if (sum(order) != ncomp)
+        stop("'ncomp' and 'order' not compatible: ncomp should equal sum(order)")
+    if (max(order) > 1) { # wrapper over func and jacfunc
+      testit <- TRUE
+      stareq <- cumsum(order)            # from func to vector returned to c
+      higord <- (1:mstar)[-stareq]  # from state to vector returned to c
+      
+      # expand func
+      Fret <- numeric(length = mstar)
+      Func    <- function(x, state, parms,...)  {
+        FF <- func   (x, state, parms,...)
+        Fret[stareq] <- unlist(FF[1])
+        Fret[higord] <- state[higord+1]
+        FF[1] <- list(Fret)
+        FF
+      }
+
+      if (! is.null(jacfunc))
+       stop ("can not combine analytical jacobian with higher-order equations - remove 'jacfunc'")
+   }
+   if (is.null(ncomp)) ncomp <- mstar    
+  } 
 
 ## ---------------------
 ## yini or bound
@@ -55,14 +95,15 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL, guess=NULL,
       times <- c(x[1], x[length(x)])
       Parms <- initparms(X)
       Y     <- inity(X,Parms)
-      out   <- ode(y=Y, times=times, fun=func, jacfunc=jacfunc, 
+      out   <- ode(y=Y, times=times, fun=Func, jacfunc=jacfunc, 
                  parms=Parms, method=method,
                  atol=atol, rtol=rtol, ...)
+      attrib <<- attrib + c(attributes(out)$istate[c(2,3,14)],1)
     # deviation with yend should be =0             
       if (is.function(yend) )
         Res   <- yend(out[nrow(out),2:(ly+1)], Y, Parms,...)
       else {
-        Res <-yend - out[nrow(out),2:(ly+1)]
+        Res <- yend - out[nrow(out),2:(ly+1)]
         Res <- Res[! is.na(Res)]
       }
       return(Res)
@@ -71,20 +112,50 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL, guess=NULL,
     JacBound <- NULL   
 
   } else {                  # bound is specified   
-
-    if (is.null(leftbc))
-      stop("leftbc should be inputted if bound is given")
+    posspecified <- FALSE   
+    if (is.null(leftbc)& is.null(posbound))
+       stop("'leftbc' or 'posbound' should be inputted if 'bound' is given")
+    if (! is.null(posbound)) {
+      if (all(posbound %in% c(x[1],x[length(x)])))  
+        leftbc <- sum(posbound == x[1])
+      else  {
+         posspecified <- TRUE 
+         # check consistency  
+         if (! is.null(ncomp)) {
+          if(length(posbound) != ncomp)
+            stop("'posbound' should have a length = number of variables ")
+         } else ncomp <- length(posbound)
+            
+         iipos <- which (x %in% posbound)
+         if (length(iipos) != ncomp)
+           stop("all elements in 'posbound' should also be in 'x' ")
+         
+      }
+    }   
     y <- guess  
   
     rootfun <- function(X,...)  {  
-      times <- c(x[1], x[length(x)])
-      out   <- ode(y=X, times=times, fun=func, jacfunc=jacfunc, 
+      if (! posspecified) 
+         times <- c(x[1], x[length(x)])
+      else
+         times <- x   
+      out   <- ode(y=X, times=times, fun=Func, jacfunc=jacfunc, 
                    parms=parms, method=method,
                    atol=atol, rtol=rtol, ...)
-      Yend <- out[nrow(out),2:(ly+1)]             
+      attrib <<- attrib + c(attributes(out)$istate[c(2,3,14)],1)
       Res <- vector(len=ly)
-      for ( i in 1:leftbc) Res[i] <- bound(i,X,parms,...)
-      if (leftbc<ly) for (i in  (leftbc+1):ly) Res[i]<- bound(i,Yend,parms,...)
+      if (! posspecified) {
+        Yend <- out[nrow(out),2:(ly+1)]             
+        for (i in 1:leftbc) 
+          Res[i] <- bound(i,X,parms,...)
+        if (leftbc < ly) 
+          for (i in  (leftbc+1):ly) 
+            Res[i]<- bound(i,Yend,parms,...)
+      } else 
+      for (i in 1:length(posbound)) {
+        ii <- iipos[i]
+        Res[i] <- bound(i,out[ii,-1],parms,...)
+      }
       return(Res)
     }
     JacBound <- NULL   
@@ -105,6 +176,8 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL, guess=NULL,
   if (is.null(Ynames) & ! is.null(yend)) 
     Ynames <- names(yend)
   if (is.null(y)) {
+    if (is.null(ncomp ))
+      stop("don't know number of variables - provide 'ncomp'")
     y <- rep(0,ncomp)
     warning("estimates for initial conditions not given ('guess'); assuming 0's")
   }  
@@ -134,6 +207,16 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL, guess=NULL,
   if (! is.null(yini) & lini+lex==0)
     stop ("this is not a boundary value problem - use initial value problem solver instead")
 
+  if (testit) {
+    if (! is.null(yini))
+      Parms <- initparms(extra)
+    else
+      Parms <- parms
+    FF <- func   (x[1], y, Parms,...)
+    if (length(FF[[1]]) != neq)
+      stop("function 'func' should return as many elements as the length of 'order'")  
+  }
+  
 ## ---------------------
 ## root solver: 
 ## ---------------------
@@ -153,16 +236,19 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL, guess=NULL,
     Y     <-  sol$root
   }
     
-  out <- ode (t=x, fun=func, y=Y, parms=Parms, method=method, jacfunc=jacfunc, 
+  out <- ode (t=x, fun=Func, y=Y, parms=Parms, method=method, jacfunc=jacfunc, 
               atol=atol, rtol=rtol, ...)
+  attrib <- attrib + c(attributes(out)$istate[c(2,3,14)],1)
+
+  attrib[2] <- attrib[2] +attrib[4] +1 # correct for one more per ivp solution
               
-  attr(out,"istate") <- NULL  # similar attributes of deSolve solvers
-  attr(out,"rstate") <- NULL
   attr(out,"roots")  <- data.frame(root=sol$root,
                                    f.root=sol$f.root, iter=sol$iter)
-  class(out) <- c("bvpSolve","matrix")  # a boundary value problem
+  class(out) <- c("bvpSolve","matrix","deSolve")  # a boundary value problem
   colnames(out)[1] <- "x"
   attr(out,"name") <- "bvpshoot"
+  attr(out,"istate2") <- attrib[c(2,3,1,4)]
+  names (attr(out,"istate2")) <- c("nfunc", "njac", "nstep", "nivp")
 
   out
 }

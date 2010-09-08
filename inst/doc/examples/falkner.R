@@ -33,10 +33,11 @@ solbet <- NULL
 
 for (beta in bet) {
   Sol <- bvptwp(func = falkner, x = seq(0,infinity, by=0.1), parms=beta,
-              yini = c(f=0, df=0, df2=NA), yend = c(NA, 1, NA), guess =1 )
+              yini = c(f=0, df=0, df2=NA), yend = c(NA, 1, NA))
               
   solbet<-cbind(solbet,Sol[,2])
 }
 
-matplot(solbet,type="l")
-legend("topleft",col=1:length(bet),lty=1,legend=bet,title="beta")
+matplot(solbet, type = "l")
+legend("topleft", col = 1:length(bet), lty = 1,
+     legend = bet, title = "beta")

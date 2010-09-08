@@ -1,29 +1,31 @@
-\name{bvptwp}
-\alias{bvptwp}
+\name{bvpcol}
+\alias{bvpcol}
 \title{
-  Solves two-point boundary value problems of ordinary differential
-  equations, using a mono-implicit Runge-Kutta formula
+  Solves multipoint boundary value problems of ordinary differential equations,
+  using a collocation method
+}
+\description{
+  Solves Boundary Value Problems For Ordinary
+  Differential Equations By Collocation.
+  
+  This is an implementation of the fortran code colnew.f written by
+  U. Ascher and G. Bader.
 }
 
-\description{
-  Solves a boundary value problem of a system of ordinary differential
-  equations. This is an implementation of the fortran
-  code twpbvpc, based on mono-implicit Runge-Kutta formulae
-  of orders 4, 6 and 8 in a deferred correction framework and 
-  that uses conditioning in the mesh selection.
-
-  written by J.R. Cash, F. Mazzia and M.H. Wright.
+\note{
+  colnew.f (Bader and Ascher, 1987), is a modification of the code
+  colsys.f (Ascher, Christiansen and Russell, 1981). 
 }
 
 \usage{
-bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL, 
+bvpcol (yini = NULL, x, func, yend = NULL, parms = NULL, 
   order = NULL, ynames = NULL, xguess = NULL, yguess = NULL, 
   jacfunc=NULL, bound = NULL, jacbound = NULL, 
   leftbc = NULL, posbound = NULL, islin = FALSE, nmax = 1000, 
-  ncomp = NULL, atol = 1e-8, cond = FALSE, allpoints = TRUE, 
+  ncomp = NULL, atol = 1e-8, colp = NULL, fullOut = TRUE, 
   dllname = NULL, initfunc = dllname, 
   rpar = NULL, ipar = NULL, nout = 0, forcings = NULL, 
-  initforc = NULL, fcontrol = NULL, verbose = FALSE, ...)
+  initforc = NULL, fcontrol = NULL, verbose = FALSE, ...) 
 }
 \arguments{
   \item{yini }{either a vector with the initial (state) variable values for
@@ -59,8 +61,9 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
     ... (optional) are any other arguments passed to the function.
   
     The return value of \code{func} should be a list, whose first element is a
-    vector containing the derivatives of \code{y} with respect to
-    \code{x}, and whose next elements are global values that are required at
+    vector containing the values of the equations. In case where the equations
+    are first-order, this will be the derivatives of \code{y} with respect to
+    \code{x}. After this can come global values that are required at
     each point in \code{x}.
     
     If \code{func} is a string, then \code{dllname} must give the name of the
@@ -90,21 +93,27 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
     If \code{ynames} is \code{NULL}, names can also be passed via \code{yini},  
     \code{yend} or \code{yguess}.
       }
-  \item{xguess }{Initial grid \code{x}, a vector. \code{bvptwp} requires the length
-    of \code{xguess} to be at least equal to the length of \code{x}. If this
-    is not the case, then \code{xguess} and \code{yguess} will be interpolated
-    to \code{x} and a warning printed. If \code{xguess} is given, so should
-    \code{yguess} be.
+ \item{xguess }{Initial grid \code{x}, a vector. 
+    If \code{xguess} is given, so should \code{yguess} be.
     
     Supplying \code{xguess} and \code{yguess}, based on results from a previous
-    (simpler) BVP-ODE can be used for model continuation, see example 2.
+    (simpler) BVP-ODE can be used for model continuation, see example 2 of
+    \code{bvptwp}.
   }
   \item{yguess }{First guess values of \code{y}, corresponding to initial grid
     \code{xguess}; a matrix with number of rows equal to the number of
-    equations, and whose number of columns equals the length of \code{xguess}.
+    variables, and whose number of columns equals the length of \code{xguess}.
     
     if the rows of \code{yguess} have a names attribute, the names will be 
     available within the functions and used to label the output matrix.
+    
+    It is also allowed to pass the output of a previous run for continuation.
+    This will use the information that is stored in the attributes 
+    \code{istate} and \code{rstate}. It will only work when for the previous 
+    run, \code{fullOut} was set equal to \code{TRUE} (the default).
+    In this case, \code{xguess} need not be provided.
+    
+    See example 3b.
   }
   \item{jacfunc }{jacobian (optional) - either an \R-function that evaluates the
     jacobian of \code{func} at point \code{x}, or a string with the name of a
@@ -139,7 +148,7 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
     If \code{jacbound} is an \R-function, it should be defined as:
     \code{jacbound = function(i, y, parms, ...)}.
     It should return the gradient of the i-th boundary condition.
-    See last example.
+    See examples.
 
     If \code{jacbound} is \code{NULL}, then a numerical approximation using
     differences is used. This is the default.
@@ -148,8 +157,12 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
     \code{posbound} is not specified: the number of left boundary conditions.
   }
   \item{posbound }{only used if \code{bound} is given: a vector with the position 
-    (in the mesh) of the boundary conditions - only the boundary points are 
-    allowed. Note that it is simpler to use \code{leftbc}. 
+    (in the mesh) of the boundary conditions - its values should be sorted - and 
+    it should be within the range of \code{x};
+    (posbound corresponds to fortran input "Zeta" in the colnew FORTRAN code.  )
+    See last example.
+    Note that two-point boundary value problems can also be specified via 
+    \code{leftbc} (which is simpler). 
   }
   \item{islin }{set to \code{TRUE} if the problem is linear - this will
     speed up the simulation.
@@ -160,6 +173,9 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
     all derivatives are 1-st order, in which case \code{order} can be set = 
     \code{NULL}.
     
+    For higher-order derivatives, specifying the order can improve computational
+    efficiency (when using \code{bvpcol}- but this interface is more complex. 
+    
     If \code{order} is not \code{NULL}, the number of equations in \code{func} 
     must equal the length of \code{order}; the summed values of \code{order}
     must equal the number of variables (ncomp). 
@@ -167,24 +183,22 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
     must have number of rows = number of equations and number of columns = number 
     of variables.                            
     \code{bound} and \code{jacbound} remain defined in the number of variables.
-    See example 4 and 4b. 
+    See example 3 and 3b. 
   }   
   \item{ncomp }{used if the model is specified by compiled code, the number of
-    components. See package vignette \code{"bvpSolve"}.
+    components (or equations). See package vignette \code{"bvpSolve"}.
     
     Also to be used if the boundary conditions are specified by \code{bound}, and 
     there is no \code{yguess}
   }
-  \item{atol }{error tolerance, a scalar.
+  \item{atol }{ error tolerance, a scalar.
   }
-  \item{cond }{if \code{TRUE}, uses conditioning in the mesh selection
+  \item{colp }{number of collocation points per subinterval.
   }
-  \item{allpoints }{sometimes the solver estimates the solution in a number
-    of extra points, and by default the solutions at these extra points will
-    also be returned.
-
-    By setting  \code{allpoints} equal to \code{FALSE},
-    only output corresponding to the elements in \code{x} will be returned.
+  \item{fullOut }{if set to \code{TRUE}, then the collocation output required
+    e.g. for continuation will be returned in attributes \code{rwork} and 
+    \code{iwork}. Use \code{attributes(out)\$rwork, attributes(out)\$rwork} 
+    to see their contents
   }
   \item{dllname }{a string giving the name of the shared library
     (without extension) that contains all the compiled function or
@@ -193,7 +207,8 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
     must be defined in the shared library; it is not allowed to merge R-functions
     with compiled functions.
     
-    See package vignette \code{"bvpSolve"}.
+    See package vignette \code{"bvpSolve"} or deSolve's package vignette
+    \code{"compiledCode"}.
   }
   \item{initfunc }{if not \code{NULL}, the name of the initialisation function
     (which initialises values of parameters), as provided in
@@ -235,165 +250,85 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
 
     See package vignette \code{"compiledCode"} from package \code{deSolve}.
   }
-  \item{verbose }{if \code{TRUE} then more verbose output will be generated
-    as "warnings".
+  \item{verbose }{when \code{TRUE}, writes messages (warnings) to the screen.
   }
-   \item{... }{additional arguments passed to the model functions.
+  \item{... }{additional arguments passed to the model functions.
   }
 }
-
 \value{
-  A matrix of class \code{bvpSolve}, with up to as many rows as elements 
-  in \code{x} and as many columns
-  as elements in \code{yini} or \code{ncomp} plus the number of "global"
-  values returned from \code{func}, plus an additional
+  A matrix of class \code{bvpSolve}, with up to as many rows as elements in 
+  \code{x} and as many columns
+  as elements in \code{yini} plus the number of "global" values returned
+  in the second element of the return from \code{func}, plus an additional
   column (the first) for the \code{x}-value.
 
-  Typically, there will be one row for each element in \code{x} unless the
-  solver returns with an unrecoverable error. In certain cases, \code{bvptwp}
-  will return the solution also in a number of extra points. This will occur
-  if the number of points as in \code{x} was not sufficient. In order to
-  not return these extra points, set \code{allpoints} equal to \code{FALSE}.
+  There will be one row for each element in \code{x} unless the solver returns
+  with an unrecoverable error.
 
   If \code{ynames} is given, or \code{yini}, \code{yend} has a names attribute, 
   or \code{yguess} has named rows, the names will be used to label the
   columns of the output value.
+
+  The output will also have \code{attributes} \code{istate} and \code{rstate}
+  which contain the collocation output required e.g. for continuation of a 
+  problem, unless \code{fullOutput} is \code{FALSE}
 }
 \author{
   Karline Soetaert <k.soetaert@nioo.knaw.nl>
-  
-  Jeff Cash <j.cash@imperial.ac.uk>
-  
-  Francesca Mazzia <mazzia@dm.uniba.it>
 }
 \details{
-  This is an implementation of the method \emph{twpbvpC}, written by
-  Cash, Mazzia and Wright, to solve two-point boundary value problems of
-  ordinary differential equations.
-
-  A boundary value problem does not have all initial values of
-  the state variable specified. Rather some conditions are specified at
-  the end of the integration interval. The number of unknown boundary
-  conditions must be equal to the number of equations (or the number
-  of dependent variables \code{y}).
-
+  This is an implementation of the Collocation method called "colnew" to 
+  solve multi-point boundary value problems of ordinary
+  differential equations.
+  
   The ODEs and boundary conditions are made available through the
   user-provided routines, \code{func} and vectors \code{yini} and \code{yend}
-  or (optionally) \code{bound}.
+  or (optionally) \code{bound}. \code{bvpcol} can also solve multipoint 
+  boundary value problems (see last example).
 
-  The corresponding partial derivatives for \code{func} and \code{bound}
-  are optionally available through the
+  The corresponding partial derivatives are optionally available through the
   user-provided routines, \code{jacfunc} and \code{jacbound}. Default is that
-  they are automatically generated by \code{bvptwp}, using numerical differences.
+  they are automatically generated by \R, using numerical differences.
 
-  The user-requested tolerance is provided through \code{tol}. The
-  default is \eqn{1e^-6}
+  The user-requested tolerance is provided through \code{atol}.
 
   If the function terminates because the maximum
   number of subintervals was exceeded, then it is recommended that
   'the program be run again with a larger value for this maximum.'
-  It may also help to start with a simple version of the model, and use
-  its result as initial guess to solve the more complex problem
-  (continuation strategy, see example 2, and package vignette "bvpSolve").
 
-  Models may be defined in \bold{compiled C or Fortran} code, as well as
-  in an  \bold{R}-function.
-
-  This is similar to the initial value problem solvers from package
-  \code{deSolve}. See package vignette \code{"bvpSolve"} for details about
-  writing compiled code.
-
-  The \bold{fcontrol} argument is a list that can supply any of the following
-  components (conform the definitions in the \link{approx} function):
-  \describe{
-    \item{method }{specifies the interpolation method to be used.
-      Choices are "linear" or "constant",}
-    \item{rule }{an integer describing how interpolation is to take place
-      outside the interval [min(times), max(times)].
-      If \code{rule} is \code{1} then an error will be triggered and the
-      calculation will stop if \code{times} extends the interval of the
-      forcing function data set. If it is \code{2}, the *default*, the
-      value at the closest data extreme is used, a warning will be printed if
-      \code{verbose} is TRUE,
-
-      Note that the default differs from the \code{approx} default}
-    \item{f }{For method=\code{"constant"} a number between \code{0} and
-      \code{1} inclusive, indicating a compromise between left- and
-      right-continuous step functions. If \code{y0} and \code{y1} are the
-      values to the left and right of the point then the value is
-      \code{y0*(1-f)+y1*f} so that \code{f=0} is right-continuous and
-      \code{f=1} is left-continuous,
-      }
-    \item{ties }{Handling of tied \code{times} values. Either a function
-      with a single vector argument returning a single number result or the
-      string "ordered".
-
-      Note that the default is "ordered", hence the existence of ties will
-      NOT be investigated; in the \code{C} code this will mean that -if ties
-      exist, the first value will be used; if the dataset is not ordered,
-      then nonsense will be produced.
-
-      Alternative values for \code{ties} are \code{mean}, \code{min} etc
-      }
-   }
-   The defaults are:
-
-   \code{fcontrol=list(method="linear", rule = 2,  f = 0, ties = "ordered")}
-
-   Note that only ONE specification is allowed, even if there is more than
-   one forcing function data set.
-   
-   This -advanced- feature is explained in \code{deSolve}'s package 
-   vignette "compiledCode".
 }
+
 \seealso{
-  \code{\link{bvpshoot}} for the shooting method
+\code{\link{bvpshoot}} for the shooting method
 
-  \code{\link{bvpcol}} for the collocation method
+\link{bvptwp} for a MIRK formula
 
-  \code{\link{diagnostics.bvpSolve}}, for a description of diagnostic messages
+\code{\link{diagnostics.bvpSolve}}, for a description of diagnostic messages
   
-  \code{\link{plot.bvpSolve}}, for a description of plotting the output of the 
+\code{\link{approx.bvpSolve}}, for approximating solution in new values
+  
+\code{\link{plot.bvpSolve}}, for a description of plotting the output of the 
   BVP solvers.
-
 }
-\note{
- When \code{order} is not \code{NULL}, then it should contain the order of all
- \emph{equations} in \code{func}. If the order of some equations > 1, then 
- there will be less equations than variables. The number of equations should
- be equal to the length of \code{order}, while the number of variables will be
- the sum of order.
 
- For instance, if \code{order = c(1,2,3,4)}, then the first equation will be
- of order 1, the second one of order 2, ...and the last of order 4. 
+\references{
+  U. Ascher, J. Christiansen and R. D. Russell,  (1981)
+  collocation software for boundary-value odes,
+  acm trans. math software 7, 209-222.
 
- There will be 1+2+3+4 = 10 variables. For instance, if the derivative 
- function defines (A', B'', C''', D'''') respectively, then the variable vector 
- will contain values for A, B, B', C, C', C'', D, D', D'', D'''; in that 
- order. This is also the order in which the initial and end conditions of 
- all variables must be specified.
+  G. Bader and U. Ascher, (1987)
+  a new basis implementation for a mixed order
+  boundary value ode solver,
+  siam j. scient. stat. comput. 8, 487-483.
 
- If neq are the number of equations, and ncomp the number of variables, then 
- the Jacobian of the derivative function as specified in \code{jacfunc}
- must be of dimension (neq, ncomp).
- 
- The jacobian of the boundaries, as specified in \code{jacbound} should return
- a vector of length = ncomp
+  U. Ascher, J. Christiansen and R.D. Russell, (1979)
+  a collocation solver for mixed order
+  systems of boundary value problems,
+  math. comp. 33, 659-679.
+
 }
 
 \keyword{math}
-
-\references{
-  J.R. Cash and M.H. Wright, A deferred correction method for nonlinear
-  two-point boundary value problems: implementation and numerical evaluation,
-  SIAM J. Sci. Stat. Comput., 12 (1991) 971 989.
-
-  Cash, J. R. and F. Mazzia, A new mesh selection algorithm, based on 
-   conditioning, for two-point boundary value codes. J. Comput. Appl. Math. 184  
-   (2005), no. 2, 362--381.
-
-  \url{http://www.ma.ic.ac.uk/~jcash/BVP\_software}
-}
 
 \examples{
 ## =============================================================================
@@ -416,7 +351,7 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
 #--------------------------------
 fun <- function(t, y, pars)
 { dy1 <- y[2]
-  dy2 <- - 3*p*y[1] / (p+t*t)^2
+  dy2 <- - 3 * p * y[1] / (p+t*t)^2
   return(list(c(dy1,
                 dy2))) }
 
@@ -425,16 +360,21 @@ fun <- function(t, y, pars)
 p    <- 1e-5
 
 # initial and final condition; second conditions unknown
-init <- c(y = -0.1 / sqrt(p+0.01), dy=NA)
-end  <- c(     0.1 / sqrt(p+0.01), NA)
+init <- c(-0.1 / sqrt(p+0.01), NA)
+end  <- c( 0.1 / sqrt(p+0.01), NA)
 
 # Solve bvp
-sol  <- as.data.frame(bvptwp(yini = init, x = seq(-0.1, 0.1, by = 0.001),
-        func = fun, yend = end))
-plot(sol$x, sol$y, type = "l")
+sol  <- bvpcol(yini = init, yend = end, 
+               x = seq(-0.1, 0.1, by = 0.001), func = fun)
+plot(sol, type = "l", which = 1)
 
 # add analytical solution
 curve(x/sqrt(p+x*x), add = TRUE, type = "p")
+
+diagnostics(sol)
+
+zoom <- approx(sol, xout = seq(-0.005, 0.005, by  = 0.0001))
+plot(zoom, which = 1, main = "zoom in on [-0.0005,0.0005]")
 
 
 ## =============================================================================
@@ -446,7 +386,7 @@ fun2 <- function(t, y, pars)
 { dy <- - 3 * p * y[1] / (p+t*t)^2
   list(dy)
 }
-sol2  <- bvptwp(yini = init, yend = end, order = 2, 
+sol2  <- bvpcol(yini = init, yend = end, order = 2, 
                 x = seq(-0.1, 0.1, by = 0.001), func = fun2)
 
 ## =============================================================================
@@ -463,63 +403,22 @@ sol2  <- bvptwp(yini = init, yend = end, order = 2,
 f2 <- function(x, y, parms)
 {
  dy  <- y[2]
- dy2 <- -1/x*y[2] - (1-1/(4*x^2))*y[1] + sqrt(x)*cos(x)
+ dy2 <- -1/x * y[2]- (1-1/(4*x^2))*y[1] + sqrt(x)*cos(x)
  list(c(dy, dy2))
 }
 
 x    <- seq(1, 6, 0.1)
-sol  <- bvptwp(yini = c(y = 1, dy = NA),
-               yend = c(-0.5, NA), x = x, func = f2)
-plot(sol, which = "y")
+sol  <- bvpcol(yini = c(1, NA), yend = c(-0.5, NA),
+               x = x, func = f2)
+plot(sol, which = 1)
 
 # add the analytic solution
-curve(0.0588713*cos(x)/sqrt(x)+1/4*sqrt(x)*cos(x)+0.740071*sin(x)/sqrt(x)+
+curve(0.0588713*cos(x)/sqrt(x) + 1/4*sqrt(x)*cos(x)+0.740071*sin(x)/sqrt(x)+
       1/4*x^(3/2)*sin(x), add = TRUE, type = "l")
 
-## =============================================================================
-## Example 3  - using continuation
-## Problem nr 24 from http://www.ma.ic.ac.uk/~jcash/BVP_software/PROBLEMS.PDF
-## xi*A*y*y'' -((1+ga)/2-xi*A'*y*y'+y'/y+(A'/A*(1-(ga-1)/2*y^2)=0
-## where A = 1 + x2, y(x=0) = 0:9129, y(x=1) = 0:375
-## =============================================================================
-
-Prob24 <- function(x, y, pars, xi) {
-  A <- 1+x*x
-  AA <- 2*x
-  ga <- 1.4
-  list(c(y[2],
-       (((1+ga)/2 -xi*AA)*y[1]*y[2]-y[2]/y[1]-
-       (AA/A)*(1-(ga-1)*y[1]^2/2))/(xi*A*y[1])  ))
-}
-
-ini <- c(0.9129, NA)
-end <- c(0.375, NA)
-
-# This problem needs an initial guess for y; (as it divides by y,
-# the default, 0, does not work)
-
-# guess of y; set equal to 1
-xguess <- c(0, 1)
-yguess <- matrix(nrow = 2, ncol = 2, data = 1)
-
-# start with relatively large value of xi
-xi <- 0.01
-print(system.time(
-mod1  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
-          func = Prob24, xi = xi, xguess = xguess, yguess = yguess)
-))        
-plot(mod1[,1:2], ylim = c(0.4,1.4), type = "l", lwd = 2)
-
-# use previous solution to initialise solver for smaller xi
-xi <- 0.005
-mod1b  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
-        func = Prob24, xi = xi, xguess = mod1[,1], 
-        yguess = t(mod1[,2:3]))
-lines(mod1b, lwd = 2, col = "red")
-
 
 ## =============================================================================
-## Example 4  - solved with specification of boundary, and jacobians
+## Example 3  - solved with specification of boundary, and jacobians
 ## d4y/dx4 =R(dy/dx*d2y/dx2 -y*dy3/dx3)
 ## y(0)=y'(0)=0
 ## y(1)=1, y'(1)=0
@@ -530,28 +429,35 @@ lines(mod1b, lwd = 2, col = "red")
 ## dy4/dx = R*(y2*y3 -y*y4)
 ## =============================================================================
 
-f2<- function(x, y, parms, R)
+# derivative function: 4 first-order derivatives
+f1st<- function(x, y, parms, R)
 {
-  list(c(y[2], y[3], y[4], R*(y[2]*y[3] - y[1]*y[4]) ))
+  list(c(y[2],
+         y[3],
+         y[4],
+         R * (y[2]*y[3] - y[1]*y[4]) ))
 }
 
-df2 <- function(x, y, parms, R)
+# jacobian of derivative function
+df1st <- function(x, y, parms, R)
 {
  df <- matrix(nrow = 4, ncol = 4, byrow = TRUE, data = c(
-             0,        1,     0,     0,
-             0,        0,     1,     0,
-             0,        0,     0,     1,
-             -1*R*y[4],R*y[3],R*y[2],-R*y[1]))
+             0,         1,      0,       0,
+             0,         0,      1,       0,
+             0,         0,      0,       1,
+             -1*R*y[4], R*y[3], R*y[2], -R*y[1]))
 }
 
+# boundary
 g2 <- function(i, y, parms, R)
 {
-  if (i == 1) return(y[1])
-  if (i == 2) return(y[2])
-  if (i == 3) return(y[1]-1)
-  if (i == 4) return(y[2])
+  if (i == 1) return (y[1])
+  if (i == 2) return (y[2])
+  if (i == 3) return (y[1] - 1)
+  if (i == 4) return (y[2])
 }
 
+# jacobian of boundary
 dg2 <- function(i, y, parms, R)
 {
   if (i == 1) return(c(1, 0, 0, 0))
@@ -560,23 +466,18 @@ dg2 <- function(i, y, parms, R)
   if (i == 4) return(c(0, 1, 0, 0))
 }
 
-require(bvpSolve)
-init <- c(1, NA)
-R    <- 100
-sol  <- bvptwp(x = seq(0, 1, by = 0.01), leftbc = 2,
-          func = f2, R = R, ncomp = 4,
-          bound = g2, jacfunc = df2, jacbound = dg2)
-plot(sol[,1:2])  # columns do not have names
+# we use posbound to specify the position of boundary conditions
+# we can also use leftbc = 2 rather than posbound = c(0,0,1,1)
+R    <- 100  
+sol  <- bvpcol(x = seq(0, 1, by = 0.01), 
+          ynames = c("y", "dy", "d2y", "d3y"),
+          posbound = c(0, 0, 1, 1), func = f1st, R = R,  
+          bound = g2, jacfunc = df1st, jacbound = dg2)
 
-mf <- par ("mfrow")
-sol  <- bvptwp(x = seq(0, 1, by = 0.01), leftbc = 2,
-          func = f2, ynames = c("y", "dy", "d2y", "d3y"), R=R,
-          bound = g2, jacfunc = df2, jacbound = dg2)
-plot(sol)        # here they do
-par(mfrow = mf)
+plot(sol)
 
 ## =============================================================================
-## Example 4b - solved with specification of boundary, and jacobians
+## Example 3b - solved with specification of boundary, and jacobians
 ## and as a higher-order derivative
 ## d4y/dx4 =R(dy/dx*d2y/dx2 -y*dy3/dx3)
 ## y(0)=y'(0)=0
@@ -584,12 +485,14 @@ par(mfrow = mf)
 ## =============================================================================
 
 # derivative function: one fourth-order derivative
-f4th <- function(x, y, parms, R) {
+f4th <- function(x, y, parms, R)
+{
   list(R * (y[2]*y[3] - y[1]*y[4]))
 }
 
 # jacobian of derivative function
-df4th <- function(x, y, parms, R)  {
+df4th <- function(x, y, parms, R)
+{
  df <- matrix(nrow = 1, ncol = 4, byrow = TRUE, data = c(
              -1*R*y[4], R*y[3], R*y[2], -R*y[1]))
 }
@@ -599,11 +502,47 @@ df4th <- function(x, y, parms, R)  {
 # jacobian of boundary - same as previous
 
 # order = 4 specifies the equation to be 4th order
-sol2 <- bvptwp(x = seq(0, 1, by = 0.01), 
+R    <- 100
+sol  <- bvpcol(x = seq(0, 1, by = 0.01), 
           ynames = c("y", "dy", "d2y", "d3y"),
           posbound = c(0, 0, 1, 1), func = f4th, R = R, order = 4, 
           bound = g2, jacfunc = df4th, jacbound = dg2)
 
-max(abs(sol2-sol))
+plot(sol)
 
+# Use continuation to find solution of a more difficult example
+# Previous solution collocation from sol passed ("guess = sol")
+
+sol2  <- bvpcol(x = seq(0,1,by=0.01), ynames = c("y","dy","d2y","d3y"),
+          posbound = c(0, 0, 1, 1), func = f4th, R = 10000, order = 4, 
+          bound = g2, jacfunc = df4th, jacbound = dg2, yguess = sol)
+
+plot(sol2)
+
+## =============================================================================
+## Example 4  - a multipoint bvp
+## dy1 = (y2 - 1)/2
+## dy2 = (y1*y2 - x)/mu
+## over interval [0,1]
+## y1(1) = 0; y2(0.5) = 1
+## =============================================================================
+
+multip <- function (x, y, p) {
+  list(c((y[2] - 1)/2, 
+         (y[1]*y[2] - x)/mu))
+}
+
+bound <- function (i, y, p) {
+  if (i == 1) y[2] -1    # at x=0.5: y2=1
+  else y[1]              # at x=  1: y1=0
+}
+
+mu  <- 0.1
+sol <- bvpcol(func = multip, bound = bound, 
+              x = seq(0, 1, 0.01), posbound = c(0.5, 1))
+
+plot(sol)
+
+# check boundary value
+sol[sol[,1] == 0.5,]
 }

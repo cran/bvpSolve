@@ -1,14 +1,16 @@
 \name{plot.bvpSolve}
 \alias{plot.bvpSolve}
+\alias{print.bvpSolve}
 
 \title{
- Plot Method for Output of bvpSolve
+ Plot and Print Methods for Output of bvp solvers
 }
 \description{
 Plot the output of boundary value solver routines.
 }
 \usage{
 \method{plot}{bvpSolve}(x, which = 1:(ncol(x)-1), ask = NULL, ...)
+\method{print}{bvpSolve}(x, ...)
 }
 
 \arguments{
@@ -29,7 +31,9 @@ Plot the output of boundary value solver routines.
 }
 
 \details{
-  Based on the S3-method of package \code{bvpSolve}.
+  \code{print.bvpSolve} prints the matrix without the attributes.
+
+  \code{plot.bvpSolve} plots multiple figures on a page.
 
   The number of panels per page is automatically determined up to 3 x 3
   (\code{par(mfrow=c(3, 3))}). This default can be overwritten by
@@ -56,35 +60,46 @@ Plot the output of boundary value solver routines.
 ##      u(0) = v(0) = w(0) = 1,  z(0) = -10,  w(1) = y(1)
 ## =============================================================================
 
-musn <- function(t,Y,pars)
+musn <- function(t, Y, pars)
 {
   with (as.list(Y),
   {
-   du=0.5*u*(w-u)/v
-   dv=-0.5*(w-u)
-   dw=(0.9-1000*(w-y)-0.5*w*(w-u))/z
-   dz=0.5*(w-u)
-   dy=-100*(y-w)
-   return(list(c(du,dv,dw,dy,dz)))
+   du <- 0.5 * u * (w-u)/v
+   dv <- -0.5 * (w-u)
+   dw <- (0.9 - 1000 * (w-y) - 0.5 * w * (w-u))/z
+   dz <- 0.5 * (w-u)
+   dy <- -100 * (y-w)
+   return(list(c(du, dv, dw, dz, dy)))
   })
 }
 
 #--------------------------------
-# Residuals
+# Boundaries
 #--------------------------------
-res  <- function (Y,yini,pars)  with (as.list(Y), w-y)
+bound <- function(i,y,pars) {
+  with (as.list(y), {
+    if (i ==1) return (u-1)
+    if (i ==2) return (v-1)
+    if (i ==3) return (w-1)
+    if (i ==4) return (z+10)
+    if (i ==5) return (w-y)
+ })
+}
 
-#--------------------------------
-# Initial values; y= NA= not available
-#--------------------------------
+xguess <- seq(0, 1, len = 5)
+yguess <- matrix(ncol = 5, (rep(c(1, 1, 1, -10, 0.91), times = 5)) )
+rownames(yguess) <- c("u","v","w","z","y")
 
-init <- c(u=1,v=1,w=1,y=NA,z=-10)
-sol  <-bvpshoot(y= init, x=seq(0,1,by=0.05), func=musn,
-           yend=res, guess=1, atol=1e-10, rtol=0)
+sol  <- bvpcol (bound = bound, x = seq(0, 1, by = 0.05), 
+          leftbc = 4, func = musn, xguess = xguess, yguess = yguess)
 
 mf <- par("mfrow")
 plot(sol)
-par(mfrow=mf)
+par(mfrow = mf)
+}
+\seealso{
+  \code{\link{diagnostics.bvpSolve}}, for a description of diagnostic messages.
+
 }
 
 \keyword{ hplot }

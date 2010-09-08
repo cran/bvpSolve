@@ -2,7 +2,7 @@
 /* Patterned on code odesolve_utils.c from package odesolve */
 #include <R.h>
 #include <Rdefines.h>
-#include "twpbvpc.h"
+#include "bvpSolve.h"
 
 /* some functions for keeping track of how many SEXPs 
  * 	are PROTECTed, and UNPROTECTing them in the case of a fortran stop.
@@ -29,10 +29,11 @@ double yguess;
 
 /* Globals : the R-functions, R-environment, R-parameters */
 
-SEXP R_bvpderiv_func;
-SEXP R_bvpjac_func;
-SEXP R_bvpbound_func;
-SEXP R_bvpjacbound_func;
+SEXP R_bvp_deriv_func;
+SEXP R_bvp_jac_func;
+SEXP R_bvp_bound_func;
+SEXP R_bvp_jacbound_func;
+SEXP R_bvp_guess_func;
 
 SEXP R_envir;
 SEXP bvp_gparms;

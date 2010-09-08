@@ -24,8 +24,7 @@ yend <- c(x=NA,y=0, p=-pi/2,k=NA,F=NA)
 print(system.time(
 Sol <- bvptwp(func=Elastica,
               yini = yini, yend = yend,
-              x = seq(0,0.5,len=16),
-              guess=c(0,0) )
+              x = seq(0,0.5,len=16) )
 ))
 Sol
 plot(Sol)
@@ -47,8 +46,7 @@ jacfunc <- function (x, y, pars) {
 print(system.time(
 Sol2 <- bvptwp(func=Elastica, jacfunc=jacfunc,
               yini = yini, yend = yend,
-              x = seq(0,0.5,len=16),
-              guess=c(0,0) )
+              x = seq(0,0.5,len=16))
 ))
 
 ## =============================================================================
@@ -63,9 +61,9 @@ bound <- function (i, y, pars)  {
 }
 print(system.time(
 Sol3 <- bvptwp(func=Elastica, jacfunc=jacfunc, 
-              bound = bound,
+              bound = bound,  ncomp = 5,
               x = seq(0,0.5,len=16),
-              leftbc = 3, guess=c(0,0) )
+              leftbc = 3 )
 ))
 
 jacbound <- function(i, y, pars)  {
@@ -79,6 +77,6 @@ jacbound <- function(i, y, pars)  {
 print(system.time(
 Sol4 <- bvptwp(func=Elastica, jacfunc = jacfunc,
               bound = bound, jacbound = jacbound,
-              x = seq(0,0.5,len=16),
-              leftbc = 3, guess=c(0,0) )
+              x = seq(0,0.5,len=16),ncomp = 5,
+              leftbc = 3 )
 ))

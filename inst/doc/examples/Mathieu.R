@@ -10,18 +10,18 @@
 
 require(bvpSolve)
 
-mathieu<- function(t,y,lambda=15)  {
- list(c(y[2],-(lambda-10*cos(2*t))*y[1]))
+mathieu<- function(t, y, lambda = 15)  {
+ list(c(y[2], -(lambda-10*cos(2*t)) * y[1]))
 }
 
 ## =============================================================================
 ## Solution method 1:  shooting  
 ## =============================================================================
-x = seq(0,pi,by=0.01)
+x = seq(0, pi, by = 0.01)
 
-init <- c(1,0)
-sol  <- bvpshoot(yini=init,yend=c(NA,0),x=x,
-        func=mathieu, guess=NULL,  extra=15)
+init <- c(1, 0)
+sol  <- bvpshoot(yini = init, yend = c(NA, 0), x = x,
+          func = mathieu, guess = NULL,  extra = 15)
 plot(sol[,1:2])
 
 ## =============================================================================
@@ -29,18 +29,20 @@ plot(sol[,1:2])
 ## =============================================================================
 
 cost <- function(X)
-{  sol<- bvptwp(yini=c(1,NA), yend=c(NA,0),x=c(0,pi),parms=X,
-        func=mathieu,guess=0)
+{  sol<- bvptwp(yini = c(1, NA), yend = c(NA, 0), 
+          x = c(0, pi), parms = X,
+          func = mathieu)
   return(sol[2,3])  # y2[0]=0
 }
 
 # find the root
-lam <- multiroot(f=cost,start=15)
+lam <- multiroot(f = cost, start = 15)
 
 # solve the mode with this root...
-Sol<- bvptwp(yini=c(1,NA), yend=c(NA,0),x=x,parms=lam$root,
-        func=mathieu,atol=1e-10,guess=1)
-lines(Sol,col="red")
+Sol<- bvptwp(yini = c(1,NA), yend = c(NA, 0),
+        x = x, parms = lam$root,
+        func = mathieu, atol = 1e-10)
+lines(Sol, col = "red")
 
 ## =============================================================================
 ## Solution method 3 augmented equations...
@@ -56,26 +58,26 @@ mathieu2<- function(t,y,parms)
 ### initial guess = 1 ####
 
 # Solvable with bvpshoot
-init <- c(y=1,dy=0,lambda=NA)
-sol1 <- bvpshoot(yini=init,yend=c(NA,0, NA),x=x,
-        func=mathieu2, guess=1)
+init <- c(y = 1,dy = 0, lambda = NA)
+sol1 <- bvpshoot(yini = init, yend = c(NA, 0, NA), x = x,
+          func = mathieu2, guess = 1)
 plot(sol1)
 
-jac <- function(x,y,p) {
-  df <- matrix(nr=3,nc=3,0)
+jac <- function(x, y ,p) {
+  df <- matrix(nr = 3, nc = 3, 0)
   df[1,2] <- 1
   df[2,1] <- -(y[3]-10*cos(2*x))
   df[2,3] <- -y[1]
   df
 }
-xguess <-  c(0,1,2*pi)
-yguess <- matrix(nr=3,rep(1,9))
+xguess <-  c(0, 1, 2*pi)
+yguess <- matrix(nr = 3, rep(1, 9))
 rownames(yguess) <- c("y", "dy", "lambda")
 
 # only works for bvptwp if yguess is not 0!...
 print(system.time(
-sol1b <- bvptwp(yini=init,yend=c(NA,0, NA),x=x,
-        func=mathieu2, jacfunc =jac, xguess = xguess,
+sol1b <- bvptwp(yini = init, yend = c(NA, 0, NA), x = x,
+        func = mathieu2, jacfunc = jac, xguess = xguess,
         yguess = yguess)
 ))
 
@@ -86,8 +88,8 @@ xguess <-  c(0,1,2*pi)
 yguess <- matrix(nr=3,rep(17,9))
 
 print(system.time(
-sol2 <- bvpshoot(yini=init,yend=c(NA,0, NA),x=x,
-        func=mathieu2, jacfunc =jac, guess=c(17))
+sol2 <- bvpshoot(yini = init, yend = c(NA, 0, NA), x = x,
+        func = mathieu2, jacfunc =jac, guess = 17)
 ))
 
 plot(sol2, type="l",lwd=2)
