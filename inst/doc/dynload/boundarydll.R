@@ -42,9 +42,9 @@ x    <- seq(-0.1, 0.1, by = 0.001)
 #  **  shooting  **
 #---------------------
 
-print(system.time(sol  <- as.data.frame(bvpshoot(yini = init, x = x,
-       func = fun, yend = end, guess = 1, atol = 1e-10))))
-plot(sol$x, sol[,2], type = "l")
+print(system.time(sol  <- bvpshoot(yini = init, x = x,
+       func = fun, yend = end, guess = 1, atol = 1e-10)))
+plot(sol, which = 1, type = "l")
 
 # add analytical solution
 curve(x/sqrt(p+x*x),add=TRUE,type="p")
@@ -54,8 +54,8 @@ curve(x/sqrt(p+x*x),add=TRUE,type="p")
 # bvptwp method -simple input
 #---------------------
 
-print(system.time(Sol2<- as.data.frame(bvptwp(yini = init, x = x,
-      func = fun, yend = end, atol = 1e-10))))
+print(system.time(Sol2<- bvptwp(yini = init, x = x,
+      func = fun, yend = end, atol = 1e-10)))
 lines(Sol2[,1], Sol2[,2], type = "l", col = "red")
 
 #-------------------------------
@@ -84,9 +84,9 @@ boundjac <- function (i, y, pars)
   return(c(1, 0))
 
 
-print(system.time(Sol <- as.data.frame(bvptwp(x = x, leftbc = 1, 
+print(system.time(Sol <- bvptwp(x = x, leftbc = 1,
         func = fun, bound = boundfun, ncomp = 2,
-        jacbound = boundjac, jacfunc = jacfun), verbose = TRUE)))
+        jacbound = boundjac, jacfunc = jacfun)))
 lines(Sol[,1], Sol[,2],type = "l", col = "blue")
 
 #-------------------------------

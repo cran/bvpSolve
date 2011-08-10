@@ -9,7 +9,7 @@
 }
 \usage{
 \S3method{diagnostics}{bvpSolve}(obj, ...)
-\S3method{approx}{bvpSolve}(x, xout=NULL, ...)
+\S3method{approx}{bvpSolve}(x, xout = NULL, ...)
 }
 \arguments{
   \item{obj }{the output as produced by \code{bvptwp}, \code{bvpcol} 
@@ -26,35 +26,37 @@
 \value{
   S3 method \code{diagnostics} prints diagnostic features of the simulation. 
   
-  It will depend on the solution method.
-  
-  In case the problem was solved with \code{bvpshoot}, the diagnostics
-  of the initial value problem solver will also be written to screen.
+  What exactly is printed will depend on the solution method.
   
   The diagnostics of all solvers include the 
   number of function evaluations, the number of jacobian evaluations, and
-  the number of steps
-  
-  Note that the number of function evaluations are *without* the extra 
-  calls performed to generate the ordinary output variables (if present). 
-
+  the number of steps.  
   The diagnostics of both \code{bvptwp} and \code{bvpcol} also include the 
   the number of boundary evaluations and the number of boundary jacobian 
   evaluations.
+  In case the problem was solved with \code{bvpshoot}, the diagnostics
+  of the initial value problem solver will also be written to screen.
+    
+  Note that the number of function evaluations are *without* the extra 
+  calls performed to generate the ordinary output variables (if present). 
 
   In case the method used was
   \code{bvptwp}, will also return the \emph{conditioning parameters}. They are:
-  ckappa, ckappa1, ckappa2, sigma and gamma.
+  kappa, kappa1, kappa2, sigma and gamma1.
   
-  See \url{http://pitagora.dm.uniba.it/~mazzia/bvp/tom/lucidinorvegiad.pdf}
+  See \url{http://www.scpe.org/vols/vol10/no4/SCPE_10_4_02.pdf}
   
-  The kappa's are based on the Inf-norm, gamma is based on the 1-norm,
-  If ckappa and gamma are both of moderate size, the problem is well conditioned.
-  If both are large, the problem is ill-conditioned.
-  If ckappa is large and gamma is small, the problem is ill-conditioned in the 
-  maximum and well conditioned in the 1-norm. This is typical for problems that
-  involve different time scales ("stiff" problems).
+the kappa's are based on the Inf-norm, gamma1 is based on the 1-norm,
+If kappa, kappa1 and gamma1 are  of moderate size, the problem is well
+conditioned. If large, the problem is ill-conditioned. If kappa1
+is large and gamma1 is small, the problem is ill-conditioned in the
+maximum and well conditioned in the 1-norm. This is typical for
+problems that involve different time scales ("stiff" problems). If
+kappa1 is small and kappa, kappa2 are large the problem  has not the
+correct dichotomy.
 
+   
+  
   S3 method \code{approx} calculates an approximate solution vector at points
   inbetween the original \code{x}-values. If beyond the integration interval,
   it will not extrapolate, but just return the values at the edges.

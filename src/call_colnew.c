@@ -30,40 +30,69 @@ void F77_NAME(colnew)(int*, int*, double *, double *, double *, int *, int *,
 		     void (*)(int *, int *, double *, double *, double *, int *),      /* dgsub */
          void (*)(double *, double *, double *),                           /* guess_func */
          double *, int *, int*) ;
-void F77_NAME(appsln)(double *, double *, double *, int *);
 
-/* initialisation function */
-static void C_bvp_guess_func (double *x, double *y,  double *ydot)
+void F77_NAME(colsys)(int*, int*, double *, double *, double *, int *, int *,
+         double *, double *, int *, double *, int *, 
+         void (*)(int *, double *, double *, double *, double *, int *),   /* fsub  */
+		     void (*)(int *, double *, double *, double *, double *, int *),   /* dfsub */
+			   void (*)(int *, int *, double *, double *, double *, int *),      /* gsub  */
+		     void (*)(int *, int *, double *, double *, double *, int *),      /* dgsub */
+         void (*)(double *, double *, double *),                           /* guess_func */
+         double *, int *, int*) ;
+
+void F77_NAME(appsln)(double *, double *, double *, int *);
+void F77_NAME(sysappsln)(double *, double *, double *, int *);
+
+
+/* -----------------------------------------------------------------------------
+                        - when model in compiled code
+----------------------------------------------------------------------------- */
+
+/* -----------------------------------------------------------------------------
+  wrapper above the derivate function that first estimates the
+values of the forcing functions */
+
+static void dll_bvp_deriv_func_forc (int *neq, double *x, double *y,
+                         double *ydot, double *rpar, int *ipar)
+{
+  updatedeforc(x);
+  derfun(neq, x, y, ydot, rpar, ipar);
+}
+
+/* -----------------------------------------------------------------------------
+   interface between fortran function calls and R functions
+   Note: passing of parameter values and "..." is done in R-function bvpcol
+----------------------------------------------------------------------------- */
+
+/* initialisation function                                                    */
+static void C_bvp_guess_func (double *x, double *y,  double *ydot,
+                              double *rpar, int *ipar)
 {
   int i;
   double p;
   SEXP R_fcall, ans, R_fcall2, ans2;
-  
+
   REAL(X)[0]   = *x;
 
-  PROTECT(R_fcall = lang2(R_bvp_guess_func,X));  incr_N_Protect();
+  PROTECT(R_fcall = lang2(R_bvp_guess_func, X));    incr_N_Protect();
   PROTECT(ans = eval(R_fcall, R_envir));            incr_N_Protect();
 
   p = fmax(1e-7, *x*1e-7 );
   REAL(X)[0]   = *x+p;
-  PROTECT(R_fcall2 = lang2(R_bvp_guess_func,X)); incr_N_Protect();
+  PROTECT(R_fcall2 = lang2(R_bvp_guess_func, X));   incr_N_Protect();
   PROTECT(ans2 = eval(R_fcall2, R_envir));          incr_N_Protect();
-  
+
   /* both have the same dimensions... */
   for (i = 0; i < n_eq; i++) y[i] = REAL(ans)[i];
   for (i = 0; i < n_eq; i++) ydot[i] = (REAL(ans2)[i]-y[i])/p;
 
   my_unprotect(4);
-  
+
 }
 
-/* interface between fortran function calls and R functions
-   Fortran code calls C_bvp_deriv_func(x, y, ydot)
-   R code called as bvp_deriv_func(time, y) and returns ydot
-   Note: passing of parameter values and "..." is done in R-function bvpcol*/
-
-static void C_bvp_deriv_func (int * n, double *x, double *y, 
-   double *ydot, double * rpar, int * ipar)
+/* derivative function                                                        */
+static void C_bvp_deriv_func (int * n, double *x, double *y,
+                              double *ydot, double * rpar, int * ipar)
 {
   int i;
   SEXP R_fcall, ans;
@@ -77,20 +106,10 @@ static void C_bvp_deriv_func (int * n, double *x, double *y,
 
   my_unprotect(2);
 }
-/* wrapper above the derivate function that first estimates the
-values of the forcing functions */
 
-static void C_bvp_deriv_func_forc (int *neq, double *x, double *y,
-                         double *ydot, double *rpar, int *ipar)
-{
-  updatedeforc(x);
-  derfun(neq, x, y, ydot, rpar, ipar);
-}
-
-/* interface between fortran call to jac_funcobian and R function */
-
-static void C_bvp_jac_func (int *n, double *x, double *y, double *pd, 
-   double * rpar, int * ipar)
+/* jacobian                                                                   */
+static void C_bvp_jac_func (int *n, double *x, double *y, double *pd,
+                            double * rpar, int * ipar)
 {
   int i;
   SEXP R_fcall, ans;
@@ -104,26 +123,26 @@ static void C_bvp_jac_func (int *n, double *x, double *y, double *pd,
   my_unprotect(2);
 }
 
-/* interface between fortran call to boundary condition and corresponding R function */
-
+/*  boundary condition                                                        */
 static void C_bvp_bound_func (int *ii, int * n, double *y, double *gout,
-  double * rpar, int * ipar)
+                              double * rpar, int * ipar)
 {
   int i;
   SEXP R_fcall, ans;
-                             INTEGER(J)[0] = *ii;
+                                INTEGER(J)[0] = *ii;
   for (i = 0; i < mstar ; i++)  REAL(Y)[i] = y[i];
 
   PROTECT(R_fcall = lang3(R_bvp_bound_func,J,Y));   incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));       incr_N_Protect();
+  PROTECT(ans = eval(R_fcall, R_envir));            incr_N_Protect();
   /* only one element returned... */
   gout[0] = REAL(ans)[0];
+
   my_unprotect(2);
 }
-/*interface between fortran call to jac_funcobian of boundary and corresponding R function */
 
+/* jacobian of boundary condition                                             */
 static void C_bvp_jacbound_func (int *ii, int *n, double *y, double *dg,
-    double * rpar, int * ipar)
+                                 double * rpar, int * ipar)
 {
   int i;
   SEXP R_fcall, ans;
@@ -137,15 +156,9 @@ static void C_bvp_jacbound_func (int *ii, int *n, double *y, double *dg,
   my_unprotect(2);
 }
 
-/* MAIN C-FUNCTION, CALLED FROM R-code
-
-      Subroutine colnew(Ncomp, M, Aleft, Aright, Zeta, Iset, Ltol,
-     +     Tol, Fixpnt, Ispace, Fspace, Iflag, 
-     +     Fsub, Dfsub, Gsub, Dgsub, guess_func)             */
-
-/* number of eqs, order of eqs, summed order of eqns, from, to,
-boundary points, settings, number of tolerances, tolerances,
-mesh points, initial value of continuation parameter */
+/* -----------------------------------------------------------------------------
+                  MAIN C-FUNCTION, CALLED FROM R-code
+----------------------------------------------------------------------------- */
 
 SEXP call_colnew(SEXP Ncomp, SEXP Xout, SEXP Aleft, SEXP Aright,
 		SEXP Zeta, SEXP Mstar, SEXP M, SEXP Iset, SEXP Rwork, SEXP Iwork,
@@ -160,7 +173,7 @@ SEXP call_colnew(SEXP Ncomp, SEXP Xout, SEXP Aleft, SEXP Aright,
 /******************************************************************************/
 
 /* These R-structures will be allocated and returned to R*/
-  SEXP yout=NULL, ISTATE, RWORK;
+  SEXP yout=NULL, ISTATE, ICOUNT, RWORK;
 
   int  j, ii, ncomp, k, nx, ntol, nfixpnt, isForcing, type;
   double aleft, aright, *zeta, *fspace, *tol, *fixpnt, *z, *rpar;
@@ -208,8 +221,8 @@ SEXP call_colnew(SEXP Ncomp, SEXP Xout, SEXP Aleft, SEXP Aright,
   iset  = (int *)    R_alloc(ii, sizeof(int));
   for (j = 0; j < ii; j++) iset[j] = INTEGER(Iset)[j];
 
-  icount  = (int *)    R_alloc(5, sizeof(int));
-  for (j = 0; j<5; j++) icount[j] = 0;
+  icount  = (int *)    R_alloc(6, sizeof(int));
+  for (j = 0; j < 6; j++) icount[j] = 0;
   
   FullOut = INTEGER(Iset)[ii];
   
@@ -248,9 +261,9 @@ SEXP call_colnew(SEXP Ncomp, SEXP Xout, SEXP Aleft, SEXP Aright,
 
 /* initialise global R-variables... */
 
+  PROTECT(X  = NEW_NUMERIC(1));                 incr_N_Protect();
   if (isDll == 0) {
-    PROTECT(X  = NEW_NUMERIC(1));               incr_N_Protect();
-    PROTECT(J  = NEW_INTEGER(1));                incr_N_Protect();
+    PROTECT(J  = NEW_INTEGER(1));               incr_N_Protect();
     PROTECT(Y = allocVector(REALSXP,mstar));    incr_N_Protect();
   }
   /* Initialization of Parameters and Forcings (DLL functions)  */
@@ -269,8 +282,9 @@ SEXP call_colnew(SEXP Ncomp, SEXP Xout, SEXP Aleft, SEXP Aright,
 	  /* here overruling deriv_func if forcing */
       if (isForcing) {
         derfun =     (C_deriv_func_type *) R_ExternalPtrAddr(derivfunc);
-        deriv_func = (C_deriv_func_type *) C_bvp_deriv_func_forc;
+        deriv_func = (C_deriv_func_type *) dll_bvp_deriv_func_forc;
       }
+
   } else {      /* interface functions between fortran and R */
       deriv_func = C_bvp_deriv_func;
       R_bvp_deriv_func = derivfunc;
@@ -292,13 +306,19 @@ SEXP call_colnew(SEXP Ncomp, SEXP Xout, SEXP Aleft, SEXP Aright,
       Subroutine colnew(Ncomp, M, Aleft, Aright, Zeta, Iset, Ltol,
      +     Tol, Fixpnt, Ispace, Fspace, Iflag, 
      +     Fsub, Dfsub, Gsub, Dgsub, guess_func)             */
+   if (type == 0) 
 	  F77_CALL(colnew) (&ncomp, m, &aleft, &aright, zeta, iset, ltol,
+        tol, fixpnt, ispace, fspace, &iflag, 
+        deriv_func, jac_func, bound_func, jacbound_func, 
+        guess_func, rpar, ipar, icount);
+   else
+	  F77_CALL(colsys) (&ncomp, m, &aleft, &aright, zeta, iset, ltol,
         tol, fixpnt, ispace, fspace, &iflag, 
         deriv_func, jac_func, bound_func, jacbound_func, 
         guess_func, rpar, ipar, icount);
 
 /*             Call Appsln(Xx,Z,Fspace,Ispace)
-C....   Iflag - The Mode Of Return From colnew.
+C....   Iflag - The Mode Of Return From colnew/colsys.
 C....         =  1  For Normal Return
 C....         =  0  If The Collocation Matrix Is Singular For The Final
 C....               Continuation Problem.
@@ -328,7 +348,7 @@ C....         = -3  If There Is An Input Data Error.
   else  if (iflag == -3)
 	{
 	  unprotect_all();
-	  error("Illegal input to colnew\n");
+	  error("Illegal input to bvpcol\n");
 	}
   else
 	{
@@ -336,15 +356,26 @@ C....         = -3  If There Is An Input Data Error.
     z  =(double *) R_alloc(mstar, sizeof(double));
 
     PROTECT(yout = allocMatrix(REALSXP,mstar+1,nx));incr_N_Protect();
+   if (type == 0) 
 	  for (k = 0; k < nx; k++)
       {          xout = REAL(Xout)[k];
                  REAL(yout)[k*(mstar+1)] = xout;
                  F77_CALL(appsln)(&xout,z,fspace,ispace);
                  for (j=0;j<mstar;j++) REAL(yout)[k*(mstar+1) + j+1] = z[ j];
       }  /* end main x loop */
+    else
+	   for (k = 0; k < nx; k++)
+      {          xout = REAL(Xout)[k];
+                 REAL(yout)[k*(mstar+1)] = xout;
+                 F77_CALL(sysappsln)(&xout,z,fspace,ispace);
+                 for (j=0;j<mstar;j++) REAL(yout)[k*(mstar+1) + j+1] = z[ j];
+      }  /* end main x loop */
+
   ii = ncomp+7;
+  PROTECT(ICOUNT = allocVector(INTSXP, 6));incr_N_Protect();
   PROTECT(ISTATE = allocVector(INTSXP, ii+6));incr_N_Protect();
   INTEGER(ISTATE)[0] = iflag;
+  for (k = 0; k < 6; k++)  INTEGER(ICOUNT)[k] = icount[k];
   for (k = 0; k < 5; k++)  INTEGER(ISTATE)[k+1] = icount[k];
   for (k = 0; k < ii; k++) INTEGER(ISTATE)[k+6] = ispace[k];
   if (FullOut) 
@@ -354,6 +385,7 @@ C....         = -3  If There Is An Input Data Error.
 
   PROTECT(RWORK = allocVector(REALSXP, ii));incr_N_Protect();
   for (k = 0; k<ii; k++) REAL(RWORK)[k] = fspace[k];
+  setAttrib(yout, install("icount"), ICOUNT);
   setAttrib(yout, install("istate"), ISTATE);
   setAttrib(yout, install("rstate"), RWORK); 
   }

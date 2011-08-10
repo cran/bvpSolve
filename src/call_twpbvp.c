@@ -2,8 +2,8 @@
 #include <string.h>
 #include "bvpSolve.h"
 
-/* definition of the calls to the fortran functions - in file twpbvpc.f
-*/
+/* definition of the calls to the fortran functions - in files twpbvpc.f,
+twpbvplc.f, twpbvpa.f */
 
 void F77_NAME(twpbvpc)(int*, int*, double *, double *,
        int *, double *, int *, int *, double *,
@@ -16,7 +16,30 @@ void F77_NAME(twpbvpc)(int*, int*, double *, double *,
 		   void (*)(int *, int *, double *, double *, double *, int *),    /* dgsub(i,n,u,dg,rp,ip) */
        double *, double *, double *, double *, double *, 
        double *, int *, int *, int *, int *, int *, int *, int *,
-       double *, double *, int*);
+       int *, double *, int *, double *, int*);
+
+void F77_NAME(twpbvplc)(int*, int*, double *, double *,
+       int *, double *, int *, int *, double *,
+       int *, int *, int *, int *, int *,
+       double *, int *, double *, int *,
+       int *, double *, int*, int*, double *,
+       void (*)(int *, double *, double *, double *, double *, int *), /* fsub(n,x,u,f,rp,ip)   */
+		   void (*)(int *, double *, double *, double *, double *, int *), /* dfsub(n,x,u,df,rp,ip) */
+		   void (*)(int *, int *, double *, double *, double *, int *),    /* gsub(i,n,u,g,rp,ip)   */
+		   void (*)(int *, int *, double *, double *, double *, int *),    /* dgsub(i,n,u,dg,rp,ip) */
+       double *, double *, double *, double *, double *,
+       double *, int *, int *, int *, int *, int *, int *, int *,
+       int *, double *, int *, double *, int*);
+
+/* wrapper above the derivate function that first estimates the
+values of the forcing functions - when model in compiled code */
+
+static void dll_bvp_deriv_func_forc (int *neq, double *x, double *y,
+                         double *ydot, double *rpar, int *ipar)
+{
+  updatedeforc(x);
+  derfun(neq, x, y, ydot, rpar, ipar);
+}
 
 /* interface between fortran function calls and R functions */
 
@@ -36,19 +59,9 @@ static void C_bvp_deriv_func (int *n,  double *x, double *y, double *ydot,
   my_unprotect(2);
 }
 
-/* wrapper above the derivate function that first estimates the
-values of the forcing functions */
-
-static void C_bvp_deriv_func_forc (int *neq, double *x, double *y,
-                         double *ydot, double *rpar, int *ipar)
-{
-  updatedeforc(x);
-  derfun(neq, x, y, ydot, rpar, ipar);
-}
-
 /* interface between fortran call to jacobian and R function */
 static void C_bvp_jac_func (int *n,  double *x, double *y, double *pd,
-  double * rpar, int * ipar)
+                            double * rpar, int * ipar)
 {
   int i;
   SEXP R_fcall, ans;
@@ -66,7 +79,7 @@ static void C_bvp_jac_func (int *n,  double *x, double *y, double *pd,
 /* interface between fortran call to boundary condition and corresponding R function */
 
 static void C_bvp_bound_func (int *ii, int *n, double *y, double *gout,
-  double * rpar, int * ipar)
+                              double * rpar, int * ipar)
 {
   int i;
   SEXP R_fcall, ans;
@@ -83,7 +96,7 @@ static void C_bvp_bound_func (int *ii, int *n, double *y, double *gout,
 /*interface between fortran call to jacobian of boundary and corresponding R function */
 
 static void C_bvp_jacbound_func (int *ii, int *n, double *y, double *dg,
-     double * rpar, int * ipar)
+                                 double * rpar, int * ipar)
 {
   int i;
   SEXP R_fcall, ans;
@@ -94,7 +107,6 @@ static void C_bvp_jacbound_func (int *ii, int *n, double *y, double *dg,
   PROTECT(ans = eval(R_fcall, R_envir));             incr_N_Protect();
 
   for (i = 0; i < *n ; i++)  dg[i] = REAL(ans)[i];
-  
   my_unprotect(2);
 }
 
@@ -107,7 +119,7 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
     SEXP Rpar, SEXP Ipar, SEXP UseC, 
     SEXP derivfunc, SEXP jacfunc, SEXP boundfunc,
     SEXP jacboundfunc, SEXP Initfunc, SEXP Parms, SEXP flist, 
-    SEXP Type, SEXP rho)
+    SEXP Lobatto, SEXP rho)
 
 {
 /******************************************************************************/
@@ -120,9 +132,9 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
   int  j, ii, ncomp, nlbc, nmax, lwrkfl, lwrkin, nx, *ipar, isForcing;
   double *wrk, *tol, *fixpnt, *u, *xx, *rpar, *precis, *xguess, *yguess;
   double aleft, aright, ckappa1, gamma1, sigma, ckappa, ckappa2; 
-  int  liseries, *iseries, indnms, nxdim, type;
+  int  liseries, *iseries, indnms, nxdim; // type;
   int *ltol, *iwrk, *iset, ntol, iflag, nfixpnt, linear, givmesh, 
-      givu, nmesh, isDll;
+      givu, nmesh, isDll, nugdim, nmshguess, lobatto;
   int full, useC;
   
   /* pointers to functions passed to FORTRAN */
@@ -141,8 +153,8 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
   aleft  =REAL(Aleft)[0];
   aright =REAL(Aright)[0];
 
-  ncomp  = INTEGER(Ncomp)[0];    /* number of equations */
-  type   = INTEGER(Type)[0];     /* 1 = bvptwp */
+  ncomp   = INTEGER(Ncomp)[0];    /* number of equations */
+  lobatto = INTEGER(Lobatto)[0];  /* 0 = bvptwp , 1 = bvptwpl*/
 
   nlbc   = INTEGER(Nlbc)[0];     /* number of left boundary conditions */
   nmax   = INTEGER(Nmax)[0];     /* max number of mesh points */
@@ -246,7 +258,7 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
 	  /* here overruling deriv_func if forcing */
       if (isForcing) {
         derfun =     (C_deriv_func_type *) R_ExternalPtrAddr(derivfunc);
-        deriv_func = (C_deriv_func_type *) C_bvp_deriv_func_forc;
+        deriv_func = (C_deriv_func_type *) dll_bvp_deriv_func_forc;
       }
   } else {      /* interface functions between fortran and R */
       deriv_func = C_bvp_deriv_func;
@@ -268,14 +280,27 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
 */
   liseries = nmax;
   iseries = (int *)    R_alloc(liseries, sizeof(int));
-    
+  nugdim = ncomp;
+  nmshguess = nmesh;
+
+  if (lobatto == 1)
+	F77_CALL(twpbvplc) (&ncomp, &nlbc, &aleft, &aright, &nfixpnt, fixpnt,
+        &ntol, ltol, tol, &linear, &givmesh, &givu, &nmesh, &nxdim, xx,
+        &ncomp, u, &nmax, &lwrkfl, wrk, &lwrkin, iwrk, precis,
+        deriv_func, jac_func, bound_func, jacbound_func,
+        &ckappa1, &gamma1, &sigma, &ckappa, &ckappa2,
+        rpar, ipar, &iflag, &liseries, iseries, &indnms,
+        &full, &useC, &nmshguess, xguess, &nugdim,
+        yguess, iset);
+  else
 	F77_CALL(twpbvpc) (&ncomp, &nlbc, &aleft, &aright, &nfixpnt, fixpnt,
         &ntol, ltol, tol, &linear, &givmesh, &givu, &nmesh, &nxdim, xx,
         &ncomp, u, &nmax, &lwrkfl, wrk, &lwrkin, iwrk, precis,
         deriv_func, jac_func, bound_func, jacbound_func, 
         &ckappa1, &gamma1, &sigma, &ckappa, &ckappa2, 
         rpar, ipar, &iflag, &liseries, iseries, &indnms, 
-        &full, &useC, xguess, yguess, iset);
+        &full, &useC, &nmshguess, xguess, &nugdim,
+        yguess, iset);
 
 /*  iflag - The Mode Of Return From twpbvp  */
 	if (iflag == 4)      {
@@ -299,14 +324,14 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
     for (j = 0; j < ncomp*nx; j++) REAL(yout)[nx+j] =  u[j];
   }
  
-  PROTECT(ISTATE = allocVector(INTSXP, 11));incr_N_Protect();
+  PROTECT(ISTATE = allocVector(INTSXP, 13));incr_N_Protect();
   INTEGER(ISTATE)[0] = iflag;
   for (j = 0; j < 6; j++)
     INTEGER(ISTATE)[1+j] = iset[j];
-  INTEGER(ISTATE)[7] = nmax;
-  INTEGER(ISTATE)[8] = nmesh;
-  INTEGER(ISTATE)[9] = lwrkfl;
-  INTEGER(ISTATE)[10] = lwrkin;
+  INTEGER(ISTATE)[9] = nmax;
+  INTEGER(ISTATE)[10] = nmesh;
+  INTEGER(ISTATE)[11] = lwrkfl;
+  INTEGER(ISTATE)[12] = lwrkin;
     
   setAttrib(yout, install("istate"), ISTATE);
 

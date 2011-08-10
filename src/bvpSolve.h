@@ -5,18 +5,18 @@
 /*============================================================================
   global R variables 
 ============================================================================*/
-SEXP X, Y, J;
+SEXP X, Y, J, EPS;
 
 /*============================================================================
   global C variables 
 ============================================================================*/
 long int nforc;  /* the number of forcings */
 /* use in colnew */
-long int n_eq;   /* number of equations */
-long int ng;     /* number of boundary conditions */
-long int mstar;  /* number of derivates (including higher order ones) */
-long int ml;
-long int nrowpd;
+int n_eq;   /* number of equations */
+int ng;     /* number of boundary conditions */
+int mstar;  /* number of derivates (including higher order ones) */
+int ml;
+int nrowpd;
 
 /* Input data. three vectors:
   tmat, fmat: time, forcing function data value
@@ -35,6 +35,7 @@ double * intpol;
 int    * maxindex;
 
 double * forcings;
+double * epsval;    /* when eps and model in compiled code */
 
 /*============================================================================
  type definitions for C functions
@@ -45,7 +46,10 @@ typedef void C_jac_func_type      (int *, double *, double *,double *, double *,
 typedef void C_jacbound_func_type (int *, int *, double *, double *, double *, int *);
 typedef void C_guess_func_type    (double *, double *, double *);
 
-C_deriv_func_type *derfun;    /* if forcing function */
+C_deriv_func_type    *derfun;    /* if DLL */
+C_bound_func_type    *boundfun;
+C_jac_func_type      *jacfun;
+C_jacbound_func_type *jacboundfun;
 
 /*============================================================================
   solver R- global functions 
@@ -59,6 +63,11 @@ extern SEXP R_bvp_jac_func;
 extern SEXP R_bvp_bound_func;
 extern SEXP R_bvp_jacbound_func;
 extern SEXP R_bvp_guess_func;
+extern SEXP R_cont_deriv_func;
+extern SEXP R_cont_jac_func;
+extern SEXP R_cont_bound_func;
+extern SEXP R_cont_jacbound_func;
+extern SEXP R_cont_guess_func;
 
 extern SEXP R_envir;
 

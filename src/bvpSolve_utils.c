@@ -34,6 +34,11 @@ SEXP R_bvp_jac_func;
 SEXP R_bvp_bound_func;
 SEXP R_bvp_jacbound_func;
 SEXP R_bvp_guess_func;
+SEXP R_cont_deriv_func;
+SEXP R_cont_jac_func;
+SEXP R_cont_bound_func;
+SEXP R_cont_jacbound_func;
+SEXP R_cont_guess_func;
 
 SEXP R_envir;
 SEXP bvp_gparms;
@@ -53,28 +58,23 @@ void initParms(SEXP Initfunc, SEXP Parms) {
     initializer = (init_func *) R_ExternalPtrAddr(Initfunc);
     initializer(Initbvpparms);
   }
-
 }
 
-void Initbvpparms(int *N, double *parms)
-{
+void Initbvpparms(int *N, double *parms) {
   int i, Nparms;
 
   Nparms = LENGTH(bvp_gparms);
-  if ((*N) != Nparms)
-    {
+  if ((*N) != Nparms)  {
       warning("Number of parameters passed to solver, %i; number in DLL, %i\n",Nparms, *N);
       PROBLEM "Confusion over the length of parms"
       ERROR;
-    } 
-  else
-    {
+  }  else  {
       for (i = 0; i < *N; i++) parms[i] = REAL(bvp_gparms)[i];
-    }
+      epsval = parms;     /* set pointer to c globals or fortran common block */
+  }
 }
   
-SEXP get_bvpSolve_gparms(void)
-{
+SEXP get_bvpSolve_gparms(void) {
   return bvp_gparms;
 }
 
@@ -82,8 +82,7 @@ SEXP get_bvpSolve_gparms(void)
  extracting elements from a list
 ===================================================*/
 
-SEXP getListElement(SEXP list, const char *str)
-{
+SEXP getListElement(SEXP list, const char *str)  {
   SEXP elmt = R_NilValue, names = getAttrib(list, R_NamesSymbol);
   int i;
 

@@ -12,7 +12,8 @@
   The functions provide an interface to (1) the FORTRAN code
   twpbvpC written by J.R. Cash, F. Mazzia and M.H. Wright,
   
-  (2) to the FORTRAN code colnew by Bader and Ascher
+  (2) to the FORTRAN codes colnew and colsys by respectively Bader and Ascher
+  and Ascher, Christiansen and Russell,
   
   and (3) also implement a shooting method.
 }
@@ -20,7 +21,7 @@
   \tabular{ll}{
     Package: \tab bvpSolve\cr
     Type:    \tab Package\cr
-    Version: \tab 1.2\cr
+    Version: \tab 1.2.2\cr
     License: \tab GNU Public License 2 or above\cr
   }
 

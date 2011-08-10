@@ -32,6 +32,7 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
 ## ---------------------------
 ## The order of the equations
 ## ---------------------------
+  JacFunc <- jacfunc # save jacfunc for further passing it to ode()
   Func <- func
   testit <- FALSE
   attrib <- rep(0,4) # number of steps, number of fn evaluations, # jacobians ,nr ivp
@@ -90,12 +91,12 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
     else
       y <- yini
       
-    # root function to solve for  
-    rootfun <- function(X,...)  {  
+    # root function to solve for  - note jacfunc = NULL to avoid error in devel R 2.12
+    rootfun <- function(X, jacfunc=NULL, ...)  {  
       times <- c(x[1], x[length(x)])
       Parms <- initparms(X)
       Y     <- inity(X,Parms)
-      out   <- ode(y=Y, times=times, fun=Func, jacfunc=jacfunc, 
+      out   <- ode(y=Y, times=times, func=Func, jacfunc=JacFunc,
                  parms=Parms, method=method,
                  atol=atol, rtol=rtol, ...)
       attrib <<- attrib + c(attributes(out)$istate[c(2,3,14)],1)
@@ -134,16 +135,16 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
     }   
     y <- guess  
   
-    rootfun <- function(X,...)  {  
+    rootfun <- function(X, jacfunc = NULL, ...)  {  
       if (! posspecified) 
          times <- c(x[1], x[length(x)])
       else
          times <- x   
-      out   <- ode(y=X, times=times, fun=Func, jacfunc=jacfunc, 
+      out   <- ode(y=X, times=times, func=Func, jacfunc=JacFunc,
                    parms=parms, method=method,
                    atol=atol, rtol=rtol, ...)
       attrib <<- attrib + c(attributes(out)$istate[c(2,3,14)],1)
-      Res <- vector(len=ly)
+      Res <- vector(length=ly)
       if (! posspecified) {
         Yend <- out[nrow(out),2:(ly+1)]             
         for (i in 1:leftbc) 
@@ -160,7 +161,7 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
     }
     JacBound <- NULL   
     if (! is.null(jacbound)) {  
-      JAC <- matrix(nr=length(y),nc=length(y),0)  
+      JAC <- matrix(nrow=length(y),ncol=length(y),0)
       JacBound <- function(x,...)  {
         for (i in 1:ly) 
           JAC[i,]<- jacbound(i,x,parms,...)
@@ -236,7 +237,7 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
     Y     <-  sol$root
   }
     
-  out <- ode (t=x, fun=Func, y=Y, parms=Parms, method=method, jacfunc=jacfunc, 
+  out <- ode (times=x, func=Func, y=Y, parms=Parms, method=method, jacfunc=jacfunc,
               atol=atol, rtol=rtol, ...)
   attrib <- attrib + c(attributes(out)$istate[c(2,3,14)],1)
 

@@ -17,11 +17,11 @@
 
 \usage{
 bvpshoot(yini = NULL, x, func, yend = NULL, parms = NULL, 
-    order = NULL, guess = NULL,
-    jacfunc = NULL, bound = NULL, jacbound = NULL, 
-    leftbc = NULL, posbound = NULL, ncomp = NULL, 
-    atol = 1e-8, rtol = 1e-8, extra = NULL, 
-    maxiter = 100, positive = FALSE, method = "lsoda",...)
+         order = NULL, guess = NULL,
+         jacfunc = NULL, bound = NULL, jacbound = NULL, 
+         leftbc = NULL, posbound = NULL, ncomp = NULL, 
+         atol = 1e-8, rtol = 1e-8, extra = NULL, 
+         maxiter = 100, positive = FALSE, method = "lsoda",...)
 }
 
 \arguments{

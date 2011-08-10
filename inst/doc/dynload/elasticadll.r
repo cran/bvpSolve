@@ -107,10 +107,10 @@ dyn.load("elastica.dll")
 
 print(system.time(
 for (i in 1:niter)
-outF <- bvptwp(ncomp = 5,
+outF <- bvpcol(ncomp = 5,
                x = seq(0, 0.5, len = 16), leftbc = 3,  
                func = "fsub", jacfunc = "dfsub", bound = "gsub",
-               jacbound = "dgsub",
+               jacbound = "dgsub", xguess = Sol4[,1], yguess = t(Sol4[,-1]),
                dllname = "elastica")
 )/niter)
 

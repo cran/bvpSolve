@@ -3,7 +3,9 @@ c ==============================================================================
 * 1. change all write statements into rprint statements
 * 2. changed all ( ,1) declarations into (,*)
 * 3. changed interface to fsub, gsub to make it compatible with TWPBVPC
+* 3. added rpar, ipar to calls of guess
 * 4. added counters
+* 5. renamed ipar -> iset and solutn -> guess
 c ===================================================================================
 
 C**********************************************************************
@@ -277,13 +279,13 @@ C     the following subroutines must be declared external in the
 C     main program which calls colnew.
 C
 C
+C    karline: changed from FSUB (x , z , f)
 C     FSUB  - name of subroutine for evaluating f(x,z(u(x))) =
 C                            t
 C             (f ,...,f     )  at a point x in (aleft,aright).  it
 C               1      ncomp
 C             should have the heading
-C    karline: changed from FSUB (x , z , f)
-C             to  subroutine FSUB (mstar, x , z , f, rpar, ipar)
+c                  subroutine FSUB (mstar, x , z , f, rpar, ipar)
 C
 C             where f is the vector containing the value of fi(x,z(u))
 C             in the i-th component and                            t
@@ -291,11 +293,11 @@ C                                       z(u(x))=(z(1),...,z(mstar))
 C             is defined as above under  purpose .
 C
 C
+C     karline: changed from subroutine dFSUB (x , z , df)
 C     DFSUB - name of subroutine for evaluating the jacobian of
 C             f(x,z(u)) at a point x.  it should have the heading
-C
-C    karline: changedd from s ubroutine dFSUB (x , z , df)
-C             to dfsub (mstar, x , z , df,rpar, ipar)
+C                dfsub (mstar, x , z , df,rpar, ipar)
+C              
 C             where z(u(x)) is defined as for FSUB and the (ncomp) by
 C             (mstar) array df should be filled by the partial deriv-
 C             atives of f, viz, for a particular call one calculates
@@ -303,13 +305,13 @@ C                                df(i,j) = dfi / dzj, i=1,...,ncomp
 C                                                     j=1,...,mstar.
 C
 C
+C     karline: changed from subroutine GSUB (i , z , g)
 C     GSUB  - name of subroutine for evaluating the i-th component of
 C             g(x,z(u(x))) = g (zeta(i),z(u(zeta(i)))) at a point x =
 C                             i
 C             zeta(i) where 1.le.i.le.mstar. it should have the heading
 C
-C     karline: chnaged from subroutine GSUB (i , z , g)
-C                      to   subroutine GSUB (i , mstar,  z , g, rpar, ipar)
+C                      subroutine GSUB (i , mstar,  z , g, rpar, ipar)
 C
 C             where z(u) is as for FSUB, and i and g=g  are as above.
 C                                                     i
@@ -317,11 +319,11 @@ C             note that in contrast to f in  FSUB , here
 C             only one value per call is returned in g.
 C
 C
+C     karline: changed from subroutine dGSUB (i , z , dg)
 C     dGSUB - name of subroutine for evaluating the i-th row of
 C             the jacobian of g(x,u(x)).  it should have the heading
 C
-C     karline: changed from subroutine dGSUB (i , z , dg)
-C                      to subroutine dGSUB(i, mstar, z, dg, rpar, ipar)
+C                      subroutine dGSUB(i, mstar, z, dg, rpar, ipar)
 C
 C             where z(u) is as for FSUB, i as for GSUB and the mstar-
 C             vector dg should be filled with the partial derivatives
@@ -334,7 +336,7 @@ C             approximation for  z(u(x)) and for dmval(u(x))= vector
 C             of the mj-th derivatives of u(x). it should have the
 C             heading
 C
-C                       subroutine guess (x , z , dmval)
+C                       subroutine guess (x , z , dmval, rpar, ipar)
 C
 C             note that this subroutine is needed only if using
 C             ISET(9) = 1, and then all  mstar  components of z
@@ -496,7 +498,7 @@ c     2                   FSUB, DFSUB, GSUB, DGSUB, GUESS)
       integer nfunc, njac, nstep, nbound, njacbound
       common/coldiag/nfunc, njac, nstep, nbound, njacbound
 
-      CHARACTER(len=100) msg
+      CHARACTER(len=150) msg
 
 C
 C*********************************************************************
@@ -756,9 +758,9 @@ C
 
   259 icount(1) = nfunc
       icount(2) = njac
-      icount(3) = nstep
-      icount(4) = nbound
-      icount(5) = njacbound
+      icount(3) = nbound
+      icount(4) = njacbound
+      icount(5) = nstep
  
       RETURN
 C----------------------------------------------------------------------
@@ -850,7 +852,7 @@ C
      1                ROOT(40), JTOL(40), LTOL(40), NTOL
 C
       EXTERNAL FSUB, DFSUB, GSUB, DGSUB, GUESS
-      CHARACTER(len=100) msg
+      CHARACTER(len=150) msg
 
 C
 C...  constants for control of nonlinear iteration
@@ -1482,7 +1484,7 @@ C
       COMMON /COLBAS/ B(28), ACOL(28,7), ASAVE(28,4)
       COMMON /COLEST/ TOL(40), WGTMSH(40), WGTERR(40), TOLIN(40),
      1                ROOT(40), JTOL(40), LTOL(40), NTOL
-      CHARACTER (len = 100) msg 
+      CHARACTER (len = 150) msg 
 C
       NFXP1 = NFXPNT +1
       GO TO (180, 100, 50, 20, 10), MODE
@@ -1976,7 +1978,7 @@ C
       COMMON /COLBAS/ B(28), ACOL(28,7), ASAVE(28,4)
       COMMON /COLEST/ TOL(40), WGTMSH(40), WGTERR(40), TOLIN(40),
      1                ROOT(40), JTOL(40), LTOL(40), NTOL
-      CHARACTER (len = 100) msg 
+      CHARACTER (len = 150) msg 
 
 C
 C...  error estimates are to be generated and tested
@@ -2126,7 +2128,7 @@ C
       COMMON /COLBAS/ B(28), ACOL(28,7), ASAVE(28,4)
 C
       EXTERNAL DFSUB, DGSUB
-      CHARACTER(len=100) msg
+      CHARACTER(len=150) msg
       integer nfunc, njac, nstep, nbound, njacbound
       common/coldiag/nfunc, njac, nstep, nbound, njacbound
 
@@ -2204,7 +2206,7 @@ C
 C
 C...       case where user provided current approximation
 C
-           CALL GUESS (XII, ZVAL, DMVAL)
+           CALL GUESS (XII, ZVAL, DMVAL, RPAR, IPAR)
            GO TO 110
 C
 C...       other nonlinear case
@@ -2248,7 +2250,7 @@ C
 C
 C...         use initial approximation provided by the user.
 C
-             CALL GUESS (XCOL, ZVAL, DMZO(IRHS) )
+             CALL GUESS (XCOL, ZVAL, DMZO(IRHS) , RPAR, IPAR)
              GO TO 170
 C
 C...         find  rhs  values
@@ -2318,7 +2320,7 @@ C
 C
 C...       case where user provided current approximation
 C
-           CALL GUESS (ARIGHT, ZVAL, DMVAL)
+           CALL GUESS (ARIGHT, ZVAL, DMVAL, RPAR, IPAR)
            GO TO 250
 C
 C...       other nonlinear case
@@ -2816,7 +2818,7 @@ C
       DIMENSION Z(*), DMZ(*), BM(4), COEF(*)
 C
       COMMON /COLOUT/ PRECIS, IOUT, IPRINT
-      CHARACTER (len = 100) msg 
+      CHARACTER (len = 150) msg 
 
 C
       GO TO (10, 30, 80, 90), MODE

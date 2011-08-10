@@ -90,7 +90,8 @@
 
 <<preliminaries,echo=FALSE,results=hide>>=
 library("bvpSolve")
-options(prompt = "> ")
+options(prompt = " ")
+options(continue = "  ")
 options(width=70)
 @ 
 
@@ -152,13 +153,11 @@ options(width=70)
   the even problems will be solved in higher-order form.
 \section{Linear problems}
 \subsection{problem 1}
-
   This problem is:
   \begin{eqnarray*}
     \xi y'' -y = 0 \\
     y_{(x=0)} = 1, y_{(x=1)} = 0
   \end{eqnarray*}
-
   which is rewritten as:
   \begin{eqnarray*}
     y_1' = y2 \\
@@ -170,42 +169,40 @@ Prob1 <- function(t, y, pars) {
    list(c( y[2] , y[1]/xi ))
 }
 @
-  which is solved for different values of $\xi$
+This is solved for different values of $\xi$
 <<>>=
 xi <- 0.1
 print(system.time(
-  shoot <- bvpshoot(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by=0.01),
+  mod1 <- bvpshoot(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by=0.01),
             func = Prob1, guess = 0)))
 print(system.time(
-  twp <- bvptwp(yini = c(1, NA),yend=c(0, NA),x = seq(0, 1, by = 0.01),
+  mod1 <- bvptwp(yini = c(1, NA),yend=c(0, NA),x = seq(0, 1, by = 0.01),
             func = Prob1)))
 print(system.time(
-  col <- bvpcol(yini = c(1, NA),yend=c(0, NA),x = seq(0, 1, by = 0.01),
+  mod1 <- bvpcol(yini = c(1, NA),yend=c(0, NA),x = seq(0, 1, by = 0.01),
             func = Prob1)))
 @
 for smaller $\xi$
 <<>>=
 xi <-0.01
-shoot2  <- bvpshoot(yini=c(1,NA),yend=c(0,NA),x=seq(0,1,by=0.01),
-            func=Prob1, guess=0)
+mod2  <- bvptwp(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
+            func = Prob1)
 @
 and for a very small value
 <<>>=
 xi <-0.001
-shoot3  <- bvpshoot(yini=c(1,NA),yend=c(0,NA),x=seq(0,1,by=0.01),
-           func=Prob1, guess=0)
+mod3  <- bvptwp(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
+           func = Prob1)
 @
 and the output plotted
 <<label=prob1,include=FALSE>>=
-plot(shoot[,1],shoot[,2],type="l",main="test problem 1",col="blue",
-  xlab="x",ylab="y")
-lines(shoot2[,1],shoot2[,2],col="red")
-lines(shoot3[,1],shoot3[,2],col="green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 1")
+
 # exact solution
 curve(exp(-x/sqrt(xi))-exp((x-2)/sqrt(xi))/(1-exp(-2/sqrt(xi))),
-      0,1,add=TRUE,type="p")
+      0, 1, add = TRUE, type = "p")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob1,fig=TRUE,echo=FALSE>>=
@@ -218,46 +215,39 @@ curve(exp(-x/sqrt(xi))-exp((x-2)/sqrt(xi))/(1-exp(-2/sqrt(xi))),
 \clearpage
 
 \subsection{problem 2}
-  This problem is:
   \begin{eqnarray*}
     \xi y'' -y' = 0 \\
     y_{(x=0)} = 1, y_{(x=1)} = 0
   \end{eqnarray*}
-
-  It is solved in higher-order form.
-
+It is solved in higher-order form.
 <<>>=
 Prob2 <- function(t, y, pars) {
   list( y[2]/xi )
 }
-
 xi <-0.2
-shoot <- bvpshoot(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
+mod1 <- bvpshoot(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
                   order = 2, func = Prob2, guess = 0)
 @
 For lower values of $\xi$ (<0.1) this problem cannot be solved by the shooting
 method, but it is solvable by mono-implicit Runge-Kutta and collocation
 <<>>=
 xi <-0.1
-twp   <- bvptwp(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
                 order = 2, func = Prob2, atol = 1e-10)
 xi <- 0.01
-twp2  <- bvptwp(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
                 order = 2, func = Prob2, atol = 1e-10)
 xi <- 0.001
-col1  <- bvpcol(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
+mod4 <- bvpcol(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
                 order = 2, func = Prob2, atol = 1e-10)
 @
 The solution can be compared with the analytical solution:
 <<label=prob2,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 2",
-  col = "blue", xlab = "x", ylab = "y")
-lines(twp[,1], twp[,2], col = "red")
-lines(twp2[,1], twp2[,2], col = "green")
+plot(mod1, mod2, mod3, mod4, which = 1, lty = 1, main = "test problem 2")
 xi <- 0.01
 curve((1-exp((x-1)/xi))/(1-exp(-1/xi)), 0, 1, type = "p", add = TRUE)
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.32\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob2,fig=TRUE,echo=FALSE>>=
@@ -275,7 +265,6 @@ curve((1-exp((x-1)/xi))/(1-exp(-1/xi)), 0, 1, type = "p", add = TRUE)
     (2+\cos (\pi x)) \pi \sin(\pi x) \\
     y_{(x=-1)} = y_{(x=1)} = -1
   \end{eqnarray*}
-
 <<>>=
 Prob3 <- function(x, y, pars) {
   list(c( y[2],
@@ -287,26 +276,22 @@ Prob3 <- function(x, y, pars) {
 @
 <<>>=
 xi <-0.1
-shoot  <- bvpshoot(yini = c(-1, NA), yend = c(-1, NA), 
+mod1 <- bvpshoot(yini = c(-1, NA), yend = c(-1, NA), 
                    x = seq(-1, 1, by=0.01), func = Prob3, guess = 0)
 @
 <<>>=
 xi <-0.01
-twp    <- bvptwp(yini = c(-1, NA), yend = c(-1, NA), 
+mod2 <- bvptwp(yini = c(-1, NA), yend = c(-1, NA), 
                  x = seq(-1, 1, by=0.01), func = Prob3)
-           
 xi <-0.001
-col1   <- bvpcol(yini = c(-1, NA), yend = c(-1, NA), 
+mod3 <- bvpcol(yini = c(-1, NA), yend = c(-1, NA), 
                  x = seq(-1, 1, by=0.01), func = Prob3)
-
 @
 <<label=prob3,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 3",
-     col = "blue", xlab = "x", ylab = "y")
-lines(twp[,1], twp[,2], col = "red")
-curve(cos(pi*x),-1,1,type="p",add=TRUE)
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 3")
+curve(cos(pi*x), -1, 1, type = "p", add = TRUE)
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob3,fig=TRUE,echo=FALSE>>=
@@ -324,42 +309,32 @@ curve(cos(pi*x),-1,1,type="p",add=TRUE)
     y_{(x=-1)} = 1+ exp(-2) \\
     y_{(x=1)} = 1 + exp(-2(1+\xi)/\xi)
   \end{eqnarray*}
-
   It is solved in higher-order form.
-
 <<>>=
 Prob4 <- function(t, y, pars) {
   list((-y[2] + (1+xi)*y[1])/xi )
 }
+yini <- c(1 + exp(-2), NA)
 @
 <<>>=
-yini <- c(1 + exp(-2), NA)
-
 xi   <- 0.5
 yend <- c(1 + exp(-2*(1+xi)/xi), NA)
-shoot  <- bvpshoot(yini = yini,yend = yend,x = seq(-1, 1, by = 0.01),
+mod1  <- bvpshoot(yini = yini, yend = yend, x = seq(-1, 1, by = 0.01),
                    order = 2, func = Prob4, guess = 0)
-@
-<<>>=
 xi   <- 0.1
 yend <- c(1 + exp(-2*(1+xi)/xi), NA)
-twp    <- bvptwp(yini = yini,yend = yend,x = seq(-1, 1, by = 0.01),
+mod2  <- bvptwp(yini = yini, yend = yend, x = seq(-1, 1, by = 0.01),
                  order = 2, func = Prob4)
-@
-<<>>=
 xi <- 0.01
 yend <- c(1 + exp(-2*(1+xi)/xi), NA)
-twp2    <- bvptwp(yini = yini,yend = yend,x = seq(-1, 1, by = 0.01),
+mod3  <- bvptwp(yini = yini,yend = yend,x = seq(-1, 1, by = 0.01),
                   order = 2, func = Prob4)
 @
 <<label=prob4,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 4",
-  ylim = c(0, 1.2), col = "blue", xlab = "x", ylab="y")
-lines(twp[,1], twp[,2],col = "red")
-lines(twp2[,1], twp2[,2],col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 4")
 curve(exp(x-1) + exp(-(1+xi)*(1+x)/xi), -1, 1, type = "p", add = TRUE)
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.32\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob4,fig=TRUE,echo=FALSE>>=
@@ -386,19 +361,18 @@ Prob5 <- function(x, y, pars) {
 @
 <<>>=
 xi <- 0.1
-shoot  <- bvpshoot(yini = c(-1, NA), yend = c(-1, NA),
+mod1 <- bvpshoot(yini = c(-1, NA), yend = c(-1, NA),
                    x=seq(-1, 1, by = 0.01), func = Prob5, guess = 0)
 @
 <<>>=
-twp    <- bvptwp(yini = c(-1, NA), yend = c(-1, NA),
+mod2 <- bvptwp(yini = c(-1, NA), yend = c(-1, NA),
                  x=seq(-1, 1, by = 0.01), func = Prob5)
 @
 <<label=prob5,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l",main = "test problem 5",
-  col = "blue", xlab = "x", ylab = "y")
+plot(mod1, mod2, which = 1, lty = 1, main = "test problem 5")
 curve(cos(pi*x), -1, 1, type = "p", add = TRUE)
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob5,fig=TRUE,echo=FALSE>>=
@@ -411,15 +385,13 @@ curve(cos(pi*x), -1, 1, type = "p", add = TRUE)
 \clearpage
 
 \subsection{problem 6}
-
   \begin{eqnarray*}
     \xi y'' + x y' = -\xi \pi^2 \cos(\pi x) -
     \pi x \sin(\pi x) \\
     y_{(x=-1)} = -2 \\
     y_{(x=1)} = 0
   \end{eqnarray*}
-  It is solved in higher-order form.
-
+It is solved in higher-order form.
 
 This problem cannot be solved by the shooting method, except for the largest
 value of xi
@@ -430,32 +402,23 @@ Prob6 <- function(t, y, pars) {
 @
 <<>>=
 xi    <- 0.1
-shoot <- bvpshoot(yini = c(-2, NA), yend = c(0, NA), 
+mod1 <- bvpshoot(yini = c(-2, NA), yend = c(0, NA), 
             order = 2, x = seq(-1, 1, by = 0.01), func = Prob6, guess = 0)
-@
-<<>>=
 xi    <- 0.01
-twp   <- bvptwp(yini = c(-2, NA), yend = c(0, NA), 
+mod2 <- bvptwp(yini = c(-2, NA), yend = c(0, NA), 
             order = 2, x = seq(-1, 1, by = 0.01), func = Prob6)
-@
-<<>>=
 xi    <- 0.001
-twp2  <- bvptwp(yini = c(-2, NA), yend = c(0, NA), 
+mod3 <- bvptwp(yini = c(-2, NA), yend = c(0, NA), 
             order = 2, x = seq(-1, 1, by = 0.01), func = Prob6)
 @
-
 <<label=prob6,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 6",
-     ylim  = c(-2, 2), col = "blue", xlab = "x", ylab = "y")
-lines(twp[,1], twp[,2], col = "red")
-lines(twp2[,1], twp2[,2], col = "green")
-
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 6")
 erf <- function(x) 2 * pnorm(x * sqrt(2)) - 1
 curve(cos(pi*x) + erf(x/sqrt(2*xi))/erf(1/sqrt(2*xi)), -1, 1, 
       type = "p", add = TRUE)
 
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob6,fig=TRUE,echo=FALSE>>=
@@ -477,42 +440,30 @@ This problem cannot be solved with the shooting method for small xi.
 <<>>=
 prob7 <- function(x, y, pars) {
   list(c(y[2],
-         1/xi * (-x*y[2]+y[1] - (1+xi*pi*pi)*cos(pi*x)-pi*x*sin(pi*x)))
-     )
+     1/xi * (-x*y[2]+y[1] - (1+xi*pi*pi)*cos(pi*x)-pi*x*sin(pi*x)))   )
 }
 
 x  <- seq(-1, 1, by = 0.01)
 @
 <<>>=
-
 xi   <- 0.01
-twp  <- bvptwp(yini = c(-1, NA), yend = c(1, NA), x = x, func = prob7)
-@
-<<>>=
+mod1  <- bvptwp(yini = c(-1, NA), yend = c(1, NA), x = x, func = prob7)
 xi   <- 0.001
-twp2 <- bvptwp(yini = c(-1, NA), yend = c(1, NA), x = x, func = prob7)
+mod2 <- bvptwp(yini = c(-1, NA), yend = c(1, NA), x = x, func = prob7)
 @
 For even smaller $\xi$, we need to provide good initial guesses:
 <<>>=
 xi <- 0.0005
-twp3  <- bvptwp(yini = c(-1, NA), yend = c(1, NA), x = x, func = prob7,
-  xguess = twp2[,1], yguess = t(twp2[,-1]))
-
+mod3  <- bvptwp(yini = c(-1, NA), yend = c(1, NA), x = x, func = prob7,
+  xguess = mod2[,1], yguess = t(mod2[,-1]))
 @
 <<label=prob7,include=FALSE>>=
-par(mfrow = c(1,2))
-plot(twp[,1], twp[,2], type = "l", main = "test problem 7",
-  col = "blue", xlab = "x", ylab = "y")
+plot(mod1, mod2, mod3, which = c(2,1), type = "l", lty = 1,
+     main = c("dy", "y"), xlab = "x", ylab = "y")
 erf <- function(x) 2 * pnorm(x * sqrt(2)) - 1
 curve(cos(pi*x) + x + (x*erf(x/sqrt(2*xi))+sqrt(2*xi/pi)*exp(-x^2/2/xi))/
          (erf(1/(2*xi))+sqrt(2*xi/pi)*exp(-1/2/xi)),
          -1, 1, type = "p", add = TRUE)
-
-plot(twp[,1], twp[,3], type = "l", main = "test problem 7",
-  col = "blue", xlab = "x", ylab = "y'")
-lines(twp2[,1], twp2[,3], col = "red")
-lines(twp3[,1], twp3[,3], col = "green")
-par(mfrow = c(1,1))
 @
 
 \setkeys{Gin}{width=0.8\textwidth}
@@ -521,7 +472,6 @@ par(mfrow = c(1,1))
 <<label=prob7,fig=TRUE,echo=FALSE, width=13, height=6>>=
 <<prob7>>
 @
-
 \end{center}
 \caption{Solution of the BVP ODE problem 7, y and y' versus x- see text for R-code}
 \label{fig:pr7}
@@ -534,8 +484,7 @@ par(mfrow = c(1,1))
     y(0) &=& 1 \\
     y(1) &=& 2
   \end{eqnarray*}
-  It is solved in higher-order form.
-
+It is solved in higher-order form.
 <<>>=
 prob8 <- function(x, y, pars) {
   list(-1/xi*y[2])
@@ -545,32 +494,22 @@ x  <- seq(0,1,by=0.01)
 @
 <<>>=
 xi    <- 0.2
-shoot <- bvpshoot(yini = c(1, NA), yend = c(2, NA), x = x,
+mod1 <- bvpshoot(yini = c(1, NA), yend = c(2, NA), x = x,
                   order = 2, func = prob8, guess = 0)
-@
-<<>>=
 xi   <- 0.1
-twp  <- bvptwp(yini = c(1, NA), yend = c(2, NA), x = x,
+mod2 <- bvptwp(yini = c(1, NA), yend = c(2, NA), x = x,
                   order = 2, func = prob8)
-@
-<<>>=
 xi   <- 0.01
-twp2 <- bvptwp(yini = c(1, NA), yend = c(2, NA), x = x,
+mod3 <- bvptwp(yini = c(1, NA), yend = c(2, NA), x = x,
                   order = 2, func = prob8)
 @
 <<label=prob8,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 8",
-  col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp[,1], twp[,2], col = "green")
-
-# analytical solution
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 8")
 curve(2-exp(-1/xi)-exp(-x/xi)/(1-exp(-1/xi)), 
       0, 1, add = TRUE, type = "p")
-
 @
 
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob8,fig=TRUE,echo=FALSE>>=
@@ -580,15 +519,13 @@ curve(2-exp(-1/xi)-exp(-x/xi)/(1-exp(-1/xi)),
 \caption{Solution of the BVP ODE problem 8, see text for R-code}
 \label{fig:pr8}
 \end{figure}
+\clearpage
 
 \subsection{problem 9}
-
   \begin{eqnarray*}
     (\xi + x^2) y'' + 4 x y' + 2 y = 0 \\
     y_{(x=-1)} = y_{(x=1)} = 1/(1+\xi)
   \end{eqnarray*}
-
-
 This problem cannot be solved by the shooting method
 <<>>=
 Prob9 <- function(x, y, pars) {
@@ -597,29 +534,25 @@ Prob9 <- function(x, y, pars) {
 @
 <<>>=
 xi   <-0.05
-twp  <- bvptwp(yini = c(1/(1+xi), NA), yend = c(1/(1+xi), NA),
+mod1 <- bvptwp(yini = c(1/(1+xi), NA), yend = c(1/(1+xi), NA),
                x = seq(-1, 1, by = 0.01), func = Prob9)
 @
 <<>>=
 xi   <-0.02
-twp2 <- bvptwp(yini = c(1/(1+xi), NA), yend = c(1/(1+xi), NA),
+mod2 <- bvptwp(yini = c(1/(1+xi), NA), yend = c(1/(1+xi), NA),
                x = seq(-1, 1, by = 0.01), func = Prob9)
 @
 <<>>=
 xi   <-0.01
-twp3 <- bvptwp(yini = c(1/(1+xi), NA), yend = c(1/(1+xi), NA),
+mod3 <- bvptwp(yini = c(1/(1+xi), NA), yend = c(1/(1+xi), NA),
                x = seq(-1, 1, by = 0.01), func = Prob9)
 @
-
 <<label=prob9,include=FALSE>>=
-plot(twp[,1], twp[,2], type = "l", main = "test problem 9", 
-     ylim = c(0, 100), col = "blue", xlab = "x", ylab="y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp3[,1], twp3[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 9")
 # exact
 curve(1/(xi+x^2), -1, 1, type = "p", add = TRUE)
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob9,fig=TRUE,echo=FALSE>>=
@@ -639,7 +572,6 @@ curve(1/(xi+x^2), -1, 1, type = "p", add = TRUE)
     y_{(x= 1)} = 2
   \end{eqnarray*}
   It is solved in higher-order form.
-
 <<>>=
 Prob10 <- function(x, y, pars) {
   list( -1/xi*x*y[2] )
@@ -647,30 +579,23 @@ Prob10 <- function(x, y, pars) {
 @
 <<>>=
 xi    <-0.1
-shoot <- bvpshoot(yini = c(0, NA), yend = c(2, NA), 
+mod1 <- bvpshoot(yini = c(0, NA), yend = c(2, NA), 
            order = 2, x = seq(-1, 1, by = 0.01), func=Prob10, guess = 0)
-@
-<<>>=
 xi   <- 0.05
-twp  <- bvptwp(yini = c(0, NA), yend = c(2, NA), 
+mod2 <- bvptwp(yini = c(0, NA), yend = c(2, NA), 
            order = 2, x = seq(-1, 1, by = 0.01), func=Prob10)
-@
-<<>>=
 xi   <- 0.01
-twp2 <- bvptwp(yini = c(0, NA), yend = c(2, NA), 
+mod3 <- bvptwp(yini = c(0, NA), yend = c(2, NA), 
            order = 2, x = seq(-1, 1, by = 0.01), func=Prob10)
 @
 <<label=prob10,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 10",
-     col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp[,1], twp[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 10")
+
 erf <- function(x) 2 * pnorm(x * sqrt(2)) - 1
 curve(1+erf(x/sqrt(2*xi))/erf(1/sqrt(2*xi)),
       -1, 1, type = "p", add = TRUE)
-
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob10,fig=TRUE,echo=FALSE>>=
@@ -696,27 +621,20 @@ Prob11 <- function(x, y, pars) {
 @
 <<>>=
 xi <-0.1
-# Shooting
 print(system.time(
-shoot  <- bvpshoot(yini = c(-1, NA), yend = c(-1, NA), guess = 0,
+mod1 <- bvpshoot(yini = c(-1, NA), yend = c(-1, NA), guess = 0,
                    x = seq(-1, 1, by=0.01), func = Prob11, atol = 1e-10)
 ))
-@
-<<>>=
 print(system.time(
-twp  <- bvptwp(yini = c(-1, NA), yend = c(-1, NA),
+mod2 <- bvptwp(yini = c(-1, NA), yend = c(-1, NA),
                x = seq(-1, 1, by=0.01), func = Prob11, atol = 1e-10)
 ))
 @
 <<label=prob11,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 11",
-     col = "blue", xlab = "x", ylab = "y")
-lines(twp[,1], twp[,2], col = "green")
-
+plot(mod1, mod2, which = 1, lty = 1, main = "test problem 11")
 curve(cos(pi*x), -1, 1, type = "p", add= TRUE)
-
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.32\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob11,fig=TRUE,echo=FALSE>>=
@@ -736,7 +654,6 @@ curve(cos(pi*x), -1, 1, type = "p", add= TRUE)
     y_{(x= 1)} = 0
   \end{eqnarray*}
   It is solved in higher-order form.
-
 <<>>=
 Prob12 <- function(x, y, pars) {
   list(1/xi * (y[1]-(xi*pi*pi+1)*cos(pi*x)))
@@ -744,30 +661,25 @@ Prob12 <- function(x, y, pars) {
 @
 <<>>=
 xi    <- 0.01
-shoot <- bvpshoot(yini = c(-1, NA), yend = c(0, NA),
+mod1 <- bvpshoot(yini = c(-1, NA), yend = c(0, NA),
            order = 2, x = seq(-1, 1, by = 0.01), func = Prob12, guess = 0)
 @
 <<>>=
 xi   <- 0.0025
-twp  <- bvptwp(yini = c(-1, NA), yend = c(0, NA),
+mod2 <- bvptwp(yini = c(-1, NA), yend = c(0, NA),
            order = 2, x = seq(-1, 1, by = 0.01), func = Prob12)
 @
 <<>>=
 xi   <- 0.0001
-twp2 <- bvptwp(yini = c(-1, NA), yend = c(0, NA),
+mod3 <- bvptwp(yini = c(-1, NA), yend = c(0, NA),
            order = 2, x = seq(-1, 1, by = 0.01), func = Prob12)
-
 @
 <<label=prob12,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main="test problem 12",
-     col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp[,1], twp[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 12")
 curve(cos(pi*x)+exp((x-1)/sqrt(xi)), 
       -1, 1, type = "p", add = TRUE)
-
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob12,fig=TRUE,echo=FALSE>>=
@@ -795,29 +707,25 @@ Prob13 <- function(x, y, pars)  {
 @
 <<>>=
 xi    <- 0.01
-shoot <- bvpshoot(yini = c(0, NA), yend = c(-1, NA),
+mod1 <- bvpshoot(yini = c(0, NA), yend = c(-1, NA),
                   x = seq(-1, 1, by=0.01), func = Prob13, guess = 0)
 @
 <<>>=
 xi   <- 0.0025
-twp  <- bvptwp(yini = c(0, NA), yend = c(-1, NA),
+mod2 <- bvptwp(yini = c(0, NA), yend = c(-1, NA),
                x = seq(-1, 1, by=0.01), func = Prob13)
 @
 <<>>=
 xi    <- 0.0001
-twp2  <- bvptwp(yini = c(0, NA), yend = c(-1, NA),
+mod3 <- bvptwp(yini = c(0, NA), yend = c(-1, NA),
                 x = seq(-1, 1, by=0.01), func = Prob13)
 @
 <<label=prob13,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 13",
-     col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp[,1], twp[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 13")
 curve(cos(pi*x)+exp(-(x+1)/sqrt(xi)), 
       -1, 1, type = "p", add = TRUE)
-
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob13,fig=TRUE,echo=FALSE>>=
@@ -837,7 +745,6 @@ curve(cos(pi*x)+exp(-(x+1)/sqrt(xi)),
     y_{(x= 1)} = 0
   \end{eqnarray*}
   It is solved in higher-order form.
-
 <<>>=
 Prob14 <- function(x, y, pars)  {
   list(1/xi*(y[1]-(xi*pi*pi+1)*cos(pi*x)))
@@ -845,29 +752,25 @@ Prob14 <- function(x, y, pars)  {
 @
 <<>>=
 xi    <- 0.01
-shoot <- bvpshoot(yini = c(0, NA), yend = c(0, NA), 
-            order = 2, x = seq(-1, 1, by = 0.01), func = Prob14, guess = 0)
+mod1 <- bvpshoot(yini = c(0, NA), yend = c(0, NA), 
+         order = 2, x = seq(-1, 1, by = 0.01), func = Prob14, guess = 0)
 @
 <<>>=
 xi   <- 0.0025
-twp  <- bvptwp(yini = c(0, NA), yend = c(0, NA), 
+mod2 <- bvptwp(yini = c(0, NA), yend = c(0, NA), 
             order = 2, x = seq(-1, 1, by = 0.01), func = Prob14)
 @
 <<>>=
 xi    <- 0.0001
-twp2  <- bvptwp(yini = c(0, NA), yend = c(0, NA), 
+mod3 <- bvptwp(yini = c(0, NA), yend = c(0, NA), 
             order = 2, x = seq(-1, 1, by = 0.01), func = Prob14)
 @
 <<label=prob14,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 14", 
-     ylim = c(-1, 1), col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp[,1], twp[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 14")
 curve(cos(pi*x)+exp((x-1)/sqrt(xi))+exp(-(x+1)/sqrt(xi)),
       -1, 1, type = "p", add = TRUE)
-
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob14,fig=TRUE,echo=FALSE>>=
@@ -878,53 +781,46 @@ curve(cos(pi*x)+exp((x-1)/sqrt(xi))+exp(-(x+1)/sqrt(xi)),
 \label{fig:pr14}
 \end{figure}
 \clearpage
-
 \subsection{problem 15}
   \begin{eqnarray*}
     \xi y'' - x y = 0\\
     y_{(x=-1)} = y_{(x=1)} = 1
   \end{eqnarray*}
-
 <<>>=
 Prob15 <- function(x, y, pars)  {
   list(c( y[2], 1/xi*x*y[1] ))
 }
-
 @
 <<>>=
 xi <-0.003
 print(system.time(
-shoot  <- bvpshoot(yini = c(1, NA), yend = c(1, NA),
+mod1 <- bvpshoot(yini = c(1, NA), yend = c(1, NA),
                    x = seq(-1, 1, by = 0.01), func = Prob15, guess = 0)
 ))
 @
 <<>>=
 xi <- 0.005
 print(system.time(
-twp  <- bvptwp(yini = c(1, NA), yend = c(1, NA),
+mod2 <- bvptwp(yini = c(1, NA), yend = c(1, NA),
                x = seq(-1, 1, by = 0.01), func = Prob15)
 ))
 xi <- 0.005
 print(system.time(
-col  <- bvpcol(yini = c(1, NA), yend = c(1, NA),
+mod3 <- bvpcol(yini = c(1, NA), yend = c(1, NA),
                x = seq(-1, 1, by = 0.01), func = Prob15)
 ))
-
 @
 <<>>=
 xi <- 0.01
 print(system.time(
-twp2  <- bvptwp(yini = c(1, NA), yend = c(1, NA),
+mod4 <- bvptwp(yini = c(1, NA), yend = c(1, NA),
             x = seq(-1, 1, by = 0.01), func = Prob15)
 ))
 @
 <<label=prob15,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 15",
-     col = "blue", xlab = "x", ylab = "y")
-lines(twp[,1], twp[,2], col = "red")
-lines(twp2[,1], twp2[,2], col = "green")
+plot(mod1, mod2, mod3, mod4, which = 1, lty = 1, main = "test problem 15")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob15,fig=TRUE,echo=FALSE>>=
@@ -943,7 +839,6 @@ lines(twp2[,1], twp2[,2], col = "green")
     y_{(x=1)} = \sin(\pi / (2 \xi))
   \end{eqnarray*}
   It is solved in higher-order form.
-
 <<>>=
 Prob16 <- function(x, y, pars) {
   list(-1/xi^2*pi^2*y[1]/4 )
@@ -952,17 +847,16 @@ Prob16 <- function(x, y, pars) {
 <<>>=
 xi <-0.11
 print(system.time(
-shoot  <- bvpshoot(yini = c(0,NA),yend = c(sin(pi/2/xi), NA),
+mod1 <- bvpshoot(yini = c(0,NA),yend = c(sin(pi/2/xi), NA),
                    x = seq(0, 1, by=0.01), func = Prob16, guess = 0, 
                    order = 2, atol = 1e-10)
 ))
 @
 <<label=prob16,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 16",
-     col = "blue", xlab = "x", ylab = "y")
+plot(mod1, which = 1, main = "test problem 16", col = "blue")
 curve(sin(pi*x/2/xi), 0, 1, type = "p", add = TRUE)
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob16,fig=TRUE,echo=FALSE>>=
@@ -973,15 +867,12 @@ curve(sin(pi*x/2/xi), 0, 1, type = "p", add = TRUE)
 \label{fig:pr16}
 \end{figure}
 \clearpage
-
  \subsection{problem 17}
   \begin{eqnarray*}
    y'' =-3 \xi y/(\xi +x^2)^2\\
    y_{(x=0.1)} = -y(-0.1) = \frac{0.1}{\sqrt(\xi + 0.01)}
   \end{eqnarray*}
-
 only bvptwp works.
-
 <<>>=
 Prob17 <- function(x, y, pars)  {
   list(c( y[2], -3*xi*y[1]/(xi+x^2)^2 ))
@@ -990,31 +881,24 @@ Prob17 <- function(x, y, pars)  {
 xseq <- seq(-0.1, 0.1, by = 0.001)
 @
 <<>>=
-xi    <- 0.01
-twp1  <- bvptwp(yini = c(-0.1/sqrt(xi+0.01), NA),
+xi   <- 0.01
+mod1 <- bvptwp(yini = c(-0.1/sqrt(xi+0.01), NA),
                 yend = c(0.1/sqrt(xi+0.01), NA), x = xseq,
                 func = Prob17, atol = 1e-10)
-@
-<<>>=
-xi    <- 0.001
-twp2  <- bvptwp(yini = c(-0.1/sqrt(xi+0.01), NA),
+xi   <- 0.001
+mod2 <- bvptwp(yini = c(-0.1/sqrt(xi+0.01), NA),
                 yend = c(0.1/sqrt(xi+0.01), NA), x = xseq,
                 func = Prob17, atol = 1e-8)
-@
-<<>>=
-xi    <- 0.0001
-twp3  <- bvptwp(yini = c(-0.1/sqrt(xi+0.01), NA),
+xi   <- 0.0001
+mod3 <- bvptwp(yini = c(-0.1/sqrt(xi+0.01), NA),
                 yend = c(0.1/sqrt(xi+0.01), NA), x = xseq,
                 func = Prob17, atol = 1e-8)
 @
 <<label=prob17,include=FALSE>>=
-plot(twp1[,1], twp1[,2], type = "l", main = "test problem 17",
-     ylim = c(-1, 1), col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp3[,1], twp3[,2], col = "red")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 17")
 curve(x/sqrt(xi+x^2), -0.1, 0.1, type = "p", add = TRUE)
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.32\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob17,fig=TRUE,echo=FALSE>>=
@@ -1025,8 +909,6 @@ curve(x/sqrt(xi+x^2), -0.1, 0.1, type = "p", add = TRUE)
 \label{fig:pr17}
 \end{figure}
 \clearpage
-
-
  \subsection{problem 18}
   \begin{eqnarray*}
    \xi y'' =-y'\\
@@ -1034,7 +916,6 @@ curve(x/sqrt(xi+x^2), -0.1, 0.1, type = "p", add = TRUE)
    y_{(x=1)} = exp(-1 / \xi)
    \end{eqnarray*}
   It is solved in higher-order form.
-
 <<>>=
 Prob18 <- function(x, y, pars) {
   list( -1/xi*y[2])  
@@ -1044,27 +925,24 @@ xseq<-seq(0,1,by=0.01)
 @
 <<>>=
 xi <-0.2
-shoot  <- bvpshoot(yini = c(1, NA), yend = c(exp(-1/xi), NA), x = xseq,
+mod1 <- bvpshoot(yini = c(1, NA), yend = c(exp(-1/xi), NA), x = xseq,
               order = 2, func = Prob18, guess = 0, atol = 1e-10)
 @
 <<>>=
 xi <- 0.1
-twp  <- bvptwp(yini = c(1, NA), yend = c(exp(-1/xi), NA), x = xseq,
+mod2 <- bvptwp(yini = c(1, NA), yend = c(exp(-1/xi), NA), x = xseq,
               order = 2, func = Prob18, atol = 1e-10)
 @
 <<>>=
 xi <- 0.01
-twp2 <- bvptwp(yini = c(1, NA), yend = c(exp(-1/xi), NA), x = xseq,
+mod3 <- bvptwp(yini = c(1, NA), yend = c(exp(-1/xi), NA), x = xseq,
               order = 2, func = Prob18, atol = 1e-10)
 @
 <<label=prob18,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 18",
-     ylim = c(0, 1), col = "blue", xlab = "x", ylab = "y")
-lines(twp[,1], twp[,2], col = "red")
-lines(twp2[,1], twp2[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 18")
 curve(exp(-x/xi), 0, 1, type = "p", add = TRUE)
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob18,fig=TRUE,echo=FALSE>>=
@@ -1083,42 +961,29 @@ For the nonlinear problems, the analytical solution is often not known.
     \xi y'' + exp(y) y' -\frac{\pi}{2} sin(\pi x/2) exp(2y)= 0 \\
     y_{(x=0)} = y_{(x=1)} = 0
   \end{eqnarray*}
-
 <<>>=
 Prob19 <- function(t, y, pars, ksi) {
   pit = pi*t
   list(c(y[2],(pi/2*sin(pit/2)*exp(2*y[1])-exp(y[1])*y[2])/ksi))
 }
-
 @
 <<>>=
 xi    <- 0.05
-shoot <- bvpshoot(yini = c(0, NA), yend = c(0, NA), 
+mod1 <- bvpshoot(yini = c(0, NA), yend = c(0, NA), 
          x = seq(0, 1, by = 0.01), func = Prob19, guess = 0, ksi = xi)
-@
-<<>>=
 xi <- 0.03
-twp  <- bvptwp(yini = c(0, NA), yend = c(0, NA), 
+mod2 <- bvptwp(yini = c(0, NA), yend = c(0, NA), 
                x = seq(0, 1, by = 0.01), func = Prob19, ksi = xi, 
                atol = 1e-15)
-@
-<<>>=
 xi <- 0.005
-print(system.time(
-
-twp2  <- bvptwp(yini = c(0, NA), yend = c(0, NA), 
+mod3 <- bvptwp(yini = c(0, NA), yend = c(0, NA), 
                 x = seq(0, 1, by = 0.01), func = Prob19, ksi = xi, 
                 atol = 1e-10)
-))
 @
 <<label=prob19,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 19", 
-     ylim = c(-0.7, 0), col = "blue", xlab = "x", ylab = "y")
-lines(twp[,1], twp[,2], col = "red")
-lines(twp2[,1], twp2[,2], col = "green")
-
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 19")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob19,fig=TRUE,echo=FALSE>>=
@@ -1129,7 +994,6 @@ lines(twp2[,1], twp2[,2], col = "green")
 \label{fig:pr19}
 \end{figure}
 \clearpage
-
 \subsection{problem 20}
   \begin{eqnarray*}
     \xi y'' + y'^2 =1 \\
@@ -1137,47 +1001,33 @@ lines(twp2[,1], twp2[,2], col = "green")
     y_{x=1} = 1 + \xi ln (cosh(0.255/\xi))
   \end{eqnarray*}
   It is solved in higher-order form.
-
 <<>>=
-
 Prob20 <- function(x, y, pars) {
   list( 1/xi *(1-y[2]^2) )
 }
-
 @
 <<>>=
 xi  <- 0.5
 ini <- c(1+xi * log(cosh(0.745/xi)), NA)
 end <- c(1+xi * log(cosh(0.255/xi)), NA)
-twp1  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by=0.01),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by=0.01),
             order = 2, func = Prob20)
-
-@
-<<>>=
 xi  <- 0.3
 ini <- c(1+xi * log(cosh(0.745/xi)), NA)
 end <- c(1+xi * log(cosh(0.255/xi)), NA)
-twp2  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by=0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by=0.01),
             order = 2, func = Prob20)
-
-@
-<<>>=
 xi  <- 0.01
 ini <- c(1+xi * log(cosh(0.745/xi)), NA)
 end <- c(1+xi * log(cosh(0.255/xi)), NA)
-twp3  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by=0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by=0.01),
                 order = 2, func = Prob20)
-
 @
 <<label=prob20,include=FALSE>>=
-plot(twp1[,1], twp1[,2], type = "l", main = "test problem 20", 
-     ylim = c(1, 1.8), col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp3[,1], twp3[,2], col = "green")
-curve(1+xi * log(cosh((x-0.745)/xi)),
-      0, 1, add = TRUE, type = "p")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 20")
+curve(1+xi * log(cosh((x-0.745)/xi)), 0, 1, add = TRUE, type = "p")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.32\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob20,fig=TRUE,echo=FALSE>>=
@@ -1188,50 +1038,37 @@ curve(1+xi * log(cosh((x-0.745)/xi)),
 \label{fig:pr20}
 \end{figure}
 \clearpage
-
-
 \subsection{problem 21}
   \begin{eqnarray*}
     \xi y'' = y + y^2 -\exp(-2 x/\sqrt(\xi)) \\
     y_{x=0} = 1 \\
     y_{x=1} = \exp(- 1/\sqrt(\xi))
   \end{eqnarray*}
-
 <<>>=
-
 Prob21 <- function(x, y, pars, xi) {
   list(c( y[2], 1/xi *(y[1]+y[1]^2-exp(-2*x/sqrt(xi))) ))
 }
-
 ini <- c(1, NA)
-
 @
 <<>>=
 xi  <- 0.2
 end <- c(exp(-1/sqrt(xi)), NA)
-shoot  <- bvpshoot(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvpshoot(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                    func = Prob21, guess = 0, xi = xi)
-@
-<<>>=
 xi  <- 0.1
 end <- c(exp(-1/sqrt(xi)), NA)
-twp  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob21, xi = xi)
-@
-<<>>=
 xi  <- 0.01
 end <- c(exp(-1/sqrt(xi)), NA)
-twp2  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                 func = Prob21, xi = xi)
 @
 <<label=prob21,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 21", 
-     ylim = c(0, 1), col = "blue", xlab = "x", ylab = "y")
-lines(twp[,1], twp[,2], col = "red")
-lines(twp2[,1], twp2[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 21")
 curve(exp(-x/sqrt(xi)), 0, 1, add = TRUE, type = "p")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob21,fig=TRUE,echo=FALSE>>=
@@ -1249,7 +1086,6 @@ curve(exp(-x/sqrt(xi)), 0, 1, add = TRUE, type = "p")
     y_{x=1} = 1/2
   \end{eqnarray*}
   It is solved in higher-order form.
-
 <<>>=
 Prob22 <- function(t, y, pars, xi) {
   list( -1/xi *(y[2]+y[1]^2) )
@@ -1260,27 +1096,23 @@ end <- c(1/2, NA)
 @
 <<>>=
 xi <-0.1
-shoot  <- bvpshoot(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvpshoot(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
               order = 2, func = Prob22, guess = 0, xi = xi)
 @
 <<>>=
 xi <-0.05
-twp  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
               order = 2, func = Prob22, xi = xi)
 @
 <<>>=
 xi <- 0.01
-twp2  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
               order = 2, func = Prob22, xi = xi)
-
 @
 <<label=prob22,include=FALSE>>=
-plot(shoot[,1], shoot[,2], type = "l", main = "test problem 22", 
-     ylim = c(0, 1), col = "blue", xlab = "x", ylab = "y")
-lines(twp[,1], twp[,2], col = "red")
-lines(twp2[,1], twp2[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 22")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob22,fig=TRUE,echo=FALSE>>=
@@ -1298,7 +1130,6 @@ This is a difficult problem that cannot be solved with bvpshoot
      y''= \mu sinh(\mu y) \\
     y_{(x=0)} = y_{(x=1)} = 1
   \end{eqnarray*}
-
 <<>>=
 Prob23 <- function(t, y, pars, xi) {
   list(c( y[2], sinh(y[1]/xi)/xi) )
@@ -1309,26 +1140,23 @@ end <- c(1, NA)
 @
 <<>>=
 xi <- 1/5
-twp1  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                 func = Prob23, xi = xi)
 @
 <<>>=
 xi <- 1/7
-twp  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob23, xi = xi)
 @
 <<>>=
 xi <- 1/9
-twp2  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                 func = Prob23, xi = xi)
 @
 <<label=prob23,include=FALSE>>=
-plot(twp1[,1], twp1[,2], type = "l", main = "test problem 23",
-     col = "blue", xlab = "x", ylab = "y")
-lines(twp[,1], twp[,2], col = "red")
-lines(twp2[,1], twp2[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 23")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob23,fig=TRUE,echo=FALSE>>=
@@ -1350,7 +1178,6 @@ This is a particularly difficult problem to solve
     y_{(x=1)} = 0.375
   \end{eqnarray*}
   It is solved in higher-order form.
-
 <<>>=
 Prob24 <- function(t, y, pars, xi) {
   A <- 1+t*t
@@ -1364,45 +1191,34 @@ ini <- c(0.9129, NA)
 end <- c(0.375, NA)
 @
 <<>>=
-xi   <-0.05
+xi   <- 0.05
 mod1 <- bvpshoot(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
             order = 2, func = Prob24, guess = 0.9, xi = xi)
 @
 <<>>=
-xi <-0.025
-mod2  <- bvpshoot(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
-            order = 2, func = Prob24, guess = 0.9, xi = xi)
-@
-<<>>=
-xi <-0.02
-mod3  <- bvpshoot(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+xi <- 0.02
+mod2 <- bvpshoot(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
             order = 2,  func = Prob24, guess = 0.9, xi = xi)
-attributes(mod3)$roots         # has FAILED: f.root too large!
+attributes(mod2)$roots         # has FAILED: f.root too large!
 @
 Function \code{bvpshoot} cannot solve this problem for small $\xi$
 
 Function \code{bvptwp} can solve it for small $\xi$ if initiated with good
 initial guesses:
 <<>>=
-xi <- 0.01
-mod3  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+xi <- 0.02
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                 order = 2, func = Prob24, xi = xi, 
                 xguess = mod2[,1], yguess = t(mod2[,2:3]))
-@
-<<>>=
-xi <- 0.005
-mod4  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
-                order = 2, func = Prob24, xi = xi, 
-                xguess = mod3[,1], yguess = t(mod3[,2:3]))
+xi <- 0.01
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+                order = 2, func = Prob24, xi = xi,
+                xguess = mod2[,1], yguess = t(mod2[,2:3]))
 @
 <<label=prob24,include=FALSE>>=
-plot(mod1[,1], mod1[,2], type = "l", main = "test problem 24",
-     col = "blue", xlab = "x", ylab = "y", ylim = c(0.35, 1.4))
-lines(mod2[,1], mod2[,2], col = "red")
-lines(mod3[,1], mod3[,2], col = "green")
-lines(mod4[,1], mod4[,2], col = "yellow")
+plot(mod1, mod2, mod3,  which = 1, lty = 1, main = "test problem 24")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob24,fig=TRUE,echo=FALSE>>=
@@ -1438,26 +1254,19 @@ end <- c(1/3, NA)
 @
 <<>>=
 xi   <- 0.1
-twp1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob25, xi = xi)
-@
-<<>>=
 xi   <- 0.01
-twp2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob25, xi = xi)
-@
-<<>>=
 xi   <- 0.001
-twp3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob25, xi = xi)
 @
 <<label=prob25,include=FALSE>>=
-plot(twp1[,1], twp1[,2], type = "l", main = "test problem 25",
-     col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp3[,1], twp3[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 25")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob25,fig=TRUE,echo=FALSE>>=
@@ -1476,40 +1285,33 @@ This problem equals previous problem, but with different boundary conditions:
     y_{x=1} = -1/3
   \end{eqnarray*}
   It is solved in higher-order form.
-
 <<>>=
-
 Prob26 <- function(t, y, pars, xi)  {
   list(  -1/xi *(y[1]*y[2]-y[1]) )
 }
 
 ini <- c(1, NA)
 end <- c(-1/3, NA)
-
 @
 <<>>=
 xi   <- 0.1
-twp1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                order = 2, func = Prob26, xi = xi)
 @
 <<>>=
 xi   <- 0.02
-twp2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                order = 2, func = Prob26, xi = xi)
 @
 <<>>=
 xi   <- 0.005
-twp3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                order = 2, func = Prob26, xi = xi)
-
 @
 <<label=prob26,include=FALSE>>=
-plot(twp1[,1], twp1[,2], type = "l", main = "test problem 26",
-     col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp3[,1], twp3[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 26")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob26,fig=TRUE,echo=FALSE>>=
@@ -1520,16 +1322,13 @@ lines(twp3[,1], twp3[,2], col = "green")
 \label{fig:pr269}
 \end{figure}
 \clearpage
-
 \subsection{problem 27}
 This problem equals previous problem, but with different boundary conditions:
   \begin{eqnarray*}
     y_{x=0} = 1 \\
     y_{x=1} = 1/3
   \end{eqnarray*}
-
 <<>>=
-
 Prob27 <- function(t, y, pars, xi) {
   list(c( y[2], -1/xi *(y[1]*y[2]-y[1]) ))
 }
@@ -1539,26 +1338,23 @@ end <- c(1/3, NA)
 @
 <<>>=
 xi   <- 0.1
-twp1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob27, xi = xi)
 @
 <<>>=
 xi   <- 0.02
-twp2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob27, xi = xi)
 @
 <<>>=
 xi   <- 0.005
-twp3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob27, xi = xi)
 @
 <<label=prob27,include=FALSE>>=
-plot(twp1[,1], twp1[,2], type = "l", main = "test problem 27", 
-     ylim = c(0, 1), col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp3[,1], twp3[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 27")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob27,fig=TRUE,echo=FALSE>>=
@@ -1569,7 +1365,6 @@ lines(twp3[,1], twp3[,2], col = "green")
 \label{fig:pr27}
 \end{figure}
 \clearpage
-
 \subsection{problem 28}
 This problem equals previous problem, but with different boudnary conditions:
   \begin{eqnarray*}
@@ -1577,7 +1372,6 @@ This problem equals previous problem, but with different boudnary conditions:
     y_{x=1} = 3/2
   \end{eqnarray*}
   It is solved in higher-order form.
-
 <<>>=
 Prob28 <- function(t, y, pars, xi)  {
   list(  -1/xi *(y[1]*y[2]-y[1]))
@@ -1588,28 +1382,23 @@ end <- c(3/2, NA)
 @
 <<>>=
 xi   <- 0.1
-twp1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                order = 2, func = Prob28, xi = xi)
 @
 <<>>=
 xi   <-0.02
-twp2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                order = 2, func = Prob28, xi = xi)
 @
 <<>>=
 xi <-0.005
-twp3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                order = 2, func = Prob28, xi = xi)
-
 @
-
 <<label=prob28,include=FALSE>>=
-plot(twp1[,1], twp1[,2], type = "l", main = "test problem 28", 
-     ylim = c(0.4, 1.5), col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp3[,1], twp3[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 28")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob28,fig=TRUE,echo=FALSE>>=
@@ -1620,16 +1409,13 @@ lines(twp3[,1], twp3[,2], col = "green")
 \label{fig:pr28}
 \end{figure}
 \clearpage
-
 \subsection{problem 29}
 This problem equals previous problem, but with different boundary conditions:
   \begin{eqnarray*}
     y_{x=0} = 0 \\
     y_{x=1} = 3/2
   \end{eqnarray*}
-
 <<>>=
-
 Prob29 <- function(t, y, pars, xi)  {
   list(c( y[2], -1/xi *(y[1]*y[2]-y[1]) ))
 }
@@ -1639,27 +1425,23 @@ end <- c(3/2,NA)
 @
 <<>>=
 xi   <- 0.1
-twp1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob29, xi = xi)
 @
 <<>>=
 xi   <- 0.02
-twp2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob29, xi = xi)
 @
 <<>>=
 xi   <- 0.005
-twp3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob29, xi = xi)
 @
 <<label=prob29,include=FALSE>>=
-plot(twp1[,1], twp1[,2], type = "l", main = "test problem 29",
-     col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp3[,1], twp3[,2], col = "green")
-
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 29")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob29,fig=TRUE,echo=FALSE>>=
@@ -1678,38 +1460,28 @@ Similar to previous problems, with different boundary conditions:
     y_{x=1} = 3/2
   \end{eqnarray*}
   It is solved in higher-order form.
-
 <<>>=
-
 Prob30 <- function(t, y, pars, xi)  {
   list( -1/xi *(y[1]*y[2]-y[1]) )
 }
-
 ini <- c(-7/6, NA)
 end <- c(3/2, NA)
 @
 <<>>=
 xi   <- 0.1
-twp1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                order = 2, func = Prob30, xi = xi)
-@
-<<>>=
 xi   <- 0.02
-twp2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                order = 2, func = Prob30, xi = xi)
-@
-<<>>=
 xi   <- 0.01
-twp3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                order = 2, func = Prob30, xi = xi)
 @
 <<label=prob30,include=FALSE>>=
-plot(twp1[,1], twp1[,2], type = "l", main = "test problem 30",
-     col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp3[,1], twp3[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 30")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob30,fig=TRUE,echo=FALSE>>=
@@ -1720,7 +1492,6 @@ lines(twp3[,1], twp3[,2], col = "green")
 \label{fig:pr30}
 \end{figure}
 \clearpage
-
 \subsection{problem 31}
   \begin{eqnarray*}
     y' &=& \sin(\theta) \\
@@ -1749,31 +1520,22 @@ ini <- c(y = 0, Tet = NA, M = 0, Q = NA)
 end <- c(y = 0, Tet = NA, M = 0, Q = NA)
 @
 Shooting does not work...
-
 But the mono-implicit Runge-Kutta method does...
 <<>>=
 xi <-0.1
-twp  <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob31, atol = 1e-10)
-@
-<<>>=
 xi <- 0.05
-twp2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob31, atol = 1e-10)
-@
-<<>>=
 xi <- 0.01
-twp3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                func = Prob31, atol = 1e-10)
 @
 <<label=prob31,include=FALSE>>=
-plot(twp[,1], twp[,4], type = "l", main = "test problem 31",
-     col = "blue", xlab = "x", ylab = "y3")
-lines(twp2[,1], twp2[,4], col = "red")
-lines(twp3[,1], twp3[,4], col = "green")
-
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 31")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob31,fig=TRUE,echo=FALSE>>=
@@ -1784,48 +1546,36 @@ lines(twp3[,1], twp3[,4], col = "green")
 \label{fig:pr31}
 \end{figure}
 \clearpage
-
 \subsection{problem 32}
   \begin{eqnarray*}
-    y'''' &=& 1/\xi(y'y'' - y y''')
-  \end{eqnarray*}
-  where
-  \[
+   y'''' &=& 1/\xi(y'y'' - y y''') \\
    y_{x=0}=y'_{x=0}= 0\\
    y_{x=1}=1\\
    y'_{x=1}= 0
-  \]
+  \end{eqnarray*}
   It is solved in higher-order form.
 <<>>=
 Prob32 <- function(t, y, pars, xi) {
   list(1/xi*(y[2]*y[3]-y[1]*y[4]))
-
 }
 ini <- c(0, 0, NA, NA)
 end <- c(1, 0, NA, NA)
 @
 <<>>=
 xi  <- 0.01
-twp <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
               order = 4, func = Prob32, xi = xi)
-@
-<<>>=
 xi   <- 0.002
-twp2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
               order = 4, func = Prob32, xi = xi)
-@
-<<>>=
 xi   <- 0.0001
-twp3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
               order = 4, func = Prob32, xi = xi)
 @
 <<label=prob32,include=FALSE>>=
-plot(twp[,1], twp[,3], type = "l", main = "test problem 32",
-     col = "blue", xlab = "x", ylab = "y'")
-lines(twp2[,1], twp2[,3], col = "red")
-lines(twp3[,1], twp3[,3], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 32")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob32,fig=TRUE,echo=FALSE>>=
@@ -1836,8 +1586,6 @@ lines(twp3[,1], twp3[,3], col = "green")
 \label{fig:pr32}
 \end{figure}
 \clearpage
-
-
 \subsection{problem 33}
   \begin{eqnarray*}
     \xi z'''' &=& -z\cdot z''' -y \cdot y' \\
@@ -1852,33 +1600,25 @@ lines(twp3[,1], twp3[,3], col = "green")
 Prob33 <- function(t, z, pars, xi) {
   list(c( z[2], z[3], z[4], 1/xi*(z[1]*z[4]-z[5]*z[6]),
           z[6], 1/xi*(z[5]*z[2]-z[1]*z[6])))
-
 }
 ini <- c(0, 0, NA, NA, -1, NA)
 end <- c(0, 0, NA, NA,  1, NA)
 @
 <<>>=
 xi  <- 0.1
-twp <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
               func = Prob33, xi = xi)
-@
-<<>>=
 xi  <- 0.01
-twp2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
               func = Prob33, xi = xi)
-@
-<<>>=
 xi  <- 0.001
-twp3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
               func = Prob33, xi = xi)
 @
 <<label=prob33,include=FALSE>>=
-plot(twp[,1], twp[,2], type= "l", main = "test problem 33",
-     col = "blue", xlab = "x", ylab = "y", ylim = c(-0.05, 0.05))
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp3[,1], twp3[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 33")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob33,fig=TRUE,echo=FALSE>>=
@@ -1902,33 +1642,29 @@ lines(twp3[,1], twp3[,2], col = "green")
 <<>>=
 Prob34 <- function(t, y, pars, xi) {
   list(-xi*exp(y[1]))
-
 }
 ini <- c(0, NA)
 end <- c(0, NA)
 @
 <<>>=
 xi  <- 0.1
-twp <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
               order = 2, func = Prob34, xi = xi)
 @
 <<>>=
 xi   <- 0.01
-twp2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
               order = 2, func = Prob34, xi = xi)
 @
 <<>>=
 xi   <- 0.001
-twp3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
               order = 2, func = Prob34, xi = xi)
 @
 <<label=prob34,include=FALSE>>=
-plot(twp[,1], twp[,2], type = "l", main = "test problem 34",
-     col = "blue", xlab = "x", ylab = "y")
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp3[,1], twp3[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 34")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob34,fig=TRUE,echo=FALSE>>=
@@ -1957,26 +1693,23 @@ end <- c(2, NA)
 @
 <<>>=
 xi  <- 1
-twp <- bvptwp(yini = ini, yend = end, x = seq(-1, 1, by = 0.05),
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(-1, 1, by = 0.05),
               func = Prob35, xi = xi)
 @
 <<>>=
 xi   <- 0.1
-twp2 <- bvptwp(yini = ini, yend = end, x = seq(-1, 1, by = 0.05),
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(-1, 1, by = 0.05),
               func = Prob35, xi = xi)
 @
 <<>>=
 xi   <- 0.01
-twp3 <- bvptwp(yini = ini, yend = end, x = seq(-1, 1, by = 0.05),
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(-1, 1, by = 0.05),
               func = Prob35, xi = xi)
 @
 <<label=prob35,include=FALSE>>=
-plot(twp[,1], twp[,2], type = "l", main = "test problem 35",
-     col = "blue", xlab = "x", ylab = "y", ylim = c(-1, 4))
-lines(twp2[,1], twp2[,2], col = "red")
-lines(twp3[,1], twp3[,2], col = "green")
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 35")
 @
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.35\textwidth}
 \begin{figure}
 \begin{center}
 <<label=prob35,fig=TRUE,echo=FALSE>>=

@@ -47,11 +47,8 @@ int initForcings(SEXP flist) {
 /*         -----     INITIALISATION  called from compiled code   -----
    1. Check the length of forcing functions in solver call and code in DLL
    2. Initialise the forcing function vectors
-   3. set pointer to DLL fortran common block or C globals /
-*/
+   3. set pointer to DLL fortran common block or C globals                    */
 
-
-/* THESE ARE CLEANER VERSIONS ; the other versions are in isnt/removed.txt*/
 
 void Initdeforc(int *N, double *forc)
 {
