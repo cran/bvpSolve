@@ -1,18 +1,18 @@
 \name{bvpcol}
 \alias{bvpcol}
 \title{
-  Solves multipoint boundary value problems of ordinary differential equations,
-  using a collocation method.
+  Solves multipoint boundary value problems of ordinary differential equations
+  or differential algebraic equations, using a collocation method.
 }
 \description{
-  Solves Boundary Value Problems For Ordinary
-  Differential Equations By Collocation.
+  Solves Boundary Value Problems For Ordinary Differential Equations (ODE)
+  or semi-explicit Differential-Algebraic Equations (DAE) with index at most 2.
+ 
+  It is possible to solve stiff ODE systems, by using an automatic continuation strategy
 
-  It is possible to solve stiff systems, by using an automatic continuation strategy
-
-  This is an implementation of the fortran codes colsys.f and colnew.f written by
+  This is an implementation of the fortran codes colsys.f, colnew.f and coldae.f written by
   respectively U. Ascher, J. christiansen  and R.D. Russell (colsys), 
-  and U. Ascher and G. Bader (colnew).
+  U. Ascher and G. Bader (colnew) and U. Ascher and C. Spiteri.
 
   The continuation strategy is an implementation of the fortran code colmod
   written by J.R. Cash, M.H. Wright and F. Mazzia.
@@ -43,7 +43,7 @@ bvpcol (yini = NULL, x, func, yend = NULL, parms = NULL,
         fullOut = TRUE, dllname = NULL, initfunc = dllname, 
         rpar = NULL, ipar = NULL, nout = 0, forcings = NULL, 
         initforc = NULL, fcontrol = NULL, verbose = FALSE,
-        epsini = NULL, eps = epsini,...)
+        epsini = NULL, eps = epsini, dae = NULL, ...)
 }
 \arguments{
   \item{yini }{either a vector with the initial (state) variable values for
@@ -84,6 +84,8 @@ bvpcol (yini = NULL, x, func, yend = NULL, parms = NULL,
     \code{x}. After this can come global values that are required at
     each point in \code{x}.
     
+    If the problem is a DAE, then the algebraic equations should be the last.
+
     If \code{func} is a string, then \code{dllname} must give the name of the
     shared library (without extension) which must be loaded before
     \code{bvptwp} is called. See package vignette "bvpSolve" for more details.
@@ -291,6 +293,11 @@ bvpcol (yini = NULL, x, func, yend = NULL, parms = NULL,
   }
   \item{verbose }{when \code{TRUE}, writes messages (warnings) to the screen.
   }
+  \item{dae }{if the problem is a DAE, should be a list containing   the  
+    \code{index} of the problem and the number of algebraic equations \code{nalg}.
+    
+    See example 5
+  }
   \item{... }{additional arguments passed to the model functions.
   }
 }
@@ -313,10 +320,11 @@ bvpcol (yini = NULL, x, func, yend = NULL, parms = NULL,
   problem, unless \code{fullOutput} is \code{FALSE}
 }
 \author{
-  Karline Soetaert <k.soetaert@nioo.knaw.nl>
+  Karline Soetaert <karline.soetaert@nioz.nl>
 }
 \details{
-  If \code{eps} does not have a value, then the method is based on an implementation
+  If \code{eps} does not have a value and \code{dae} = NULL, 
+  then the method is based on an implementation
   of the Collocation methods called "colnew" and
   "colsys" to solve multi-point boundary value problems of ordinary
   differential equations.
@@ -324,7 +332,7 @@ bvpcol (yini = NULL, x, func, yend = NULL, parms = NULL,
   The ODEs and boundary conditions are made available through the
   user-provided routines, \code{func} and vectors \code{yini} and \code{yend}
   or (optionally) \code{bound}. \code{bvpcol} can also solve multipoint 
-  boundary value problems (see last example).
+  boundary value problems (see one but last example).
 
   The corresponding partial derivatives are optionally available through the
   user-provided routines, \code{jacfunc} and \code{jacbound}. Default is that
@@ -353,6 +361,24 @@ bvpcol (yini = NULL, x, func, yend = NULL, parms = NULL,
 
   where \code{epsini} is a user provided starting value and \code{eps} is a
   user desired final value for the parameter.
+
+
+  If \code{dae} is not NULL, then it is assumed that a DAE has to be solved.
+  In that case, \code{dae} should contain give the \code{index} of the DAE and the number of algebraic
+  equations (\code{nalg}).
+  
+  (this part comes from the comments in the code coldae).
+  With respect to the dae, it should be noted that the code does not explicitly
+  check the index of the problem, so if the index is > 2 then the code will
+  not work well. 
+  The number of boundary conditions required is independent
+  of the index. it is the user's responsibility to ensure
+  that these conditions are consistent with the constraints.
+  The conditions at the left end point must include
+  a subset equivalent to specifying the index-2
+  constraints there.
+  For an index-2 problem in hessenberg form, the projected
+  collocation method of Ascher and Petzold [2] is used.
 }
 
 \seealso{
@@ -392,6 +418,16 @@ bvpcol (yini = NULL, x, func, yend = NULL, parms = NULL,
   an automatic continuation strategy for the solution of
   singularly perturbed linear two-point boundary value problems,
   j. comp. phys. 122, 266-279.
+  
+  U. Ascher and R. Spiteri, 1994.
+  collocation software for boundary value differential-algebraic equations,
+  siam j. scient. stat. comput. 15, 938-952.
+
+  U. Ascher and L. Petzold, 1991.
+  projected implicit runge-kutta methods for differential-
+  algebraic equations,
+  siam j. num. anal. 28 (1991), 1097-1120.
+  
 }
 
 \keyword{math}
@@ -667,4 +703,47 @@ plot(sol)
 
 # check boundary value
 sol[sol[,1] == 0.5,]
+
+
+## =============================================================================
+## Example 5 - a bvp DAE
+## =============================================================================
+
+bvpdae <- function(t, x, ks, ...) {
+  p1  <- p2 <- sin(t)
+  dp1 <- dp2 <- cos(t)
+  
+  dx1 <- (ks + x[2] - p2)*x[4] + dp1
+  dx2 <- dp2
+  dx3 <- x[4]
+  res <- (x[1] - p1)*(x[4] - exp(t))
+
+  list(c(dx1, dx2, dx3, res), res = res)
+}
+
+boundfun <- function(i,  x, par, ...) {
+  if (i == 1) return(x[1] - sin(0))
+  if (i == 2) return(x[3] - 1)
+  if (i == 3) return(x[2] - sin(1))
+  if (i == 4) return((x[1] - sin(1))*(x[4] - exp(1)))  # Not used here..
+}
+
+x <- seq(0, 1, by = 0.01)
+mass <- diag(nrow = 4)  ; mass[4, 4] <- 0
+
+# solved using boundfun
+out <- bvpcol (func = bvpdae, bound = boundfun, x = x, 
+               parms = 1e-4, ncomp = 4, leftbc = 2,
+               dae = list(index = 2,  nalg = 1)) 
+
+# solved using yini, yend
+out1 <- bvpcol (func = bvpdae, x = x, parms = 1e-4, 
+                yini = c(sin(0), NA, 1, NA), 
+                yend = c(NA, sin(1), NA, NA),
+                dae = list(index = 2,  nalg = 1)) 
+
+# the analytic solution
+ana <- cbind(x, "1" = sin(x), "2" = sin(x), "3" = 1, "4" = 0, res = 0)
+plot(out, out1, obs = ana)
+
 }

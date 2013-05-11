@@ -4,12 +4,12 @@
 ## using MIRK method "twpbvp"
 ##==============================================================================
 
-bvptwp<- function(yini=NULL, x, func, yend=NULL, parms=NULL, order = NULL, 
-     ynames=NULL, xguess=NULL, yguess=NULL, jacfunc=NULL, bound=NULL, 
-     jacbound=NULL, leftbc=NULL, posbound=NULL, islin=FALSE, nmax=1000, 
-     ncomp=NULL, atol=1e-8, cond = FALSE, lobatto = FALSE, allpoints=TRUE,
-     dllname=NULL, initfunc=dllname, rpar = NULL, ipar = NULL, nout = 0,
-     forcings=NULL, initforc = NULL, fcontrol=NULL, verbose = FALSE,
+bvptwp<- function(yini = NULL, x, func, yend = NULL, parms = NULL, order = NULL, 
+     ynames = NULL, xguess = NULL, yguess = NULL, jacfunc = NULL, bound = NULL, 
+     jacbound = NULL, leftbc = NULL, posbound = NULL, islin = FALSE, nmax = 1000, 
+     ncomp = NULL, atol = 1e-8, cond = FALSE, lobatto = FALSE, allpoints = TRUE,
+     dllname = NULL, initfunc = dllname, rpar = NULL, ipar = NULL, nout = 0,
+     forcings = NULL, initforc = NULL, fcontrol=NULL, verbose = FALSE,
      epsini = NULL, eps = epsini,  ...)   {
    if (is.null(eps))
     bvpsolver(1,       # type 1 = bvptwp
@@ -21,7 +21,7 @@ bvptwp<- function(yini=NULL, x, func, yend=NULL, parms=NULL, order = NULL,
      dllname, initfunc, rpar, ipar, nout,
      forcings, initforc, fcontrol, verbose,
      cond, lobatto, allpoints, colp = NULL, fullOut = TRUE,
-     bspline = TRUE, eps = NULL, epsini = NULL, ... )
+     bspline = TRUE, eps = NULL, epsini = NULL, dae = NULL, ... )
   else {
     if (parms[1] != eps)
       stop ("first element in 'parms' should be equal to 'eps' if continuation is used")
@@ -33,24 +33,24 @@ bvptwp<- function(yini=NULL, x, func, yend=NULL, parms=NULL, order = NULL,
      dllname, initfunc, rpar, ipar, nout,
      forcings, initforc, fcontrol, verbose,
      cond, lobatto = FALSE, allpoints, colp = NULL, fullOut = TRUE,
-     bspline = TRUE, eps = eps, epsini = epsini,  ... )
+     bspline = TRUE, eps = eps, epsini = epsini, dae = NULL,  ... )
   }
 }
 ##==============================================================================
 ## Solving boundary value problems of ordinary differential equations
-## using collocation method "colnew"  or "colsys"
+## using collocation method "colnew", "colsys", "colmod", "coldae"
 ##==============================================================================
 
-bvpcol<- function(yini=NULL, x, func, yend=NULL, parms=NULL, order = NULL, 
-     ynames=NULL, xguess=NULL, yguess=NULL, jacfunc=NULL, bound=NULL, 
-     jacbound=NULL, leftbc=NULL, posbound=NULL, islin=FALSE, nmax=1000, 
-     ncomp=NULL, atol=1e-8, colp=NULL, bspline = FALSE, fullOut = TRUE, 
-    dllname=NULL, initfunc=dllname, rpar = NULL, ipar = NULL, nout = 0,
-    forcings=NULL, initforc = NULL, fcontrol=NULL, verbose = FALSE,
-    epsini = NULL, eps = epsini, ...)   {
+bvpcol<- function(yini = NULL, x, func, yend = NULL, parms = NULL, order = NULL, 
+     ynames = NULL, xguess = NULL, yguess = NULL, jacfunc = NULL, bound = NULL, 
+     jacbound = NULL, leftbc = NULL, posbound = NULL, islin = FALSE, nmax = 1000, 
+     ncomp = NULL, atol = 1e-8, colp=NULL, bspline = FALSE, fullOut = TRUE, 
+    dllname = NULL, initfunc = dllname, rpar = NULL, ipar = NULL, nout = 0,
+    forcings = NULL, initforc = NULL, fcontrol = NULL, verbose = FALSE,
+    epsini = NULL, eps = epsini, dae = NULL, ...)   {
 
   if (is.null(eps))
-    bvpsolver(2,                                               # type 2 = bvpcol
+    bvpsolver(2,                                      # type 2 = bvpcol/bvpdae
      yini, x, func, yend, parms, 
      order, ynames, xguess, 
      yguess, jacfunc, bound, 
@@ -59,10 +59,12 @@ bvpcol<- function(yini=NULL, x, func, yend=NULL, parms=NULL, order = NULL,
      dllname, initfunc, rpar, ipar, nout,
      forcings, initforc, fcontrol, verbose,
      cond = FALSE, lobatto = FALSE, allpoints = TRUE, colp = colp, fullOut = fullOut,
-     bspline = bspline, eps = NULL, epsini = NULL,... )
+     bspline = bspline, eps = NULL, epsini = NULL, dae = dae,... )
   else  {
     if (parms[1] != eps)
       stop ("first element in 'parms' should be equal to 'eps' if continuation is used")
+    if (! is.null(dae))
+      stop ("'dae' can not be present if continuation ('eps') is used")
     bvpsolver(3,                                            # type 3 = bvpcolmod
      yini, x, func, yend, parms,
      order, ynames, xguess,
@@ -72,7 +74,7 @@ bvpcol<- function(yini=NULL, x, func, yend=NULL, parms=NULL, order = NULL,
      dllname, initfunc, rpar, ipar, nout,
      forcings, initforc, fcontrol, verbose,
      cond = FALSE, lobatto = FALSE, allpoints = TRUE, colp = colp, fullOut = fullOut,
-     bspline = bspline, eps = eps, epsini = epsini, ... )
+     bspline = bspline, eps = eps, epsini = epsini, dae = NULL, ... )
   }
 }
 
@@ -92,7 +94,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
      dllname = NULL, initfunc = dllname, rpar = NULL, ipar = NULL, nout = 0,
      forcings = NULL, initforc = NULL, fcontrol=NULL, verbose = FALSE,
      cond = FALSE, lobatto = FALSE, allpoints = TRUE, colp = NULL, fullOut = TRUE,
-     bspline = TRUE, eps = NULL, epsini = NULL, ...)   {
+     bspline = TRUE, eps = NULL, epsini = NULL, dae = NULL, ...)   {
 
   rho <- environment(func)
 
@@ -141,6 +143,8 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
   y     <- NULL
   guess <- NULL
   Restart <- "bvpSolve" %in% class(yguess) & type >= 2 # only for bvpcol/colmod
+  nalg <- 0    # number of algebraic equations, in case a DAE
+  if (!is.null(dae)) nalg <- dae$nalg
 
   if (! is.null(yini)) {  # yini is either a vector - or a function
     y      <- yini
@@ -151,11 +155,11 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
         stop ("length of 'order' can not exceed the length of 'yini'")
       if (neq <= 0)
         stop ("length of 'order' should be > 0")
-      if (sum(order) != mstar)
+      if (sum(order) - nalg != mstar)
         stop ("summed values of 'order' should be = length of 'yini' = number of variables")
     } else {
       neq  <- length(yini)
-      order <- rep(1, neq)
+      order <- rep(1, neq - nalg)
     }
 
     Y       <- y
@@ -175,9 +179,9 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
 
     inix   <- which (!is.na(yini))
     finalx <- which (!is.na(yend))
-    ll <- length(finalx) + length(inix)
-    if (ll != mstar)
-      stop (paste("number of boundary conditions wrong: should be ",mstar," but is", ll))
+    ll <- length(finalx) + length(inix) # added for coldae
+    if (ll != mstar- nalg )
+      stop (paste("number of boundary conditions wrong: should be ",mstar- nalg ," but is", ll))
     zeta   <- c(rep(aleft,length(inix)),rep(aright,length(finalx)))
 
 ##------------------------------------------------------------------------------
@@ -585,11 +589,11 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
            }
        else
          JacBound <- function (ii, state)  {
-           BJAC        <- numeric(mstar)
+           BJAC        <- numeric(mstar - nalg)
            perturbfac  <- 1e-8
            state2 <- state
            tmp2     <- Bound(ii, state)
-           for (i in 1:mstar)  {
+           for (i in 1:(mstar-nalg))  {
              dstate   <-max(perturbfac,state[i]*perturbfac)
              state[i] <- state[i]+ dstate
              tmp      <- Bound(ii, state)
@@ -740,7 +744,10 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
         for (i in 1:nrow(out2)) {
           y <- out[i,-1]
           names(y) <- nm[-1]
-          out2[i,] <- unlist(Func2(out[i, 1], y)[-1])  # KS: Func2 rather than func
+          if (type == 1)
+            out2[i,] <- unlist(Func2(out[i, 1], y)[-1])  # KS: Func2 rather than func
+          else
+            out2[i,] <- unlist(Func2_eps(out[i, 1], y, EPS[1])[-1])  # KS: Func2 rather than func
           }
         out <- cbind(out,out2)
         }  # end !is.character func
@@ -766,7 +773,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
   out
 
 ## =============================================
-## bvpcol or bvpcolmod
+## bvpcol (colsys, colnew, colmod, coldae)
 ## =============================================
 
   } else if (type >= 2) {  # bvpcol, bvpcolmod
@@ -777,12 +784,12 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
     stop ("colp must be smaller than 8")
 
   iset   <- rep(0,14)
-  itol <- 1:mstar
-  tol    <- rep(atol,mstar)
-  iset[1] <- 1-islin    # linear/nonlinear problem
-  iset[2] <- colp       # no of colocation points per subinterval
-  iset[3] <- 0          # no of subintervals in original mesh
-  iset[4] <- mstar      # no of tolerances
+  itol <- 1:(mstar - nalg)
+  tol    <- rep(atol, length = mstar - nalg)
+  iset[1] <- 1-islin      # linear/nonlinear problem
+  iset[2] <- colp         # no of colocation points per subinterval
+  iset[3] <- 0            # no of subintervals in original mesh
+  iset[4] <- mstar -nalg  # no of tolerances
   iset[14] <- fullOut
   if (type == 3)
     if (! is.null(epsini))
@@ -790,7 +797,9 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
 
   if (verbose)
     iset[7] <- 0 else iset[7]<-1
-
+   
+  if (!is.null(dae)) iset[12] <- dae$index
+   
   GuessFunc <- function(x) y     # dummy function
   if (Restart) {   # previous solution used - same mesh
     ATT <- attributes(yguess)
@@ -803,8 +812,8 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
     if ( length (iwork) == 0)
        stop ("attributes(yguess)$istate should be present, if continuation is requested")
 
-    iset[9]<-2
-    iset[3]<- iwork[1]
+    iset[9] <- 2
+    iset[3] <- iwork[1]
   } else {
   rwork <- 0.
   iwork <- 0
@@ -842,8 +851,8 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
   }
 
   if (! is.null(Xguess))   {
-   iset[9]<-1
-   iset[3]<-length(xguess)
+   iset[9] <- 1
+   iset[3] <- length(xguess)
   }
   }
 
@@ -861,6 +870,9 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
       nsizef <- 7+3*mstar+ (5+kd)*kdm+(2*mstar-nrec)*2*mstar
     else
       nsizef <- 8+4*mstar+ (5+kd)*kdm+(2*mstar-nrec)*2*mstar +kd
+  } else if (nalg > 0) {
+    nsizef <- 4 + 3*mstar+ (5+kd)*kdm+(2*mstar-nrec)*2*mstar + neq*(mstar+nalg+2) + kd
+  
   } else           # colsys
     nsizef <- 4 + neq + 2 *kd + (4+2*neq)*mstar+ (kdm-nrec)*(kdm+1)
   iset[5] <- nmax*nsizef     # length of fspace
@@ -887,11 +899,14 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
   else
     initpar <- as.double(parms)
 
+  if(nalg > 0) {
+    bspline <- 2   #coldae
+  }
   storage.mode(y) <- storage.mode(x) <- "double"
   if (type == 2)
   out <- .Call("call_colnew",as.integer(neq),as.double(x),
             as.double(aleft),as.double(aright),as.double(zeta),
-            as.integer(mstar),as.integer(order),
+            as.integer(c(mstar, nalg)),as.integer(order),
             as.integer(iset),as.double(rwork), as.integer(iwork),
             as.double(tol),
             as.double(fixpnt), as.double (rpar), as.integer (ipar),
@@ -924,7 +939,10 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
         for (i in 1:ncol(out2)) {
           y <- out[-1,i]
           names(y) <- nm[-1]
+        if (type == 2)
           out2[, i] <- unlist(Func2(out[1, i], y)[-1])  # KS: Func2 rather than func
+        else
+          out2[, i] <- unlist(Func2_eps(out[1, i], y, EPS[1])[-1])  # KS: Func2 rather than func
           }
         out <- rbind(out,out2)
         }  # end !is.character func

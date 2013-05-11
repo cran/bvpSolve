@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 * 3. added rpar, ipar to calls of guess
 * 4. TODO added counters
 * 5. renamed ipar -> iset and solutn -> guess
-c all subroutines renamed, with "sys" in front.
+c all subroutines renamed, with 'sys' in front.
 c-----------------------------------------------------------------------
 
 
@@ -474,13 +474,11 @@ c----------------------------------------------------------------------
       dimension m(*), zeta(*), iset(*), ltol(*), tol(*),
      1     fixpnt(*), ispace(*), fspace(*), ipar(*), rpar(*), icount(*)
 
-c karline: added this "dimenioning"
+c karline: added this 'dimenioning'
       dimension dum1(1),dum2(1),dum3(1),dum4(1)
 c karline: added counters
       integer nfunc, njac, nstep, nbound, njacbound
       common/coldiag/nfunc, njac, nstep, nbound, njacbound
-
-      CHARACTER(len=150) msg
 
 c***********************************************************************
 c
@@ -560,21 +558,9 @@ c
 c
 c...  print the input data for checking.
 c
-      if (iprint .gt. (-1))                         go to 100
-      if (nonlin .gt. 0)                            go to 80
-cks: this cannot be printed: too long
-C      write (iwr,260) ncomp, (m(ip), ip=1,ncomp)
-c      go to 90
+
    80 continue
-c   80 write(iwr,270) ncomp, (m(ip), ip=1,ncomp)
-c   90 write (iwr,280) (zeta(ip), ip=1,mstar)
-c      write (iwr,290) k
-c      write (iwr,300) (ltol(ip), ip=1,ntol)
-c      write (iwr,310) (tol(ip), ip=1,ntol)
-c      if (iguess .ge. 2) write (iwr,320)
-c      if (iread .eq. 2) write (iwr,330)
-c      if (nfxpnt .gt. 0) write (iwr,340) nfxpnt,
-c     1      (fixpnt(ip), ip=1,nfxpnt)
+
   100 continue
 c
 c...  check for correctness of data
@@ -617,15 +603,14 @@ c
       nmaxf = (ndimf - nfixf) / nsizef
       nmaxi = (ndimi - nfixi) / nsizei
       if (iprint .lt. 1) then
-        write(msg,350) nmaxf, nmaxi
-        call rprint(msg)
+       CALL Rprinti1('The maximum number of subintervals is min',nmaxF)
+       CALL Rprinti1('The maximum number allowed from ispace', NMAXI)
       endif 
       nmax = min0(nmaxf,nmaxi)
       if (nmax .lt. n)                              return
       if (nmax .lt. nfxpnt+1)                       return
       if (nmax .lt. 2*nfxpnt+2  .and.  iprint .lt. 1) then
-        write(msg,360)
-        call rprint(msg)
+      CALL Rprint('Insufficient space to double mesh for err estimate')
       endif 
 c
 c...  generate pointers to break up  fspace  and  ispace .
@@ -742,23 +727,6 @@ c...  prepare output
       icount(5) = nstep
       return
 c-----------------------------------------------------------------------
-  260 format(37h the number of (linear) diff eqns is , i3, 1x,
-     1       16htheir orders are, 20i3)
-  270 format(40h the number of (nonlinear) diff eqns is , i3,
-     1       16htheir orders are, 20i3)
-  280 format(27h side condition points zeta, 8f10.6, 4(27x, 8f10.6))
-  290 format(37h number of colloc pts per interval is, i3)
-  300 format(39h components of z requiring tolerances -,8(7x,i2,1x),
-     1       4(8i10))
-  310 format(33h corresponding error tolerances -,6x,8d10.2,
-     1       4(8d10.2))
-  320 format(44h initial mesh(es) and alpha provided by user)
-  330 format(27h no adaptive mesh selection)
-  340 format(10h there are ,i5,27h fixed points in the mesh - ,
-     1       10(6d12.4))
-  350 format(44h the maximum number of subintervals is min (, i4,
-     1       23h (allowed from fspace),,i4, 24h (allowed from ispace) ))
-  360 format(53h insufficient space to double mesh for error estimate)
       end
       subroutine syscontrl(xi, xiold, xij, alpha, aldif, rhs,
      1           dalpha, ealpha, a, valstr, slope,
@@ -820,7 +788,6 @@ c
       common /eqord/  ind(5), ineq(20), mnd(5), nd, neq
       common /errors/ tol(40),wgtmsh(40),tolin(40),root(40),
      1       jtol(40),ltol(40),ntol
-      CHARACTER(len=150) msg
 c
 c...  constants for control of nonlinear iteration
 c
@@ -863,8 +830,7 @@ c...       check for a singular matrix
 c
            if (iflag .ne. 0)                        go to 40
    30      if (iprint .lt. 1) then
-             write (msg,490 )
-             call rprint(msg)
+             CALL Rprint('The matrix is singular')
            endif 
 
            return
@@ -909,13 +875,11 @@ c...       the value of ifreez determines whether this is a full
 c...       newton step (=0) or a fixed jacobian iteration (=1).
 c
            if (iprint .lt. 0  .and.  iter .eq. 0)  then
-             write(msg,530)
-             call rprint(msg)
+             CALL Rprint('Fixed Jacobian iterations')
            endif 
 
    70      if (iprint .lt. 0)  then
-             write (msg,510) iter, rnorm
-             call rprint(msg)
+      CALL Rprintid('Iteration = , Norm (RHS) = ', Iter, Rnorm)
            endif 
 
            rnold = rnorm
@@ -957,10 +921,8 @@ c
            if (rnorm .lt. precis)                   go to 405
            if (rnorm .le. rnold)                    go to 120
            if (iprint .lt. 0)  then
-             write (msg,510) iter, rnorm
-             call rprint(msg)
-             write (msg,540)
-             call rprint(msg)
+      CALL Rprintid('Iteration = , Norm (RHS) = ', Iter, Rnorm)
+             CALL Rprint('Switch to damped Newton iteration')
            endif 
 
            icon = 0
@@ -987,8 +949,7 @@ c...       with the modified newton method.
 c...       evaluate rhs.
 c
   140      if(iprint .lt. 0)  then
-             write (msg,500)
-             call rprint(msg)
+             CALL Rprint('Full damped Newton iteration')
            endif 
        call syslsyslv (iflag, xi, xiold, xij, dalpha, aldif, rhs,
      1          alpha, a, ipiv, integs, rnorm, 1, fsub,
@@ -1065,16 +1026,16 @@ c
            anscl = dsqrt(anscl / falpha)
            if (icor .eq. 1)                         go to 230
            if (iprint .lt. 0)  then
-               write (msg,520) iter, relax, anorm,
-     1           anfix, rnold, rnorm
-             call rprint(msg)
+      CALL Rprintid('Iteration = , Relaxation factor = ', Iter, Relax)
+      CALL Rprintd2('Norm of scaled RHS changes from, to ',Anorm,Anfix)
+      CALL Rprintd2('Norm of RHS changes from, to ', Rnold, Rnorm)
            endif 
 
            go to 240
   230      if (iprint .lt. 0) then
-             write (msg,550) relax, anorm, anfix,
-     1           rnold, rnorm
-             call rprint(msg)
+      CALL Rprintd1('Relaxation factor corrected to ', Relax)
+      CALL Rprintd2('Norm of scaled RHS changes from, to ',Anorm,Anfix)
+      CALL Rprintd2('Norm of RHS changes from, to ', Rnold, Rnorm)
            endif 
 
   240      icor = 0
@@ -1161,8 +1122,7 @@ c
 c...       convergence obtained
 c
            if (iprint .lt. 1) then 
-             write (msg,560) iter
-             call rprint(msg)
+      CALL Rprinti1('Convergence after iteration ',Iter)
            endif 
 
            if (icon .eq. 1)                         go to 450
@@ -1175,8 +1135,7 @@ c
            do 400 i=1,nalpha
   400      alpha(i) = alpha(i) + ealpha(i)
   405    if ((anfix.lt.precis.or.rnorm.lt.precis).and.iprint.lt.1) then
-             write (msg,560) iter
-             call rprint(msg)
+      CALL Rprinti1('Convergence after iteration ',Iter)
            endif 
 
            icon = 1
@@ -1191,13 +1150,12 @@ c
 c...       diagnostics for failure of nonlinear iteration.
 c
   420      if(iprint .lt. 1) then
-             write (msg,570) iter
-             call rprint(msg)
+      CALL Rprinti1('NO convergence after iteration ',Iter)
            endif 
            go to 440
   430      if(iprint .lt. 1) then
-              write(msg,580) relax, relmin
-             call rprint(msg)
+      CALL Rprintd1('NO convergence, Relaxation factor too small',Relax)
+      CALL Rprintd1('Should not be less than ', Relmin)
            endif 
   440      iflag = -2
            lconv = lconv + 1
@@ -1230,36 +1188,16 @@ c
            n = n / 2
            iflag = -1
            if (icon .eq. 0 .and. iprint .lt. 1) then
-             write (msg,590)
-             call rprint(msg)
+             CALL Rprint('NO convergence')
            endif 
            if (icon .eq. 1 .and. iprint .lt. 1) then
-             write (msg,600)
-             call rprint(msg)
+      CALL Rprint('Probably tolerances too stringent or nmax too small')
            endif 
            return
   470      if (icon .eq. 0)  imesh = 1
            if (icare .eq. 1)  icon = 0
       go to 20
 c     ---------------------------------------------------------------
-  490 format(24h the matrix is singular )
-  500 format(30h full damped newton iteration,)
-  510 format(13h iteration = , i3, 15h  norm (rhs) = , d10.2)
-  520 format(13h iteration = ,i3,22h  relaxation factor = ,d10.2
-     1       ,33h norm of scaled rhs changes from ,d10.2,3h to,d10.2
-     2       ,33h norm   of   rhs  changes  from  ,d10.2,3h to,d10.2)
-  530 format(27h fixed jacobian iterations,)
-  540 format(35h switch to damped newton iteration,)
-  550 format(40h relaxation factor corrected to relax = , d10.2
-     1       ,33h norm of scaled rhs changes from ,d10.2,3h to,d10.2
-     2       ,33h norm   of   rhs  changes  from  ,d10.2,3h to,d10.2)
-  560 format(18h convergence after , i3,11h iterations)
-  570 format(22h no convergence after , i3, 11h iterations)
-  580 format(37h no convergence.  relaxation factor =,d10.3
-     1       ,24h is too small (less than, d10.3, 1h))
-  590 format(18h  (no convergence) )
-  600 format(50h  (probably tolerances too stringent, or nmax too
-     1       ,6hsmall) )
       end
 c-----------------------------------------------------------------------
 c                    p a r t  2
@@ -1352,7 +1290,6 @@ c
       dimension d1(40), d2(40), zv(40), slope(*), accum(*), valstr(*)
 c karline: added dimension of dummy double precision 'dumm'
       dimension xi(*), xiold(*), xij(*), aldif(*), fixpnt(*), dumm(1)
-      CHARACTER(len=150) msg
 c
       nfxp1 = nfxpnt +1
       go to (180, 100, 50, 20, 10), mode
@@ -1368,10 +1305,6 @@ c
 c...  iguess=2, 3 or 4.
 c
       noldp1 = nold + 1
-      if (iprint .lt. 1)  then
-        write(msg,360) nold, (xiold(i), i=1,noldp1)
-             call rprint(msg)
-           endif 
 
       if (iguess .ne. 3)                            go to 40
 c
@@ -1443,8 +1376,7 @@ c
       n = nmax / 2
       go to 220
   110 if (iprint .lt. 1)  then 
-       write(msg,370)
-       call rprint(msg)
+             CALL Rprint('Expected N too large')
       endif 
       n = n2
       return
@@ -1564,8 +1496,8 @@ c...  naccum=expected n to achieve .1x user requested tolerances
 c
       naccum = accum(nold+1) + 1.d0
       if (iprint .lt. 0)  then
-        write(msg,350) degequ, naccum
-        call rprint(msg)
+      CALL Rprintd1('Mesh info, degree of equidistribution = ',Degequ)
+      CALL Rprinti1('Prediction for required N =  ', Naccum)
       endif 
 c
 c...  decide if mesh selection is worthwhile (otherwise, halve)
@@ -1656,20 +1588,10 @@ c
              k2 = k2 + 1
   330 continue
       np1 = n + 1
-      if (iprint .lt. 1) then
-        write(msg,340) n, (xi(i),i=1,np1)
-        call rprint(msg)
-      endif 
 
       nalpha = n * k * ncomp + mstar
       return
 c----------------------------------------------------------------
-  340 format(17h the new mesh (of,i5,16h subintervals), ,100(8f12.6))
-  350 format(21h mesh selection info,30h degree of equidistribution =
-     1       , f8.5, 28h prediction for required n = , i8)
-  360 format(20h the former mesh (of,i5,15h subintervals),,
-     1       100(8f12.6))
-  370 format (23h  expected n too large  )
       end
       subroutine sysconsts
 c
@@ -1724,7 +1646,6 @@ c
      3     5.097d-13, 2.290d-12, 2.446d-11, 2.331d-10, 2.936d-9,
      4     3.593d-8,  7.001d-16, 3.363d-15, 3.921d-14, 4.028d-13,
      5     5.646d-12, 7.531d-11, 1.129d-9  /
-      CHARACTER(len=150) msg
 c
 c...  assign weights for error estimate
 c
@@ -1857,7 +1778,6 @@ c
       common /bsplin/ vncol(66,7), vnsave(66,5), vn(66)
 C Karline: added dumm(1)	  
       dimension xiold(*), aldif(*), valstr(*), work(mstar,*),dumm(1)
-      CHARACTER(len=150) msg
 c
       ifin = 1
       noldp1 = nold + 1
@@ -1865,20 +1785,8 @@ c
 c...  if full output has been requested, print values of the
 c...  solution components   z  at the meshpoints.
 c
-      if ( iprint .ge. 0 )                          go to 30
-c karline: toggled this off
-c      do 10 i = 1, nold
-c   10 call sysapprox(i, xiold(i), work(1,i), vnsave(1,1), xiold,
-c     1     nold, aldif, k, ncomp, m, mstar, 3, dumm, 0)
-c      call sysapprox(nold, xiold(noldp1), work(1,noldp1), vn, xiold,
-c     1     nold, aldif, k, ncomp, m, mstar, 2, dumm, 0)
-c      do 20 i = 1, mstar
-c           write(msg,140) i
-c             call rprint(msg)
-c   20 continue
-c      write(msg,150) (work(i,j), j=1, noldp1)
-c     call rprint(msg)
-   30 continue
+c karline: toggled off printing
+
       if (imesh.eq.1)                               return
 c
 c...  imesh = 2 so error estimates are to be generated and tested
@@ -1929,26 +1837,10 @@ c
    80      do 90 l = 1,mstar
    90      errest(l) = dmax1(errest(l),err(l))
   100 continue
-      if (iprint .lt. 1) then
-        write(msg,130)
-        call rprint(msg)
-      endif 
-      lj = 1
-      do 110 j = 1,ncomp
-           mj = lj - 1 + m(j)
-           if (iprint .lt. 1) then
-             write(msg,120) j, (errest(l), l= lj, mj)
-             call rprint(msg)
-           endif 
 
-           lj = mj + 1
-  110 continue
+C karline: toggled off lot of printing
       return
 c--------------------------------------------------------------
-  120 format (3h u(, i2, 3h) -,4d12.4)
-  130 format (26h the estimated errors are,)
-  140 format( 19h mesh values for z(, i2, 2h), )
-  150 format(1h , 8d15.7)
       end
 c
 c-----------------------------------------------------------------------
@@ -2017,7 +1909,6 @@ C Karline: added dimension dummy(1)
       dimension aldif(*), rhs(*), a(*), ipiv(*), integs(3,*),dummy(1)
       dimension z(40), f(40), df(800), dmval(20)
       dimension rpar(*), ipar(*)
-      CHARACTER(len=150) msg
 
       integer nfunc, njac, nstep, nbound, njacbound
       common/coldiag/nfunc, njac, nstep, nbound, njacbound
@@ -2295,7 +2186,6 @@ c**********************************************************************
       integer nfunc, njac, nstep, nbound, njacbound
       common/coldiag/nfunc, njac, nstep, nbound, njacbound
 
-      CHARACTER(len=150) msg
 c
       nk = nc
       if (mode .eq. 2)  nk = nc + ncomp - 1
@@ -2509,7 +2399,6 @@ c
       common /nonln/ precis,nonlin,iter,limit,icare,iprint,iguess,ifreez
       common /side/  zeta(40), aleft, aright, izeta
       dimension z(*), vn(*), xi(*), aldif(*), m(*), dmval(*)
-      CHARACTER(len=150) msg
 c
       go to (10, 60, 70, 10, 80), mode
 c
@@ -2519,8 +2408,8 @@ c
       if (x .ge. xi(1)-precis .and. x .le. xi(n+1)+precis)
      1                                              go to 20
       if (iprint .lt. 1) then
-         write(msg,160) x, xi(1), xi(n+1)
-         call rprint(msg)
+      CALL Rprintd3('Domain error in Approx, X, Aleft, Aright ',
+     +  X, Xi(1), Xi(N+1))
       endif 
 
       if (x .lt. xi(1)) x = xi(1)
@@ -2595,9 +2484,6 @@ c
   150 continue
       return
 c--------------------------------------------------------
-  160 format(37h ****** domain error in approx ******
-     1       ,4h x =,d20.10, 10h   aleft =,d20.10,
-     2       11h   aright =,d20.10)
       end
       subroutine sysbspfix (rhox, vn, k, ncomp, m)
 c
@@ -2619,7 +2505,6 @@ c***********************************************************************
 c
       implicit real*8 (a-h,o-z)
       dimension vn(*), m(*)
-      CHARACTER(len=150) msg
       xrho = 1.d0 - rhox
       ivn = 0
 c
@@ -2667,7 +2552,6 @@ c**********************************************************************
 c
       implicit real*8 (a-h,o-z)
       dimension vn(*), xi(*), m(*)
-      CHARACTER(len=150) msg
       md1 = m(ncomp) -1
       if(md1 .le. 0)                                return
       xil = xi(1)
@@ -2746,7 +2630,6 @@ c
       common /eqord/ ind(5), ineq(20), mnd(5), nd, neq
       dimension basef(*), vn(*), xmesh(*)
       dimension alphd(80), alphdo(80), alphn(280) , alphno(280)
-      CHARACTER(len=150) msg
 c
       go to (10, 20, 30, 40), mode
 c
@@ -3020,7 +2903,6 @@ c***********************************************************************
 c
       implicit real*8 (a-h,o-z)
       dimension aldif(*), alpha(*), xi(*), m(*)
-      CHARACTER(len=150) msg
       kd = k * ncomp
       incomp = 0
       k3 = 0
@@ -3134,7 +3016,6 @@ c
       common /order/ k,ncomp,mstar,kd,kdm,mnsum,m(20)
       dimension uhigh(*) , ar(20), arm1(20)
       dimension aldif(*), xiold(*)
-      CHARACTER(len=150) msg
 c
       dn2 = 1.d0 / (xiold(i+1) - xiold(i))
       incomp = 0
@@ -3212,7 +3093,6 @@ c
       integer integs(3,nbloks),ipivot(*),iflag, i,index,indexb,indexn,
      1        last,ncol,nrow
       double precision bloks(*),scrtch(*)
-      CHARACTER(len=150) msg
       iflag = 1
       indexb = 1
       indexn = 1
@@ -3275,7 +3155,6 @@ c
       integer ipivot(nrow),ncol,last,iflag, i,ipivi,ipivk,j,k,kp1
       double precision w(nrow,ncol),d(nrow), awikdi,colmax,ratio,rowmax
       double precision dabs,dmax1
-      CHARACTER(len=150) msg
 c
 c...  initialize ipivot, d
 c

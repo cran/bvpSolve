@@ -1,19 +1,19 @@
 Package: bvpSolve
-Version: 1.2.2
+Version: 1.2.3
 Title: Solvers for boundary value problems of ordinary differential
         equations
-Author: Karline Soetaert <k.soetaert@nioo.knaw.nl>, Jeff Cash
+Author: Karline Soetaert <karline.soetaert@nioz.nl>, Jeff Cash
         <j.cash@imperial.ac.uk>, Francesca Mazzia <mazzia@dm.uniba.it>
-Maintainer: Karline Soetaert <k.soetaert@nioo.knaw.nl>
+Maintainer: Karline Soetaert <karline.soetaert@nioz.nl>
 Depends: R (>= 2.01), rootSolve, deSolve
 Description: Functions that solve boundary value problems (BVP) of
-        systems of ordinary differential equations (ODE). The functions
-        provide an interface to the FORTRAN functionS twpbvpC,
-        colnew/colsys, and an R-implementation of the shooting method.
+        systems of ordinary differential equations (ODE).  The
+        functions provide an interface to the FORTRAN functionS
+        twpbvpC, colnew/colsys, and an R-implementation of the shooting
+        method.
 License: GPL (>= 2)
 LazyData: yes
+Packaged: 2013-05-11 15:06:58 UTC; KarlineS
+NeedsCompilation: yes
 Repository: CRAN
-Repository/R-Forge/Project: bvpsolve
-Repository/R-Forge/Revision: 88
-Date/Publication: 2011-08-11 08:05:41
-Packaged: 2011-08-10 21:02:40 UTC; rforge
+Date/Publication: 2013-05-11 22:48:30

@@ -1,19 +1,20 @@
-
+## EXTENDED FOR DAEs
 ##==============================================================================
 ## Solving boundary value problems of ordinary differential equations
 ## using the shooting method
 ##==============================================================================
 
-bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL, 
-    order = NULL,  guess=NULL, 
-    jacfunc=NULL, bound=NULL, jacbound=NULL, 
-    leftbc=NULL, posbound = NULL, ncomp = NULL, 
-    atol=1e-8, rtol=1e-8, extra=NULL, maxiter=100, 
-    positive =FALSE, method="lsoda", ...)  {
+bvpshoot<- function(yini = NULL, x, func, yend = NULL, parms = NULL, 
+    order = NULL,  guess = NULL, 
+    jacfunc = NULL, bound = NULL, jacbound = NULL, 
+    leftbc = NULL, posbound = NULL, ncomp = NULL, 
+    atol = 1e-8, rtol = 1e-8, extra = NULL, maxiter = 100, 
+    positive = FALSE, method = "lsoda", ...)  {
 
 ## ---------------------
 ## check input
 ## ---------------------
+  
   if (is.null(yini)   && is.null(bound))
     stop("either 'yini' and 'yend' or 'bound' should be inputted")
   if (!is.null(yini)  && is.null(yend))
@@ -29,6 +30,22 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
     stop("cannot use 'bvpshoot' with compiled code")
 
   lex      <- length(extra)
+
+  # dots for passing to function and dots for method
+  fdots <- list(...)
+  metargs <- names(formals(method))
+  fmet <- which(names(fdots) %in% metargs)
+  fdots [fmet] <- NULL
+
+  if (is.function(method)) 
+    Ode <- method  else 
+    Ode <- function(...) ode (method = method, ...)
+
+  if (length(fdots) == 0)
+    Do.call <- function(x, ll) do.call(x, ll)
+  else
+    Do.call <- function(x, ll) do.call(x, c(ll,unlist(fdots)))
+
 ## ---------------------------
 ## The order of the equations
 ## ---------------------------
@@ -51,7 +68,7 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
       # expand func
       Fret <- numeric(length = mstar)
       Func    <- function(x, state, parms,...)  {
-        FF <- func   (x, state, parms,...)
+        FF <- Do.call(func, list(x, state, parms))
         Fret[stareq] <- unlist(FF[1])
         Fret[higord] <- state[higord+1]
         FF[1] <- list(Fret)
@@ -62,16 +79,16 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
        stop ("can not combine analytical jacobian with higher-order equations - remove 'jacfunc'")
    }
    if (is.null(ncomp)) ncomp <- mstar    
-  } 
+  }             
 
 ## ---------------------
 ## yini or bound
 ## ---------------------
   if (! is.null(yini))  {    
     # initial value yini; a function or vector
-    inity <- function(X,parms) {  # initialises yini and parms..
+    inity <- function(X, Parms) {  # initialises yini and parms..
       if (is.function(yini))
-        Y <-yini(X,Parms,...)
+        Y <- do.call(yini,list(X,Parms))
       else Y <- yini
       if (lini>0)
         Y[inix] <- X[1:lini]
@@ -87,17 +104,17 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
     }  
 
     if (is.function(yini))
-      y <- yini(extra,parms,...)
+      y <- Do.call(yini,list(extra, parms))
     else
       y <- yini
       
     # root function to solve for  - note jacfunc = NULL to avoid error in devel R 2.12
-    rootfun <- function(X, jacfunc=NULL, ...)  {  
+    rootfun <- function(X, jacfunc = NULL, ...)  {  
       times <- c(x[1], x[length(x)])
       Parms <- initparms(X)
       Y     <- inity(X,Parms)
-      out   <- ode(y=Y, times=times, func=Func, jacfunc=JacFunc,
-                 parms=Parms, method=method,
+      out   <- Ode(y=Y, times=times, func=Func, jacfunc=JacFunc,
+                 parms=Parms, #method=method,
                  atol=atol, rtol=rtol, ...)
       attrib <<- attrib + c(attributes(out)$istate[c(2,3,14)],1)
     # deviation with yend should be =0             
@@ -133,6 +150,9 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
          
       }
     }   
+    if (! is.null(guess) & ! is.null(ncomp))
+      if (length(guess) != ncomp) stop ("length of 'guess' should be = number of variables")
+      
     y <- guess  
   
     rootfun <- function(X, jacfunc = NULL, ...)  {  
@@ -140,22 +160,22 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
          times <- c(x[1], x[length(x)])
       else
          times <- x   
-      out   <- ode(y=X, times=times, func=Func, jacfunc=JacFunc,
-                   parms=parms, method=method,
-                   atol=atol, rtol=rtol, ...)
+      out   <- Ode(y = X, times = times, func = Func, jacfunc = JacFunc,
+                   parms = parms, #method = method,
+                   atol = atol, rtol = rtol, ...)
       attrib <<- attrib + c(attributes(out)$istate[c(2,3,14)],1)
       Res <- vector(length=ly)
       if (! posspecified) {
         Yend <- out[nrow(out),2:(ly+1)]             
         for (i in 1:leftbc) 
-          Res[i] <- bound(i,X,parms,...)
+          Res[i] <- Do.call(bound,list(i,X,parms))
         if (leftbc < ly) 
           for (i in  (leftbc+1):ly) 
-            Res[i]<- bound(i,Yend,parms,...)
+            Res[i]<- Do.call(bound,list(i,Yend,parms))
       } else 
       for (i in 1:length(posbound)) {
-        ii <- iipos[i]
-        Res[i] <- bound(i,out[ii,-1],parms,...)
+        ii <- iipos[i]          
+        Res[i] <- Do.call(bound,list(i,out[ii,-1],parms))
       }
       return(Res)
     }
@@ -163,8 +183,8 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
     if (! is.null(jacbound)) {  
       JAC <- matrix(nrow=length(y),ncol=length(y),0)
       JacBound <- function(x,...)  {
-        for (i in 1:ly) 
-          JAC[i,]<- jacbound(i,x,parms,...)
+        for (i in 1:ly)    
+          JAC[i,]<- Do.call(jacbound,list(i,x,parms))
         return(JAC)  
       }    
     }    
@@ -213,7 +233,7 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
       Parms <- initparms(extra)
     else
       Parms <- parms
-    FF <- func   (x[1], y, Parms,...)
+    FF <- Do.call(func,list(x[1], y, Parms))
     if (length(FF[[1]]) != neq)
       stop("function 'func' should return as many elements as the length of 'order'")  
   }
@@ -231,13 +251,13 @@ bvpshoot<- function(yini=NULL, x, func, yend=NULL, parms=NULL,
 
   if (! is.null(yini) ) {
     Parms <- initparms(sol$root)
-    Y     <- inity(sol$root,Parms)
+    Y     <- inity(sol$root, Parms)
   }  else {
     Parms <- parms 
     Y     <-  sol$root
   }
     
-  out <- ode (times=x, func=Func, y=Y, parms=Parms, method=method, jacfunc=jacfunc,
+  out <- Ode (times=x, func=Func, y=Y, parms=Parms, jacfunc=jacfunc, #method=method, 
               atol=atol, rtol=rtol, ...)
   attrib <- attrib + c(attributes(out)$istate[c(2,3,14)],1)
 

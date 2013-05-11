@@ -8,16 +8,6 @@ c  modified external and intrinsic instructions
 c karline: got rid of pdebug (common algprs)
 
 c ===================================================================================
-c print R-messages
-c ===================================================================================
-
-      subroutine rprint(msg)
-      character (len=150) msg
-
-            call dblepr(msg, 150, 0, 0)
-      end subroutine
-
-c ===================================================================================
 c initu resets u after re-meshing for linear problems or for nonlinear problems
 c when interpolation of the old solution is not used.
 c it interpolates between (Xguess,Yguess), if these are inputted
@@ -30,8 +20,6 @@ c ==============================================================================
       implicit double precision (a-h,o-z)
       dimension xx(*), u(nudim, *), xguess(*), uguess(nugdim,*)
 
-      character(len=150) msg
-
       logical use_c, comp_c, giv_u
       integer nmguess, ureset
       common/algprs/nminit, iprint, idum, use_c, comp_c
@@ -41,12 +29,9 @@ c ==============================================================================
 
       ureset = ureset + 1
 
-   99 format('initu',1pd15.5)
-
       IF (giv_u) THEN
        if (iprint .ne. -1) then
-        write(msg,99) 0.0d0
-        call Rprint(msg)
+             CALL Rprint('initu = 0.d0')
        endif
 
        call interp(ncomp, nmsh, xx, nudim, u,
@@ -54,10 +39,9 @@ c ==============================================================================
 
       ELSE
        if (iprint .ne. -1) then
-        write(msg,99) Uval0
-        call Rprint(msg)
+        CALL Rprintd1('initu ', Uval0)
        endif
-        call mtload(ncomp, nmsh, Uval0, nudim, u)
+       call mtload(ncomp, nmsh, Uval0, nudim, u)
       ENDIF
 
       return
@@ -95,7 +79,6 @@ c     cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         INTRINSIC SIGN
         DOUBLE PRECISION SIGN
-      character(len=150) msg
 
         FIRSTCOL=.true.
 
@@ -221,14 +204,14 @@ c               OMG(l) = DMAX1( OMG(l),CSUM)
                idmx=idmn
            endif
            if (OMG(l).GT.OMG(l-1)) then
-               gamma1=OMG(l)* (XX(l)-XX(l-1))
+               gamma1=OMG(l)* ABS(XX(l)-XX(l-1))
            else
-               gamma1=OMG(l-1)* (XX(l)-XX(l-1))
+               gamma1=OMG(l-1)* ABS(XX(l)-XX(l-1))
            end if
            GAMMA=GAMMA + gamma1
            l=l+1
  400    continue
-      GAMMA=GAMMA/(ARIGHT-ALEFT)
+      GAMMA=GAMMA/ABS(ARIGHT-ALEFT)
 
 
 
@@ -260,9 +243,9 @@ c        OMG(I-1)  = OMG(I-1)+BOMEGA1
                   BOMEGA2 = DMAX1(BOMEGA2,ABS(C1(k,j+l-1)))
                END DO
                IF (BOMEGA1 .GT. BOMEGA2) THEN
-                  GAMMAK = GAMMAK + BOMEGA1*(XX(I)-XX(I-1))
+                  GAMMAK = GAMMAK + BOMEGA1*ABS(XX(I)-XX(I-1))
                ELSE
-                  GAMMAK = GAMMAK + BOMEGA2*(XX(I)-XX(I-1))
+                  GAMMAK = GAMMAK + BOMEGA2*ABS(XX(I)-XX(I-1))
                END IF
                IF (BOMEGA2 .GT. KPPAK) THEN
                    KPPAK=BOMEGA2
@@ -270,7 +253,7 @@ c        OMG(I-1)  = OMG(I-1)+BOMEGA1
                BOMEGA1=BOMEGA2
                I=I+1
            END DO
-           GAMMAK = GAMMAK/(ARIGHT-ALEFT)
+           GAMMAK = GAMMAK/ABS(ARIGHT-ALEFT)
            IF (GAMMAK .GT. GAMMAI) THEN
               GAMMAI = GAMMAK
            END IF
@@ -413,8 +396,6 @@ c     cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         double precision ckappa
         INTEGER KASE,ISOLVE
         INTEGER k,i,j,l,jj
-      character(len=150) msg
-
 
 c
 c       DO THE CONDITION NUMBER ESTIMATION BY HIGHAM:
@@ -505,13 +486,11 @@ c ==============================================================================
       save  dfold, oldrt1, savedu, reposs
 
       logical adjrer
-      character(len=150) msg
 
 *  The Newton iteration converged for a 4th order solution.
 
       if (iprint .eq. 1) THEN
-        write(msg,901)
-        CALL rprint(msg)
+             CALL Rprint('conv4')
       ENDIF
 
 
@@ -701,7 +680,6 @@ c      if (stiff_cond .and. stab_cond) onto6 = .true.
 
       return
 
-  901 format(1h ,'conv4')
 
       end
 
@@ -727,13 +705,11 @@ c ==============================================================================
       dimension amg(*),r4(*), fixpnt(*), irefin(*)
       logical use_c, comp_c
       common/algprs/ nminit, iprint, idum,  use_c, comp_c
-      character(len=150) msg
 
 *  The Newton procedure failed to obtain a 4th order solution.
 
       if (iprint .eq. 1) THEN
-        write(msg,901)
-        CALL Rprint(msg)
+             CALL Rprint('fail4')
       ENDIF
 
 
@@ -784,7 +760,6 @@ c ==============================================================================
       endif
 
       return
- 901   format(1h ,'fail4')
       end
 
       subroutine conv6(ncomp, nmsh, ntol, ltol, tol,
@@ -803,13 +778,11 @@ c ==============================================================================
       common/algprs/ nminit, iprint,idum,  use_c, comp_c
 
       logical errok
-      character(len=150) msg
 
 *  The Newton iteration converged for a 6th-order solution.
 
       if (iprint .eq. 1) THEN
-        write(msg,901)
-        CALL rprint(msg)
+             CALL Rprint('conv6')
       ENDIF
 
 
@@ -832,7 +805,6 @@ c ==============================================================================
       endif
 
       return
-  901 format(1h ,'conv6')
       end
 
 c ===================================================================================
@@ -868,13 +840,11 @@ c ==============================================================================
 *  intervals when the mesh is altered based on the distribution
 *  in size of the rhs vector.
       parameter ( nmpt = 15)
-      character(len=150) msg
 
 *  Non-convergence of 6th order.
 
       if (iprint .eq. 1) THEN
-        write(msg,901)
-        CALL rprint(msg)
+             CALL Rprint('fail6')
       ENDIF
 
       succes = .false.
@@ -889,26 +859,18 @@ c ==============================================================================
       call matcop(ncomp, nudim, ncomp, nmold, uold, u)
 
       if (reaft6 .and. iprint .ge. 0) THEN
-        write(msg,9999)
-        CALL rprint(msg)
+         CALL Rprint('in fail6, reaft6is true')
       ENDIF
- 9999 format(1h ,'in fail6, reaft6is true')
       if (.not.reaft6 .and. iprint .ge. 0) THEN
-        write(msg,9998)
-        CALL rprint(msg)
+         CALL Rprint('in fail6, not reaft6')
       ENDIF
- 9998 format(1h ,'in fail6, not reaft6')
       if (ddouble.and. iprint .ge. 0) THEN
-        write(msg,9997)
-        CALL rprint(msg)
+         CALL Rprint('in fail6, ddouble  is true')
       ENDIF
- 9997 format(1h ,'in fail6, ddouble  is true')
       if (.not.ddouble.and. iprint.ge.0 ) THEN
-        write(msg,9996)
-        CALL rprint(msg)
+         CALL Rprint('in fail6, not double')
       ENDIF
 
- 9996 format(1h ,'in fail6, not double')
 
       if (.not. reaft6 .or. .not. ddouble ) then
 
@@ -958,17 +920,13 @@ c ==============================================================================
          call rerrvl( ncomp, nmsh, nudim, u, usave, ntol, ltol,
      *          rerr, remax, itlmx, adjrer )
          if (iprint.eq.1) THEN
-           write(msg,9994)
-           CALL rprint(msg)
+             CALL Rprint('***in fail6')
          ENDIF
 
- 9994    format(1h ,'***in fail6')
          if (iprint.eq.1) THEN
-           write(msg,9993) remax, eight*tol(itlmx)
-           CALL rprint(msg)
+           CALL Rprintd2('remax and 8*tol = ', remax, eight*tol(itlmx))
          ENDIF
 
- 9993    format(1h ,'remax',1pe14.4,5x,'8*tol',1pe14.4)
          if (remax .lt. eight*tol(itlmx)) then
             succes = .true.
          else
@@ -1057,7 +1015,6 @@ cf of the old mesh we take the values using incx = 2
       endif
 
       return
-  901 format(1h ,'fail6')
       end
 
 c ===================================================================================
@@ -1097,14 +1054,12 @@ c ==============================================================================
 *  blas: dload
 
       save er6old, er8old
-      character(len=150) msg
 
 *  The Newton iteration converged for the 8th order solution.
 
 
       if (iprint .eq. 1) THEN
-        write(msg,901)
-        CALL rprint(msg)
+             CALL Rprint('conv8')
       ENDIF
 
 
@@ -1139,7 +1094,6 @@ c ==============================================================================
       call errest (ncomp, nmsh, ntol, ltol, tol,
      *          nudim, u, uold, etest8, err8, errok)
 
-c      write(*,*) 'etest8', etest8(1),etest8(2), errok
       if (errok)  then
          succes = .true.
          return
@@ -1290,7 +1244,6 @@ c               call matcop(nudim, ncomp, ncomp, nmold, u, uold)
 
       return
 
-  901 format(1h ,'conv8')
       end
 
 c ===================================================================================
@@ -1313,7 +1266,6 @@ c ==============================================================================
 
       logical use_c, comp_c
       common/algprs/ nminit, iprint,idum,use_c, comp_c
-      character(len=150) msg
 
 *  8th order solution did not converge (the problem must be nonlinear)
 
@@ -1368,7 +1320,6 @@ c ==============================================================================
 
       intrinsic abs
       intrinsic max
-      character(len=150) msg
 
 *  blas: idamax
 
@@ -1464,7 +1415,6 @@ c ==============================================================================
       parameter ( tenth = 0.1d+0, one = 1.0d+0, two = 2.0d+0 )
       parameter ( thrtwo = 32.0d+0 )
       parameter ( rtst = 50.0d+0, derval = 50.0d+0 )
-      character(len=150) msg
 
 *  decid4 evaluates information about the deferred corrections
 *  and the nature of the problem, and sets various logical
@@ -1594,8 +1544,6 @@ c ==============================================================================
       integer nfunc, njac, nstep, nbound, njacbound
       common/diagnost/nfunc, njac, nstep, nbound, njacbound
 
-      character(len=150) msg
-
 *  Given the nmsh mesh points xx, the estimated solution
 *  u and the array fval of function values at (xx(im), u(*,im)),
 *  im = 1,...,nmsh, dfexcl calculates sixth-order explicit
@@ -1668,8 +1616,6 @@ c ==============================================================================
      *    a5, b5, c5, d5, e5, f5, a6, b6, c6
       integer nfunc, njac, nstep, nbound, njacbound
       common/diagnost/nfunc, njac, nstep, nbound, njacbound
-
-      character(len=150) msg
 
       do 100 im = 1, nmsh-1
 
@@ -1753,7 +1699,6 @@ c ==============================================================================
 *  blas: dcopy
 
       parameter (zero = 0.0d+0)
-      character(len=150) msg
 
 *  dfimcl calculates the rational deferred correction array,
 *  which is indexed over the components and mesh intervals.
@@ -1794,8 +1739,6 @@ c ==============================================================================
 
       parameter ( zero = 0.0d+0, half = 0.5d+0 )
       parameter ( frac1 = 0.1d+0, frac2 = 1.0d-2 )
-      character(len=150) msg
-
 
 *  For linear problems, subroutine osc performs heuristic tests
 *  to detect an oscillating solution.  the tests check whether
@@ -1901,7 +1844,6 @@ c ==============================================================================
       dimension xx(nmsh), defimp(ncomp,nmsh-1)
       dimension dfrat(ncomp,nmsh-1), bhold(ncomp,ncomp,nmsh-1)
 
-      character(len=150) msg
 *  blas: ddot, dscal
 
       parameter (zero = 0.0d+0, half = 0.5d+0, one = 1.0d+0)
@@ -2071,7 +2013,6 @@ c ==============================================================================
       parameter ( xlarge = 1.0d+6, huge = 1.0d+30, lmtfrz = 8)
       parameter ( rngrow = 16.0d+0, rfact = 100.0d+0 )
       parameter ( tolfct = 0.1d+0 )
-      character(len=150) msg
 
 *  The iteration scheme uses a fixed Jacobian matrix to solve for
 *  correction vectors, once there has been convergence of the Newton
@@ -2080,8 +2021,7 @@ c ==============================================================================
 *  their calculation.
 
       if (iprint .eq. 1) THEN
-        write(msg,901)
-        CALL rprint(msg)
+             CALL Rprint('fixed Jacobian iterations')
       ENDIF
 
       ninter = nmsh - 1
@@ -2113,8 +2053,7 @@ c ==============================================================================
       if (rnsq.gt.huge .or.
      *      (iorder.eq. 8 .and. rnsq.gt.xlarge)) then
          if (iprint .eq. 1) THEN
-           write (msg,902) rnsq
-           CALL rprint(msg)
+          CALL Rprintd1('Large residual, rnsq =', rnsq)
          ENDIF
 
          iflag = -2
@@ -2129,8 +2068,7 @@ c ==============================================================================
 *  If rnsq is sufficiently small, terminate immediately.
 
       if (iprint .eq. 1) THEN
-        write(msg,903) iter, rnsq
-        CALL rprint(msg)
+       CALL Rprintid('iter, rnsq', iter, rnsq)
       ENDIF
 
       if (rnsq .le. 1.0d2*epsmch) then
@@ -2192,8 +2130,7 @@ c ==============================================================================
             iflag = -2
          endif
          if (iprint .eq. 1) THEN
-           write(msg,904) iflag
-           CALL rprint(msg)
+          CALL Rprinti1('Failure of fixed Jacobian, iflag =', iflag)
          ENDIF
 
          return
@@ -2212,18 +2149,12 @@ c ==============================================================================
 *  been passed.
 
       if (iprint .ge. 0) THEN
-        write(msg,905) iter, rnsq
-        CALL rprint(msg)
+       CALL Rprintid('Fixed Jacobian convergence iter rnsq ',iter,rnsq)
       ENDIF
 
 
       iflag = 0
       return
-  901 format(1h ,'fixed Jacobian iterations')
-  902 format(1h ,'Large residual, rnsq =',1pe12.4)
-  903 format(1h ,'iter, rnsq',i5,1pe11.3)
-  904 format(1h ,'failure of fixed Jacobian, iflag =',i5)
-  905 format(1h ,'fixed Jacobian convergence',i5,1pe11.3)
       end
 
 c ===================================================================================
@@ -2264,7 +2195,6 @@ c ==============================================================================
 *  blas: dcopy, dload
 
       parameter  ( one = 1.0d+0, zero = 0.0d+0 )
-      character(len=150) msg
 
 *  The routine lineq calculates the Newton step for a linear
 *  problem.  The Newton step is exact unless the Jacobian
@@ -2340,7 +2270,6 @@ c ==============================================================================
 c      iflag = 0
       return
 
-  901 format(1h ,'Singular matrix')
       end
 
 c ===================================================================================
@@ -2408,8 +2337,6 @@ c
       data  gtpdeb/.false./, mfsrch/5/
       data  eta/.999999d+0/, rmu/1.0d-6/
 
-      character(len=150) msg
-
 *  The routine newteq performs Newton iterations with a line
 *  search, to solve the nonlinear equations.
 
@@ -2427,8 +2354,7 @@ c
       ninter = nmsh - 1
 
       if (iprint .eq. 1) THEN
-        write(msg,901)
-        CALL rprint(msg)
+             CALL Rprint('Start Newton iterations')
       ENDIF
 
 
@@ -2450,6 +2376,9 @@ c
      *    rpar, ipar)
          call rhscal (ncomp, nmsh, nlbc, xx, nudim, u, defcor,
      *      fsub, gsub, rhs, rnsq, fval, ftmp, uint, rpar, ipar)
+      else
+         call rhscal (ncomp, nmsh, nlbc, xx, nudim, u, defcor,
+     *      fsub, gsub, rhs, rnsq, fval, ftmp, uint, rpar, ipar)
       endif
 
 
@@ -2459,8 +2388,7 @@ c
       rnprev = flmax
       rnbest = flmax
       if (iprint .ge. 0) THEN
-        write (msg,902)
-        CALL rprint(msg)
+        CALL Rprint('Iterations  alfa  merit and rnsq:')
       ENDIF
 
 
@@ -2475,8 +2403,7 @@ c
       iter = iter + 1
 
       if (iprint .eq. 1) THEN
-        write(msg,910) iter
-        CALL rprint(msg)
+       CALL Rprinti1('Newton iteration',  iter)
       ENDIF
 
 
@@ -2484,8 +2411,7 @@ c
 
       if (iter .ge. lmtnwt) then
          if (iprint .ge. 0) THEN
-           write(msg,903)
-           CALL rprint(msg)
+             CALL Rprint('Too many Newton iterations')
          ENDIF
 
          iflag = -2
@@ -2506,8 +2432,7 @@ c
 
       if (iflwat .ne. 0) then
          if (iprint .ge. 0) THEN
-           write(msg,904) iter
-           CALL rprint(msg)
+          CALL Rprinti1('Watchdog tests fail, iter =', iter)
          ENDIF
          iflag = -3
          return
@@ -2526,8 +2451,7 @@ c
 
       if (rnsq .le. epsmch .and. .not. comp_c ) then
          if (iprint .ge. 0) THEN
-           write(msg,906) iter, rnsq
-           CALL rprint(msg)
+          CALL Rprintid('Convergence, iter = ,rnsq =',iter, rnsq)
          ENDIF
 
          iflag = 0
@@ -2553,8 +2477,7 @@ c
      +   ninter,botblk,ncomp-nlbc,ipivot,delu,iflag,job)
 
       if (iprint .ge. 0 .and. iflag.ne.0) THEN
-        write(msg,905) iter
-        CALL rprint(msg)
+       CALL Rprinti1('Singular Jacobian, iter= ', iter)
       ENDIF
 
 C KSKS to account for the NOT COMP_C this was added...
@@ -2587,8 +2510,7 @@ c  at the initial point of the line search.
       oldg = -two*fa
       alfa = zero
       if (iprint .eq. 1) THEN
-        write (msg,908) alfa, fmtry, rnsq
-        CALL rprint(msg)
+       CALL Rprintd3('alfa, merit, rnsq', alfa, fmtry, rnsq)
       ENDIF
 
 
@@ -2689,8 +2611,7 @@ c  at the initial point of the line search.
             fmtry = rnsqtr
          end if
          if (iprint .eq. 1) THEN
-           write (msg,908) alfa, fmtry, rnsqtr
-           CALL rprint(msg)
+       CALL Rprintd3('alfa, merit, rnsq', alfa, fmtry, rnsqtr)
          ENDIF
 
          go to 150
@@ -2706,8 +2627,7 @@ c  at the initial point of the line search.
       call matcop (ncomp, nudim, ncomp, nmsh, utrial, u)
       call dcopy(ncomp*nmsh, rhstri, 1, rhs, 1)
       if (iprint .ge. 0) THEN
-        write(msg,909) iter, alfa, fmtry, rnsq
-        CALL rprint(msg)
+       CALL Rprintd3('alfa, merit, rnsq', alfa, fmtry, rnsq)
       ENDIF
 
 
@@ -2725,8 +2645,7 @@ c  at the initial point of the line search.
 
 
       if (iprint .ge. 0) THEN
-        write(msg, 906) iter+1, rnsq
-        CALL rprint(msg)
+       CALL Rprintid('Convergence, iter, rnsq =',iter+1, rnsq)
       ENDIF
 
       iflag = 0
@@ -2739,16 +2658,6 @@ c  at the initial point of the line search.
 
       return
 
-  901 format(1h ,'start Newton iterations')
-  902 format(1h ,' iter',
-     *              7x,'alfa',6x,'merit',7x,'rnsq')
-  903 format(1h ,'Too many Newton iterations')
-  904 format(1h ,'Watchdog tests fail, iter =', i5)
-  905 format(1h ,'Singular Jacobian, iter=',i5)
-  906 format(1h ,'Convergence, iter =',i5,4x,'rnsq =',1pe12.3)
-  908 format(1h ,'alfa, merit, rnsq',3(1pe11.3))
-  909 format(1h ,i5,3(1pe11.3))
-  910 format(1h ,'Newton iteration',i5)
       end
 
 c ===================================================================================
@@ -2761,7 +2670,6 @@ c ==============================================================================
       implicit double precision (a-h,o-z)
       parameter ( itonew = 5, itwtmx = 8, grfct = 100.0d+0 )
       parameter ( half = 0.5d+0 )
-      character(len=150) msg
 
 *  Perform watchdog tests in two forms:
 *  (1) to determine whether a sufficient decrease in the
@@ -2780,10 +2688,6 @@ c ==============================================================================
 *  itwtch counts the number of iterations without an improvement
 *  in the unscaled merit function.
 
-*      write(6,99) iter, wmerit, wmbest, wmprev
-*      write(6,98) itwtch, alfold
-*   99 format(1h ,'iter,wmer,wbest,wprev',i5,3(1pe15.5))
-*   98 format(1h ,'itwtch,alfold',i5,1pe15.5)
       iflag = 0
       if (wmerit .le. wmbest) then
 
@@ -2886,8 +2790,6 @@ c ==============================================================================
       parameter ( zero = 0.0d+0, half = 0.5d+0, eighth = 0.125d+0 )
       parameter ( four = 4.0d+0, six = 6.0d+0 )
       parameter ( one = 1.0d+0, three = 3.0d+0, twelve = 12.0d+0 )
-      character(len=150) msg
-
 
       ninter = nmsh - 1
 
@@ -2978,8 +2880,6 @@ c ==============================================================================
       integer nfunc, njac, nstep, nbound, njacbound
       common/diagnost/nfunc, njac, nstep, nbound, njacbound
       intrinsic abs
-      character(len=150) msg
-
 *  blas: dssq
 
       ninter = nmsh - 1
@@ -3057,7 +2957,6 @@ c ==============================================================================
 
       parameter ( zero = 0.0d+0, half = 0.5d+0, eighth = 0.125d+0 )
       parameter ( one = 1.0d+0, four = 4.0d+0, six = 6.0d+0 )
-      character(len=150) msg
 
 *  ninter is the number of intervals in the mesh (one less than the
 *  number of mesh points)
@@ -3120,7 +3019,6 @@ c ==============================================================================
 *  blas: dcopy
 
       parameter (half = 0.5d+0)
-      character(len=150) msg
 
 
 *  This routine is used to double the mesh, i.e., produce a mesh
@@ -3146,8 +3044,7 @@ c ==============================================================================
       nmnew = ninnew + 1
       if(nmnew .ge. nmax) then
          if (iprint .ge. 0) THEN
-           write(msg,901) nmnew
-           CALL rprint(msg)
+          CALL Rprinti1('Dblmsh: maximum mesh exceeded ',  nmnew)
          ENDIF
 
          nmsh = nmold
@@ -3170,13 +3067,10 @@ c ==============================================================================
       xx(2) = half*(xx(3) + xx(1))
       nmsh = nmnew
       if(iprint .ge. 0) THEN
-        write(msg,902) nmsh
-        CALL rprint(msg)
+      CALL Rprinti1('Dblmsh, points in the doubled mesh: ', nmsh)
       ENDIF
 
       return
-  901 format (1h , ' dblmsh.  maximum mesh exceeded, nmnew =', i8)
-  902 format (1h , ' dblmsh.  the doubled mesh has ', i8,' points.')
       end
 
 c ===================================================================================
@@ -3197,7 +3091,6 @@ c ==============================================================================
       intrinsic abs
       intrinsic  max
       intrinsic  int
-      character(len=150) msg
 
 *  blas: dcopy
 *  double precision dlog
@@ -3457,8 +3350,7 @@ c ==============================================================================
       nmsh = new
       maxmsh = .false.
       if (iprint .ge. 0) THEN
-        write(msg,905) nmsh
-        CALL rprint(msg)
+       CALL Rprinti1('Selmsh.  new nmsh =', nmsh)
       ENDIF
 
       return
@@ -3497,10 +3389,6 @@ c         nmsh = 2*nmsh - 1
       endif
       return
 
-  902 format(1h ,'im, jcomp, ermeas, normalized er',2i5,2(1pe11.3))
-  903 format(1h ,'errmax',1pe11.3)
-  905 format(1h ,'selmsh.  new nmsh =',i8)
-  910 format(1h ,'ihcomp',(10i5))
       end
 c       selmsh
 
@@ -3515,7 +3403,6 @@ c ==============================================================================
 
       logical use_c, comp_c
       common/algprs/ nminit, iprint, idum,use_c, comp_c
-      character(len=150) msg
 
 *  blas: dcopy
 
@@ -3545,8 +3432,7 @@ c ==============================================================================
          nmnew = nmsh + numadd
          if (nmnew .gt. nmax) then
             if (iprint .ge. 0) THEN
-              write(msg,903) nmnew
-              CALL rprint(msg)
+       CALL Rprinti1('Smpmsh.  maximum points exceeded, nmnew =',nmnew)
             ENDIF
             maxmsh = .true.
             return
@@ -3570,8 +3456,7 @@ c ==============================================================================
          nmnew = nmsh + numadd
          if (nmnew .gt. nmax) then
             if (iprint .ge. 0) THEN
-               write(msg,903) nmnew
-               CALL rprint(msg)
+       CALL Rprinti1('Smpmsh.  maximum points exceeded, nmnew =',nmnew)
             ENDIF
 
             maxmsh = .true.
@@ -3594,8 +3479,7 @@ c ==============================================================================
          nmnew = nmsh + 3*numadd
          if (nmnew .gt. nmax) then
             if (iprint .ge. 0) THEN
-              write(msg,903) nmnew
-              CALL rprint(msg)
+       CALL Rprinti1('Smpmsh.  maximum points exceeded, nmnew =',nmnew)
             ENDIF
             maxmsh = .true.
             return
@@ -3637,13 +3521,10 @@ c ==============================================================================
       nmsh = nmnew
 
       if(iprint .ge. 0) THEN
-        write(msg,904) nmsh
-        CALL rprint(msg)
+       CALL Rprinti1('Smpmsh.  new mesh =', nmsh)
       ENDIF
 
       return
-  903 format(1h , ' smpmsh.  maximum points exceeded, nmnew =',i6)
-  904 format(1h ,'smpmsh, new nmsh =',i7)
       end
 
 c ===================================================================================
@@ -3657,7 +3538,6 @@ c ==============================================================================
       common/algprs/ nminit, iprint, idum, use_c, comp_c
 
       intrinsic max
-      character(len=150) msg
 
 
 *  Given a left endpoint aleft, a right endpoint aright,
@@ -3680,8 +3560,7 @@ c ==============================================================================
 *  The array xx (of dimension nmsh) contains the mesh points.
 
       if (iprint .ge. 0) THEN
-        write(msg,901) nmsh
-        CALL rprint(msg)
+       CALL Rprinti1('Unimsh.  nmsh =', nmsh)
       ENDIF
 
 
@@ -3745,7 +3624,6 @@ c ==============================================================================
 
       return
 c
-  901 format (1h ,'unimsh.  nmsh =',i5)
       end
 
 c ===================================================================================
@@ -3758,7 +3636,6 @@ c ==============================================================================
       intrinsic abs
 
       parameter  ( zero = 0.0d+0 )
-      character(len=150) msg
 
 *  Given the real array elem of length len, stats calculates
 *  the following:
@@ -3811,7 +3688,6 @@ c ==============================================================================
       logical nodouble
       parameter (two = 2.0d+0)
       parameter (bigfac = 10.0d+0, small = 1.0d-2, numpt = 14)
-      character(len=150) msg
 
 
 *  This routine performs calculations leading to a decision
@@ -4005,7 +3881,6 @@ c ==============================================================================
       intrinsic max
 
       parameter ( one = 1.0d+0, zero = 0.0d+0 )
-      character(len=150) msg
 
 
 *  Given current and previous solutions u and uold on the same
@@ -4055,7 +3930,7 @@ c ==============================================================================
       logical            debug, imprvd
       logical            braktd, crampd, extrap, vset, wset
       integer            mfsrch, nout, inform, nfsrch, nsamea, nsameb
-      character(len=150) msg
+
 c
 c  *********************************************************************
 c  getptq  is a step-length algorithm for minimizing a function of one
@@ -4308,11 +4183,6 @@ c
       factor = five
       tol    = tolabs
       xtry   = alfa
-c     if (debug) THEN
-c  write (msg, 1000) alfmax, oldf, oldg, tolabs,
-c    *   alfuzz, epsaf, epsag, tolrel, crampd
-c       CALL rprint(msg)
-c     ENDIF
 
       go to 800
 c
@@ -4340,10 +4210,6 @@ c
       if (alfa .gt. alfuzz) sigdec = ctry   .le.    epsaf
       imprvd = sigdec  .and.  ( ftry - fbest ) .le. (- epsaf)
 c
-c     if (debug) THEN
-c  write (msg, 1100) alfa, ftry, ctry
-c       CALL rprint(msg)
-c     ENDIF
 
       if (.not. imprvd) go to 130
 c
@@ -4453,14 +4319,7 @@ c
       btrue  = alfbst + b
       alfaw  = alfbst + xw
       gap    = b - a
-c     if (debug) write (nout, 1200) atrue, btrue, gap, tol,
-c    *   nsamea, nsameb, braktd, closef, imprvd, conv1, conv2, conv3,
-c    *   extrap, alfbst, fbest, cbest, alfaw, fw
       if (vset) alfav  = alfbst + xv
-c     if (debug  .and.  vset) THEN
-c     write (msg, 1300) alfav, fv
-c       CALL rprint(msg)
-c     ENDIF
 
       if (convrg  .and.  moved) go to 910
 c
@@ -4511,10 +4370,6 @@ c
       if (.not. moved) s = oldg
       if (      moved) s = oldg - two*gw
       q = two*(oldg - gw)
-c     if (debug) THEN
-c  write (msg, 2100)
-c       CALL rprint(msg)
-c     ENDIF
 
       go to 600
 c
@@ -4523,10 +4378,6 @@ c
   450 gv = (fv - fbest)/xv
       s  = gv - (xv/xw)*gw
       q  = two*(gv - gw)
-c     if (debug) THEN
-c  write (msg, 2200)
-c       CALL rprint(msg)
-c     ENDIF
 
 c
 c  ---------------------------------------------------------------------
@@ -4558,10 +4409,6 @@ c  polynomial fit, the default  xtry  is one tenth of  xw.
 c
   610 if (vset  .and.  moved) go to 620
       xtry   = xw/ten
-c     if (debug) THEN
-c  write (msg, 2400) xtry
-c       CALL rprint(msg)
-c     ENDIF
 
       go to 700
 c
@@ -4605,10 +4452,6 @@ c
       if (daux .ge. dtry)   xtry = five*dtry*(point1 + dtry/daux)/eleven
       if (daux .lt. dtry)   xtry = half*sqrt( daux )*sqrt( dtry )
       if (endpnt .lt. zero) xtry = - xtry
-c     if (debug) THEN
-c  write (msg, 2500) xtry, daux, dtry
-c       CALL rprint(msg)
-c     ENDIF
 
 c
 c  if the points are configured for an extrapolation set the artificial
@@ -4632,10 +4475,6 @@ c  accept the polynomial fit.
 c
       xtry = zero
       if (abs( s*xw ) .ge. q*tol) xtry = (s/q)*xw
-c     if (debug) THEN
-c  write (msg, 2600) xtry
-c       CALL rprint(msg)
-c     ENDIF
 
 c
 c  ---------------------------------------------------------------------
@@ -4712,32 +4551,8 @@ c
 c  exit.
 c
   990 continue
-c 990 if (debug) THEN
-c       write (msg, 3000)
-c       CALL rprint(msg)
-c     ENDIF
 
       return
-c KSKSKS:
-c1000 format(/ 31h alfmax  oldf    oldg    tolabs, 1p2e22.14, 1p2e16.8
-c    *       / 31h alfuzz  epsaf   epsag   tolrel, 1p2e22.14, 1p2e16.8
-c    *       / 31h crampd                        ,  l6)
-c1100 format(/ 31h alfa    ftry    ctry          , 1p2e22.14, 1pe16.8)
-c1200 format(/ 31h a       b       b - a   tol   , 1p2e22.14, 1p2e16.8
-c    *       / 31h nsamea  nsameb  braktd  closef, 2i3, 2l6
-c    *       / 31h imprvd  convrg  extrap        ,  l6, 3x, 3l1, l6
-c    *       / 31h alfbst  fbest   cbest         , 1p2e22.14, 1pe16.8
-c    *       / 31h alfaw   fw                    , 1p2e22.14)
-c1300 format(  31h alfav   fv                    , 1p2e22.14 /)
-
-c2100 format(30h parabolic fit,    two points.)
-c2200 format(30h parabolic fit,  three points.)
-c2400 format(31h exponent reduced.  trial point, 1p1e22.14)
-c2500 format(31h geo. bisection. xtry,daux,dtry, 1p3e22.14)
-c2600 format(31h polynomial fit accepted.  xtry, 1p1e22.14)
-c3000 format(53h ---------------------------------------------------- /)
-c
-c  end of getptq
       end
 
 c ===================================================================================
@@ -4753,7 +4568,6 @@ c ==============================================================================
 * blas: dcopy
 
       parameter (zero = 0.0d+0)
-      character(len=150) msg
 
 *  interp performs piecewise linear interpolation of the old
 *  solution uold at the nmold old mesh points xxold onto the nmsh
@@ -4818,7 +4632,6 @@ c ==============================================================================
       intrinsic max
 
       parameter ( one = 1.0d+0, zero = 0.0d+0 )
-      character(len=150) msg
 
 *  rerrvl is used in considering Richardson extrapolation.
 *  The two solutions u and usvrex have a special relationship:
@@ -4883,7 +4696,6 @@ c#     modified 12/3/93, array(1) declarations changed to array(*)
 c#
       double precision dx(*),dtemp
       integer i,incx,m,mp1,n,nincx
-      character(len=150) msg
 c#
       dasum = 0.0d0
       dtemp = 0.0d0
@@ -4951,7 +4763,6 @@ c ==============================================================================
       logical first, add
       save    first, rlndec
       data    first / .true. /
-      character(len=150) msg
 
 *  The routine selconderrmsh performs selective mesh refinement, depending
 *  on the error measure ermeas and the monitor function based on the
@@ -5000,11 +4811,10 @@ c ==============================================================================
          errmax = max(ermx(im), errmax)
   120 continue
 
-c      write(*,*) 'tol', tol(1),tol(2)
 
       call moncondmsh(nmsh,xx,r1,r2,r3,fatt_r1r3,fatt_r3,nptcond,r4,amg)
 
-c      write(*,*) 'errmax', errmax, 'nptcond', nptcond
+
 c
        if (.not. stab_cond .and. errmax .ge. 1e20 ) then
 cf     *           .and. r1 .gt. 1.0d0 ) then
@@ -5248,8 +5058,7 @@ c        end if
       nmsh = new
       maxmsh = .false.
       if (iprint .ge. 0) THEN
-        write(msg,905) nmsh
-        CALL rprint(msg)
+       CALL Rprinti1('Selconderrmsh.  new nmsh =',  nmsh)
       ENDIF
 
       return
@@ -5291,8 +5100,6 @@ c         nmsh = 2*nmsh - 1
 c   endif use the conditioning and the error
       return
 
-  905 format(1h ,'selconderrmsh.  new nmsh =',i8)
-  910 format(1h ,'ihcomp',(10i5))
       end
 
 c ===================================================================================
@@ -5321,9 +5128,6 @@ c ==============================================================================
 
       parameter  ( zero = 0.0d+0, one = 1.0d+0, onep1 = 1.1d+0 )
       parameter  ( erdcid = 5.0d+0 )
-      character(len=150) msg
-
-
 
 
 *  The routine selcondmsh performs selective mesh refinement, depending
@@ -5543,8 +5347,7 @@ c  220 continue
       nmsh = new
       maxmsh = .false.
       if (iprint .ge. 0) THEN
-        write(msg,905) nmsh
-        CALL rprint(msg)
+       CALL Rprinti1('Selcondmsh.  new nmsh =', nmsh)
       ENDIF
 
       return
@@ -5560,14 +5363,6 @@ c  220 continue
 
 
       return
-
-
-
-  902 format(1h ,'im, jcomp, ermeas, normalized er',2i5,2(1pe11.3))
-  903 format(1h ,'errmax',1pe11.3)
-  904 format(1h ,'nmest, irefin',(10i5))
-  905 format(1h ,'selcondmsh.  new nmsh =',i8)
-  910 format(1h ,'ihcomp',(10i5))
       end
 
 c ===================================================================================
@@ -5596,9 +5391,6 @@ c ==============================================================================
 
       parameter  ( zero = 0.0d+0, one = 1.0d+0,onep1 = 1.1d+0)
       parameter  ( erdcid = 5.0d+0 )
-      character(len=150) msg
-
-
 
 
 *  The routine smpselcondmsh performs selective mesh refinement, by adding
@@ -5808,8 +5600,7 @@ c ==============================================================================
 *  but has more than 3 times as many intervals as the old mesh.
 *  Try doubling the mesh if possible.
             if (iprint .eq. 1) THEN
-              write(msg,*) 'smpselcondmsh'
-              CALL rprint(msg)
+             CALL rprint('Smpselcondmsh')
             ENDIF
 
             nmsh = nmold
@@ -5835,8 +5626,7 @@ c ==============================================================================
       nmsh = new
       maxmsh = .false.
       if (iprint .ge. 0) THEN
-        write(msg,905) nmsh
-        CALL rprint(msg)
+       CALL Rprinti1('Smpselcondmsh.  new nmsh =', nmsh)
       ENDIF
 
       return
@@ -5852,11 +5642,6 @@ c ==============================================================================
 
 
       return
-
-
-
-  905 format(1h ,'smpselcondmsh.  new nmsh =',i8)
-  910 format(1h ,'ihcomp',(10i5))
       end
 
 c ===================================================================================
@@ -5882,7 +5667,6 @@ c ==============================================================================
       common/monpar/ sfatt_alpha, sfatt_r3, sfatt_r1r3
 
       parameter  ( zero = 0.0d+0, one = 1.0d+0 )
-      character(len=150) msg
 
 * the function moncond compute the monitor function based on the
 * conditioning parameters and the factor used to perform the mesh selection
@@ -5948,16 +5732,6 @@ c vecchio 0.5 nuovo 0.65
             nptcond = 2
         endif
 
-
-       if (iprint .eq. 1) THEN
-         write(msg,901)r1,r3,fatt_r1r3,nptcond,nptm,nptr
-         CALL rprint(msg)
-       ENDIF
-
-
-
-  901 format(1h ,'moncondmsh.', (1pe11.3), 2(1pe11.3), 3i10)
-
       end
 
 c ===================================================================================
@@ -5983,7 +5757,7 @@ C******************************************************************
         DOUBLE PRECISION TOP(NTOP,*),A(NRWBLK,NCLBLK,*),BOT(NBOT,*)
         INTEGER J,K
         DOUBLE PRECISION MAX,DASUM,TEMP
-      character(len=150) msg
+
         TEMP = 0.0D0
 C
 C       FIRST, GO OVER THE COLUMNS OF TOP AND THE FIRST BLOCK:
@@ -6233,7 +6007,7 @@ C
 C     THE AUGUST 27 1992 VERSION OF COLROW IN WHICH X IS NO LONGER
 C     REQUIRED, WITH THE SOLUTION BEING RETURNED IN B, THE RIGHT
 C     HAND SIDE.  IN ADDITION, ALL VARIABLES ARE EXPLICITLY DECLARED.
-C     A PARAMETER "JOB" IS INCLUDED, TO SPECIFY WHICH OF A.X = B OR
+C     A PARAMETER 'JOB' IS INCLUDED, TO SPECIFY WHICH OF A.X = B OR
 C     TRANSPOSE(A).X = B IS TO BE SOLVED.
 
       SUBROUTINE COLROW(N,TOPBLK,NRWTOP,NOVRLP,ARRAY,NRWBLK,
@@ -6520,7 +6294,6 @@ C
       INTEGER PIVOT(*)
       DIMENSION TOPBLK(NRWTOP,*),ARRAY(NRWBLK,NCLBLK,*),BOTBLK(NRWBOT,*)
       DATA ZERO / 0.0D+0 /
-      character(len=150) msg
 C
 C***************************************************************
 C

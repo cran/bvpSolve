@@ -211,7 +211,7 @@ bvpshoot(yini = NULL, x, func, yend = NULL, parms = NULL,
 }
 
 \author{
-  Karline Soetaert <k.soetaert@nioo.knaw.nl>
+  Karline Soetaert <karline.soetaert@nioz.nl>
 }
 
 \details{

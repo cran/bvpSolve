@@ -285,7 +285,7 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
   columns of the output value.
 }
 \author{
-  Karline Soetaert <k.soetaert@nioo.knaw.nl>
+  Karline Soetaert <karline.soetaert@nioz.nl>
   
   Jeff Cash <j.cash@imperial.ac.uk>
   

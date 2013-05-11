@@ -3,16 +3,18 @@
 C.... *****************************************************************
 C November 2010. Bugs removed by Francesca Mazzia
 C
-C karline: changed the exit strategy if epsmin was changed - FRANCESCA CAN YOU CHECK?
+C karline: changed the exit strategy if epsmin was changed
 C
+C Francesca: September 2011, changed again the exit strategy, modified print format
+c
 C karline: to make this code compatible with R:
 C
-C 1. change all write statements into rprint statements and 
+C 1. change all write statements into rprint statements and
 C    clean up formats (no /h; toggle off excessive writes)
 C 3. changed interface to MFsub, Mgsub etc.. and added rpar, ipar
 C 4. added counters
 C 5. renamed ipar -> iset and solutn -> guess
-c all subroutines renamed, with "M" in front.
+c all subroutines renamed, with 'M' in front.
 C.... *****************************************************************
 * Francesca : Added two more values for iflag (2 and -4)
 C....   Iflag - The Mode Of Return From Colmod.
@@ -26,6 +28,7 @@ C....         = -2  If The Nonlinear Iteration Has Not Converged For The
 C....               Final Continuation Problem.
 C....         = -3  If There Is An Input Data Error.
 C             = -4  maximum number of continuation steps reached
+C             = -5  iback = 1
 c
 c Francesca added statistics in icount
 c      icount(1) = total number of function evaluation
@@ -631,7 +634,6 @@ C----------------------------------------------------------------------
       External MGsub
       External MDgsub
       External MGuess
-      CHARACTER(len=150) msg
 
 c Francesca
       logical eps_changed
@@ -653,6 +655,8 @@ C.... The Second Part Of This Subroutine Contains The Actual Algorithm
 C.... For Selecting The Continuation Parameter.
 
 C.... ******************************************************************
+
+
 
 C     intialise counters
       nfunc = 0
@@ -718,33 +722,8 @@ C
 
 C.... Print The Input Data For Checking.
 
-      If ( Iprint .gt. 0 )                         Go To 80
-      If ( Nonlin .gt. 0 )                          Go To 60
-
-      Write (msg,1000) Ncomp, (M(Ip), Ip = 1,Ncomp)
-        call rprint(msg)
-      Go To 70
-   60 Write (msg,1001) Ncomp, (M(Ip), Ip = 1,Ncomp)
-        call rprint(msg)
-
-   70 Write (msg,1002) (Zeta(Ip), Ip = 1,Mstar)
-        call rprint(msg)
-
-      If ( Nfxpnt .gt. 0 ) THEN
-        Write (msg,1003) Nfxpnt, (Fixpnt(Ip), Ip = 1,Nfxpnt)
-        call rprint(msg)
-      endif
-      Write (msg,1004) K
-        call rprint(msg)
-      Write (msg,1005) (Ltol(Ip), Ip = 1,Ntol)
-        call rprint(msg)
-      Write (msg,1006) (Tol(Ip), Ip = 1,Ntol)
-        call rprint(msg)
-      If (Iguess .ge. 2) then
-        Write (msg,1007)
-        call rprint(msg)
-      endif
-      Write (msg,1008) Eps, Epsmin
+C ... Karline: removed a lot of unnecessary printing
+C...
    80 Continue
 
 C.... Check For Correctness Of Data
@@ -802,15 +781,14 @@ C.... Ispace  And  Fspace.
       Nmaxf = (Ndimf - Nfixf) / Nsizef
       Nmaxi = (Ndimi - Nfixi) / Nsizei
       If ( Iprint .lt. 0 ) then
-         Write(msg,1009) Nmaxf, Nmaxi
-         call rprint(msg)
+       CALL Rprinti1('The maximum number of subintervals is min ',nmaxF)
+       CALL Rprinti1('The maximum number allowed from ispace ', NMAXI)
       Endif
       Nmax = Min( Nmaxf, Nmaxi )
       If ( Nmax .lt. N )                            Return
       If ( Nmax .lt. Nfxpnt+1 )                     Return
       If (Nmax .lt. 2*Nfxpnt+2 .and. Iprint .lt. 1)  Then
-        Write(msg,1010)
-        call rprint(msg)
+      CALL Rprint('Insufficient space to double mesh for err estimate')
       Endif
 
 C.... Generate Pointers To Break Up Fspace And Ispace.
@@ -1041,9 +1019,8 @@ C.... Increase The Continuation Step Counter Ncs.
 
       Ncs = Ncs+1
       If (Iprint .lt. 1) Then
-        Write(msg,1011) Ncs, Eps
-        call rprint(msg)
-      Endif 
+       CALL Rprintid('Continuation step , epsilon', Ncs, Eps)
+      Endif
       Iflag = 1
 
 C.... If We Have Reached The Maximum Number Of Continuation Steps
@@ -1051,12 +1028,12 @@ C.... Then This Will Be The Last Problem We Attempt.
 
       If (Ncs .eq. Maxcon) Then
          If (Iprint .lt. 1) Then
-           Write(Msg,1012) Maxcon
-           call rprint(msg)
-         Endif 
+       CALL Rprint('This is the final continuation step ')
+         Endif
          Iback = 1
          Ifinal = 1
          eps_changed = .true.
+         Epsmin = Eps
       Endif
 
 C.... Iatt Is A Flag That Governs Whether Mesh Selection Is Performed
@@ -1087,15 +1064,18 @@ C.... We May Finish. Ifinal = 1 When Eps = Epsmin.
 
          If (Ifinal .eq. 1) Then
             If (Iprint .lt. 1) Then
-              Write(msg,1013) Eps
-              call rprint(msg)
+       CALL Rprint('Tolerances satisfied for final problem')
+       CALL Rprintd1('Epsilon = ', Eps)
             Endif
-            if (eps_changed) iflag = 2
+            if (eps_changed) then
+               iflag = 2
+               Epsmin=Eps
+            end if
 c F            If (Eps .gt. (1.00001d0*Epsmin)) iflag = -6
             Goto 340
          Endif
 
-C.... When Bactracking The Program Should Find A Problem That It Can
+C.... When Backtracking The Program Should Find A Problem That It Can
 C.... Eventually Solve. The Relationship Between The Last Two
 C.... Successful Epsilon Values Is Used To Restrict Future Epsilon
 C.... Values. This Is The Purpose Of Estep. If Istep = 1, Then We
@@ -1128,8 +1108,8 @@ C.... The User Is Warned Of This Possibility.
 
          If (Iprec .eq. 0 .and. Phit .gt. Phimax) Then
             If (Iprint .lt. 1) Then
-              Write(msg,1014) Eps
-              call rprint(msg)
+      CALL Rprint(' ** Machine precision (possibly) not sufficient ')
+      CALL Rprint(' for epsilon less than ',Eps)
             Endif
             Epsp = Eps
             Iprec = 1
@@ -1284,35 +1264,33 @@ C.... Reached Our Final Problem
          If (Dele .lt. 0.01d0*E(3) .or. (N .gt. (Nmax/2))) Then
             Ep = E(3)
             Epsmin = One/Ep
+
 C KARLINE: added...
             eps_changed = .true.
-            iflag = 2
+
 
             If (Iprint .lt. 1) Then
                If (Dele .lt. 0.01d0*E(3)) Then
-                  Write(msg,1015) Epsmin
-                  call rprint(msg)
+      CALL Rprintd1('Continuation steps too small-Change eps to',Epsmin)
                Else
-                  Write(msg,1016) Epsmin
-                  call rprint(msg)
-               Endif
+      CALL Rprintd1('Storage limit approached-Change eps to ',Epsmin)
+	           Endif
             Endif
             Emin = Ep
             Iback = 1
 C KARLINE: ADDED THAT - NOW DIRECTLY TO 340, NOT TO 290!
                If (Epsp .ne. Zero) Then
-                  Write(msg,1018) Eps,Iflag,Eps
-                  call rprint(msg)
-                  Write(msg,1017) Epsp
-                  call rprint(msg)
+      CALL Rprintd1('Final problem not solved - Epsilon = ',Eps)
+      CALL Rprintd1('Try qgain with Eps > ',Eps)
+      CALL Rprint  ('** Machine precision (possibly) not sufficient ')
+      CALL Rprintd1('for epsilon less than ',Epsp)
                Else
-                  Write(msg,1018) Eps,Iflag,Eps
-                  call rprint(msg)
+      CALL Rprintd1('Final problem not solved - Epsilon = ', Eps)
+      CALL Rprintd1('try again with Eps > ',Eps)
                Endif
-            if (ncs .eq. Maxcon) iflag = -4
-            Goto 340
+            if (ncs .eq. Maxcon)  iflag = -4
+                Goto 340
 
-C            Goto 290
 C KARLINE: CHANGES TILL HERE
          Endif
 
@@ -1459,11 +1437,11 @@ C.... In This Case We Stop.
          If (Iback .eq. 1) Then
 C            If (Iprint .lt. 1) Then   ! karline: toggled this off
                If (Epsp .ne. Zero) Then
-                  Write(msg,1017) Eps,Iflag,Eps,Epsp
-                  call rprint(msg)
+      CALL Rprint(' ** Machine precision (possibly) not sufficient ')
+      CALL Rprintd1(' for Epsilon less than ',Epsp)
                Else
-                  Write(msg,1018) Eps,Iflag,Eps
-                  call rprint(msg)
+      CALL Rprintd1('Final problem not solved, Epsilon = ',Eps)
+      CALL Rprintd1('Try again with Eps > ',Eps)
                Endif
 C            Endif
             if (ncs .eq. Maxcon) iflag = -4
@@ -1481,9 +1459,9 @@ C.... Tolerances. We Alter Epsmin Accordingly.
 
 C.... Insert Details For Backtracking
 
-         If (Iprint .lt. 1) Then 
-           Write(msg,1019)
-           call rprint(msg)
+         If (Iprint .lt. 1) Then
+          CALL Rprint('** Failed step - backtracking for larger value')
+          CALL Rprint('of Epsilon')
          Endif
          Ifinal = 0
          N = Nbk1
@@ -1493,17 +1471,17 @@ C.... Insert Details For Backtracking
             Ep = E(3)
             Epsmin = One/Ep
             If (Iprint .lt. 1) Then
-              Write(msg,1015) Epsmin
-              call rprint(msg)
+      CALL Rprintd1('Continuation steps too small-Change Eps to',Epsmin)
             Endif
             Emin = Ep
             Iback = 1
             Iflag = 1
 C KARLINE: ADDED THE GOTO... and iflag changed and epschanged...
             eps_changed = .true.
-            iflag = 2
-            GOTO 340
-C KARLINE: CHANGES TILL HERE         
+            Iflag=2
+
+c            GOTO 340
+C KARLINE: CHANGES TILL HERE
 
          Endif
 
@@ -1598,25 +1576,6 @@ C.... *****************************************************************
       Do 380 I = 1, K2
  380     Fspace( Ic+I ) = Coef(I)
 
-      If (Iflag .eq. 1 .and. Iprint .eq. 0) Then
-C         Write(msg,1020) ('Z',Ltol(J), J=1,Ntol)
-C         call rprint(msg)
-         Jstep = Max(N/30,1)
-         Iadd = Jstep*Mstar
-         Ind = N + 1
-         Do 390 I = 1, N, Jstep
-C            Write(msg,1021) I,Fspace(I),(Fspace(Ind+Ltol(J)),J=1,Ntol)
-C           call rprint(msg)
-            Ind = Ind + Iadd
- 390     Continue
-         Ind = N+1 + Nz - Mstar
-C         Write(msg,1021) N+1,Fspace(N+1),(Fspace(Ind+Ltol(J)),J=1,Ntol)
-C        call rprint(msg)
-
-C         Write(msg,1022)
-C        call rprint(msg)
-      Endif
-
       icount(1) = nfunc
       icount(2) = njac
       icount(3) = nbound
@@ -1627,46 +1586,6 @@ C        call rprint(msg)
 
       Return
 C-----------------------------------------------------------------------
- 1000 Format(37h The Number Of (Linear) Diff Eqns Is , I3,
-     +     17h Their Orders Are, 20i3)
- 1001 Format(40h The Number Of (Nonlinear) Diff Eqns Is , I3,
-     +     17h Their Orders Are, 20i3)
- 1002 Format(27h Side Condition Points Zeta, 8f10.6, 4(2x, 8f10.6))
- 1003 Format(10h There Are ,I5,27h Fixed Points In The Mesh - ,
-     +     10(6f10.6))
- 1004 Format(37h Number Of Colloc Pts Per Interval Is, I3)
- 1005 Format(39h Components Of Z Requiring Tolerances -,8(7x,I2,1x),
-     +     4(3x,8i10))
- 1006 Format(33h Corresponding Error Tolerances -,6x,8d10.2,
-     +     4(3x,8d10.2))
- 1007 Format(44h Initial Mesh(Es) And Z,Dmz Provided By User)
- 1008 Format (33h The Initial Value Of Epsilon Is ,D11.4, 
-     +     39h The Desired Final Value Of Epsilon Is ,D11.4)
- 1009 Format(44h The Maximum Number Of Subintervals Is Min (, I4,
-     +     23h (Allowed From Fspace),,I4, 24h (Allowed From Ispace) ))
- 1010 Format(53h Insufficient Space To Double Mesh For Error Estimate)
- 1011 Format (1x,' Continuation Step ',I2,
-     +        ', Epsilon = ',D9.4,1x)
- 1012 Format (1x,'This Is The Final Continuation Step Since ',
-     +        'Maxcon =',I4)
- 1013 Format (1x,' Tolerances Satisfied For Final Problem',
-     +        ' Epsilon = ',D9.4)
- 1014 Format(' ** Machine Precision (Possibly) Not Sufficient For',
-     +        ' Epsilon Less Than ',D9.4)
- 1015 Format (' Continuation Steps Too Small, Change Eps To ',D9.4)
- 1016 Format (' Storage Limit Being Approached, Change Eps To ',
-     +     D9.4)
- 1017 Format (' Machine Precision',
-     +        ' (Possibly) Not Sufficient For Eps < ',D9.4)
- 1018 Format (' Final Problem Epsilon = ',D10.4,
-     +        ' Not Solved, Iflag =',I3,' Try Again',
-     +        ' With Eps > ',D9.4)
- 1019 Format (' ** Failed Step - Bactracking For Larger Value ',
-     +          'Of Epsilon')
-C 1020 Format(' The Final Mesh And Solution Components Are:',
-C     +       5x,'I',10x,'X(I) ',40(14x,A,'(',I2,')'))
-C 1021 Format(I6,41d19.8)
-C 1022 Format(1x,82('$'))
 C-----------------------------------------------------------------------
       End
 
@@ -1674,7 +1593,7 @@ C-----------------------------------------------------------------------
       Subroutine MContrl (Xi, Xiold, Z, Dmz, Rhs, Delz, Deldmz,
      +           Dqz, Dqdmz, G, W, V, Valstr, Slope, Scale, Dscale,
      +           Accum, Ipvtg, Integs, Ipvtw, Nfxpnt, Fixpnt, Iflag,
-     +           MFsub, MDfsub, MGsub, MDgsub, MGuess, Slpold, Voldmsh, 
+     +           MFsub, MDfsub, MGsub, MDgsub, MGuess, Slpold, Voldmsh,
      +           Eps, Rpar, Ipar )
 C
 C**********************************************************************
@@ -1746,7 +1665,6 @@ C
       External MGsub
       External MDgsub
       External MGuess
-      CHARACTER(len=150) msg
 
 
 *  The Parameter Inumb Is A Counter Used To Limit To Three The Number
@@ -1792,13 +1710,11 @@ C
       If ( Msing .eq. 0 )                      Go To 400
  30   If ( Msing .lt. 0 )                      Go To 40
       If ( Iprint .lt. 1 ) Then
-      Write (msg,1000)
-        call rprint(msg)
+        CALL Rprint('A local elimination matrix is singular')
       Endif
       Go To 460
  40   If ( Iprint .lt. 1 )  Then
-        Write (msg,1001)
-        call rprint(msg)
+        CALL Rprint('The global BVP-matrix is singular')
       Endif
       Iflag = 0
       Return
@@ -1827,12 +1743,10 @@ C
      +     MFsub, MDfsub, MGsub, MDgsub, MGuess, Eps, Rpar, Ipar )
 C
       If ( Iprint .lt. 0 )  Then
-        Write(msg,1002)
-        call rprint(msg)
+        CALL Rprint('Fixed Jacobian iterations')
       Endif
       If ( Iprint .lt. 0 )  Then
-        Write (msg,1003) Iter, Rnold
-        call rprint(msg)
+      CALL Rprintid('Iteration = , Norm (RHS) = ', Iter, Rnold)
       Endif
       Go To 70
 C
@@ -1841,13 +1755,12 @@ C.... The Value Of Ifreez Determines Whether This Is A Full
 C.... Newton Step ( = 0) Or A Fixed Jacobian Iteration ( = 1).
 C
  60   If ( Iprint .lt. 0 )  Then
-        Write (msg,1003) Iter, Rnorm
-        call rprint(msg)
+      CALL Rprintid('Iteration = , Norm (RHS) = ', Iter, Rnorm)
       Endif
       Rnold = Rnorm
       Call MLsyslv (Msing, Xi, Xiold, Z, Dmz, Delz, Deldmz, G,
      +     W, V, Rhs, Dummy, Integs, Ipvtg, Ipvtw, Rnorm,
-     +     3+Ifreez, MFsub, MDfsub, MGsub, MDgsub, MGuess, 
+     +     3+Ifreez, MFsub, MDfsub, MGsub, MDgsub, MGuess,
      +     Eps, Rpar, Ipar )
 C
 C.... Check For A Singular Matrix
@@ -1901,27 +1814,23 @@ C
 C
 C.... Convergence Obtained
 C
-      If ( Iprint .eq. -1 ) Then 
-        Write (msg,1004) Iter
-        call rprint(msg)
+      If ( Iprint .eq. -1 ) Then
+      CALL Rprinti1('Convergence after iteration ',Iter)
       Endif
-      If ( Iprint .eq. 0 )  Then 
-        Write (msg,1016) Iter
-        call rprint(msg)
+      If ( Iprint .eq. 0 )  Then
+      CALL Rprinti1('Convergence after iteration ',Iter)
       Endif
       If (Iatt .eq. -1) Nits = Iter
       Go To 400
 C
 C.... Convergence Of Fixed Jacobian Iteration Failed.
 C
- 130  If ( Iprint .lt. 0 ) Then 
-        Write (msg,1003) Iter, Rnorm
-        call rprint(msg)
-      Endif 
-      If ( Iprint .lt. 0 ) Then 
-        Write (msg,1005)
-        call rprint(msg)
-      Endif 
+ 130  If ( Iprint .lt. 0 ) Then
+      CALL Rprintid('Iteration = , Norm (RHS) = ', Iter, Rnorm)
+      Endif
+      If ( Iprint .lt. 0 ) Then
+        CALL Rprint('Switch to damped Newton iteration')
+      Endif
       Iconv = 0
       Relax = Rstart
       Do 140 I = 1, Nz
@@ -1946,8 +1855,7 @@ C.... With The Damped Newton Method.
 C.... Evaluate Rhs And Find The First Newton Correction.
 C
  160  If(Iprint .lt. 0)  Then
-        Write (msg,1006)
-        call rprint(msg)
+        CALL Rprint('Full damped Newton iteration')
       Endif
       Call MLsyslv (Msing, Xi, Xiold, Z, Dmz, Delz, Deldmz, G,
      +     W, V, Rhs, Dqdmz, Integs, Ipvtg, Ipvtw, Rnold, 1,
@@ -2046,15 +1954,15 @@ C
       Anfix = Sqrt(Anfix / Dfloat(Nz+Ndmz))
       If ( Icor .eq. 1 )                         Go To 280
       If (Iprint .lt. 0)  Then
-        Write (msg,1007) Iter, Relax, Anorm,
-     +     Anfix, Rnold, Rnorm
-        call rprint(msg)
+      CALL Rprintid('Iteration = , Relaxation factor = ', Iter, Relax)
+      CALL Rprintd2('Norm of scaled RHS changes from, to', Anorm, Anfix)
+      CALL Rprintd2('Norm of RHS changes from, to', Rnold, Rnorm)
       Endif
       Go To 290
  280  If (Iprint .lt. 0) Then
-        Write (msg,1008) Relax, Anorm, Anfix,
-     +     Rnold, Rnorm
-        call rprint(msg)
+      CALL Rprintd1('Relaxation factor corrected to ', Relax)
+      CALL Rprintd2('Norm of scaled RHS changes from, to ',Anorm, Anfix)
+      CALL Rprintd2('Norm of RHS changes from, to', Rnold, Rnorm)
       Endif
  290  Icor = 0
 C
@@ -2112,12 +2020,10 @@ C
 C.... Convergence Obtained
 C
       If ( Iprint .eq. -1 )  Then
-        Write (msg,1004) Iter
-        call rprint(msg)
+      CALL Rprinti1('Convergence at iteration ', Iter)
       Endif
       If ( Iprint .eq. 0 ) Then
-        Write (msg,1016) Iter
-        call rprint(msg)
+      CALL Rprinti1('Convergence at iteration ', Iter)
       Endif
       If (Iatt .eq. -1) Nits = Iter
 C
@@ -2133,27 +2039,19 @@ C
  390  If (Anfix .lt. Precis .or. Rnorm .lt. Precis) Then
          If (Iatt .eq. -1) Nits = Iter
          If ( Iprint .eq. -1 )  Then
-           Write (msg,1004) Iter
-           call rprint(msg)
+      CALL Rprinti1('Convergence at iteration ', Iter)
          Endif
          If ( Iprint .eq. 0 ) Then
-           Write (msg,1016) Iter
-           call rprint(msg)
-         Endif 
+      CALL Rprinti1('Convergence at Iteration ', Iter)
+         Endif
       Endif
 
       Iconv = 1
 C
 C.... If Full Output Has Been Requested, Print Values Of The
 C.... Solution Components   Z  At The Meshpoints.
-C
- 400  If ( Iprint .ge. 0 )                     Go To 420
-      Do 410 J = 1, Mstar
-         Write(msg,1009) J
-         call rprint(msg)
-         Write(msg,1010) (Z(Lj), Lj = J, Nz, Mstar)
-         call rprint(msg)
- 410  Continue
+C ... karline: toggled off
+ 400  CONTINUE
 
 C.... Check For Error Tolerance Satisfaction
 
@@ -2167,13 +2065,12 @@ C
 C.... Diagnostics For Failure Of Nonlinear Iteration.
 C
  430  If ( Iprint .lt. 1 ) Then
-        Write (msg,1011) Iter
-        call rprint(msg)
+      CALL Rprinti1('NO convergence after iteration ', Iter)
       Endif
       Go To 450
  440  If( Iprint .lt. 1 ) Then
-        Write(msg,1012) Relax, Relmin
-        call rprint(msg)
+      CALL Rprintd1('NO Convergence, Relaxation factor too small',Relax)
+      CALL Rprintd1('Should not be less than', Relmin)
       Endif
  450  Iflag = -2
       Return
@@ -2210,8 +2107,8 @@ C.... Pick A New Mesh
      +           Slope, Accum, Nfxpnt, Fixpnt, Slpold, Nvold, Voldmsh)
             If (Iprec .eq. 2) Then
                If (Iprint .lt. 1) Then
-                 Write(msg,1013)
-                 call rprint(msg)
+      CALL Rprint('** Mesh cannot be defined within the bounds imposed')
+      CALL Rprint('by the machine precision')
                Endif
                Iflag = -1
             Else
@@ -2224,9 +2121,9 @@ C.... Pick A New Mesh
       Call MNewmsh (Imesh, Xi, Xiold, Z, Dmz, Valstr,
      +     Slope, Accum, Nfxpnt, Fixpnt, Slpold, Nvold, Voldmsh)
       If (Iprec .eq. 2) Then
-         If (Iprint .lt. 1) Then 
-           Write(msg,1013)
-           call rprint(msg)
+         If (Iprint .lt. 1) Then
+      CALL Rprint('** Mesh cannot be defined within the bounds imposed')
+      CALL Rprint('by the machine precision')
          Endif
          Iflag = -1
          Return
@@ -2241,44 +2138,16 @@ C.... Exit If Expected N Is Too Large (But May Try N = Nmax Once)
       N = N / 2
       Iflag = -1
       If ( Iconv .eq. 0 .and. Iprint .lt. 1 ) Then
-        Write (msg,1014)
-        call rprint(msg)
+      CALL Rprint('No Convergence')
       Endif
       If ( Iconv .eq. 1 .and. Iprint .lt. 1 ) Then
-        Write (msg,1015)
-        call rprint(msg)
+      CALL Rprint('Probably tolerances too stringent or Nmax too small')
       Endif
       Return
  480  If ( Iconv .eq. 0 )  Imesh = 1
       maxmesh = max(maxmesh, N)
       Go To 20
 C     ---------------------------------------------------------------
- 1000 Format(40h A Local Elimination Matrix Is Singular )
- 1001 Format(35h The Global Bvp-Matrix Is Singular )
- 1002 Format(27h Fixed Jacobian Iterations,)
- 1003 Format(13h Iteration = , I3, 15h  Norm (Rhs) = , D10.2)
- 1004 Format(18h Convergence After , I3,11h Iterations )
- 1005 Format(35h Switch To Damped Newton Iteration,)
- 1006 Format(30h Full Damped Newton Iteration,)
- 1007 Format(13h Iteration = ,I3,22h  Relaxation Factor = ,D10.2,
-     +       33h Norm Of Scaled Rhs Changes From ,D10.2,3h To,D10.2,
-     +       33h Norm   Of   Rhs  Changes  From  ,D10.2,3h To,D10.2,
-     +       D10.2)
- 1008 Format(40h Relaxation Factor Corrected To Relax = , D10.2,
-     +       33h Norm Of Scaled Rhs Changes From ,D10.2,3h To,D10.2,
-     +       33h Norm   Of   Rhs  Changes  From  ,D10.2,3h To,D10.2
-     +       ,D10.2)
- 1009 Format(19h Mesh Values For Z(, I2, 2h), )
- 1010 Format(1h , 8d15.7)
- 1011 Format(22h No Convergence After , I3, 11h Iterations)
- 1012 Format(37h No Convergence.  Relaxation Factor =,D10.3
-     +       ,24h Is Too Small (Less Than, D10.3, 1h))
- 1013 Format(1x,'** Mesh Cannot Be Defined Within The Bounds Imposed',
-     +       ' By The Machine Precision')
- 1014 Format(18h  (No Convergence) )
- 1015 Format('(Probably Tolerances Too Stringent Or Nmax Too',
-     +       'small)' )
- 1016 Format(18h Convergence After , I3,11h Iterations )
       End
 
       Subroutine MSkale (N, Mstar, Kd, Z, Xi, Scale, Dscale)
@@ -2417,7 +2286,6 @@ C
      +                Root(40), Jtol(40), Ltol(40), Ntol
       Common /Flags/ Ifinal,Iatt,Iback,Iprec
       Common /Mshvar/ Pmax,Hord,Hsml
-      CHARACTER(len=150) msg
 C
       Nfxp1 = Nfxpnt +1
       Iprec = Min(Iprec,1)
@@ -2430,10 +2298,6 @@ C
 C.... Iguess = 2, 3 Or 4.
 C
       Noldp1 = Nold + 1
-C      If (Iprint .lt. 0)  Then
-C       Write(msg,1000) Nold,(Xiold(I), I = 1,Noldp1)
-C       call rprint(msg)
-C      Endif
       If ( Iguess .ne. 3 )                          Go To 40
 C
 C.... If Iread ( Iset(8) ) .eq. 1 And Iguess ( Iset(9) ) .eq. 3
@@ -2505,8 +2369,7 @@ C
       N = Nmax / 2
       Go To 220
   110 If ( Iprint .lt. 1 ) Then
-        Write(msg,1001)
-        call rprint(msg)
+        CALL Rprint('Expected N Too Large')
       Endif
       N = N2
       Return
@@ -2734,8 +2597,8 @@ C.... Naccum = Expected N To Achieve .1x User Requested Tolerances
 C
       Naccum = Int(Accum(Nold+1) + 1.d0)
       If ( Iprint .lt. 0 ) Then
-        Write(msg,1002) Degequ, Naccum
-        call rprint(msg)
+      CALL Rprintd1('Mesh info, degree of equidistribution = ' ,Degequ)
+      CALL Rprinti1('Prediction for required N =  ', Naccum)
       Endif
 C
 C.... This Assures That Halving Will Be Possible Later (For Error Est)
@@ -2748,8 +2611,8 @@ C.... We Do Not Violate The Maximum Mesh Size.
 C
       If (Ifinal .eq. 1 .and. Iatt .eq. 0) Then
          If ( Iprint .lt. 1 ) Then
-           Write(msg,1007)
-           call rprint(msg)
+          CALL Rprint('Halving mesh (and then doubling) in order to')
+          CALL Rprint('calculate an error estimate')
          Endif
          N = Min(Nmax2-10,Naccum/2)
       Else
@@ -2934,23 +2797,13 @@ C
   320 Continue
       Np1 = N + 1
       If (Mode .le. 2) Then
-C         If ( Iprint .eq. -1 ) Then
-C          Write(msg,1003) N, (Xi(I),I = 1,Np1)
-C          call rprint(msg)
-C         Endif
-         If ( Iprint .eq. 0 ) Then
-           Write(msg,1004) N
-           call rprint(msg)
-         Endif
+        If ( Iprint .eq. 0 ) Then
+        CALL Rprinti1('Number of subintervals in the new mesh ', N)
+        Endif
       Else
-C         If ( Iprint .eq. -1 ) Then
-C           Write(msg,1005) N, (Xi(I),I = 1,Np1)
-C           call rprint(msg)
-C         Endif
-         If ( Iprint .eq. 0 )  Then
-           Write(msg,1006) N
-           call rprint(msg)
-         Endif
+        If ( Iprint .eq. 0 )  Then
+        CALL Rprinti1('Number of subintervals in the initial mesh ', N)
+        Endif
       Endif
 
       Nz   = Mstar * (N + 1)
@@ -2958,18 +2811,6 @@ C         Endif
 
       Return
 C----------------------------------------------------------------
-C 1000 Format(20h The Former Mesh (Of,I5,15h Subintervals),,
-C     +       600(8f12.6))
- 1001 Format (23h  Expected N Too Large  )
- 1002 Format('Mesh Selection Info,30h Degree Of Equidistribution =',
-     +      F8.5, 'Prediction For Required N =  ', I8)
-C 1003 Format(17h The New Mesh (Of,I5,16h Subintervals), ,600(/8f12.6))
- 1004 Format(17h The New Mesh Has,I5,13h Subintervals)
-C 1005 Format(21h The Initial Mesh (Of,I5,16h Subintervals), ,
-C     +     600(/8f12.6))
- 1006 Format(21h The Initial Mesh Has,I5,13h Subintervals)
- 1007 Format(' Halving Mesh (And Then Doubling) In Order To',
-     +     ' Calculate An Error Estimate')
       End
 
       Subroutine MConsts (K, Rho, Coef)
@@ -3155,7 +2996,6 @@ C
       Common /MColbas/ B(28), Acol(28,7), Asave(28,4)
       Common /MColest/ Wgtmsh(40), Wgterr(40), Tolin(40),
      +                Root(40), Jtol(40), Ltol(40), Ntol
-      CHARACTER(len=150) msg
 C
 C.... Error Estimates Are To Be Generated And Tested
 C.... To See If The Tolerance Requirements Are Satisfied.
@@ -3222,21 +3062,9 @@ C
    50      Continue
    60 Continue
       If ( Iprint .gt. 0 )                          Return
-      If ( Ifin .eq. 0 .and. Iprint .eq. 0) Return
-      Write(msg,1000)
-      call rprint(msg)
 
-      Lj = 1
-      Do 70 J = 1,Ncomp
-           Mj = Lj - 1 + M(J)
-           Write(msg,1001) J, (Errest(L), L =  Lj, Mj)
-           call rprint(msg)
-           Lj = Mj + 1
-   70 Continue
       Return
 C---------------------------------------------------------------------
- 1000 Format (52h The Estimated (Mixed Relative/Absolute) Errors Are,)
- 1001 Format (3h U(, I2, 3h) -,4d12.4)
       End
 C---------------------------------------------------------------------
 C                            P A R T  3
@@ -3245,7 +3073,7 @@ C---------------------------------------------------------------------
 C
       Subroutine MLsyslv (Msing, Xi, Xiold, Z, Dmz, Delz, Deldmz,
      +           G, W, V, Rhs, Dmzo, Integs, Ipvtg, Ipvtw, Rnorm,
-     +           Mode, MFsub, MDfsub, MGsub, MDgsub, MGuess, Eps, 
+     +           Mode, MFsub, MDfsub, MGsub, MDgsub, MGuess, Eps,
      +           Rpar, Ipar )
 C*********************************************************************
 C
@@ -3410,7 +3238,7 @@ C
 C
 C....     Build A Row Of  A  Corresponding To A Boundary Point
 C
-  120      Call MGderiv (G(Ig), Nrow, Izeta, Zval, Dgz, 1, 
+  120      Call MGderiv (G(Ig), Nrow, Izeta, Zval, Dgz, 1,
      +          MDgsub, Eps, Rpar, Ipar)
   130      Izeta = Izeta + 1
            Go To 100
@@ -3476,7 +3304,7 @@ C
 C....       Fill In Ncomp Rows Of  W And V
 C
   210        Call MVwblok (Xcol, Hrho, J, W(Iw), V(Iv), Ipvtw(Idmz), Kd,
-     +       Zval, Df, Acol(1,J), Dmzo(Idmzo), Ncomp, MDfsub, Msing, 
+     +       Zval, Df, Acol(1,J), Dmzo(Idmzo), Ncomp, MDfsub, Msing,
      +       Eps, Rpar, Ipar)
              If ( Msing .ne. 0 )                    Return
   220      Continue
@@ -3521,7 +3349,7 @@ C
 C....     Build A Row Of  A  Corresponding To A Boundary Point
 C
  260       Izm = Izeta+Mstar
-           Call MGderiv (G(Ig), Nrow, Izm, Zval, Dgz, 2, MDgsub, 
+           Call MGderiv (G(Ig), Nrow, Izm, Zval, Dgz, 2, MDgsub,
      +         Eps, Rpar, Ipar)
  270       Izeta = Izeta + 1
            Go To 240
@@ -3628,7 +3456,7 @@ C
 C
       Return
       End
-      Subroutine MGderiv ( Gi, Nrow, Irow, Zval, Dgz, Mode, MDgsub, 
+      Subroutine MGderiv ( Gi, Nrow, Irow, Zval, Dgz, Mode, MDgsub,
      +    Eps, Rpar, Ipar)
 C
 C**********************************************************************
@@ -3997,7 +3825,6 @@ C
       Dimension Z(*), Dmz(*), Bm(4), Coef(*)
 C
       Common /MColout/ Precis, Iprint
-      CHARACTER(len=150) msg
 C
       Go To (10, 30, 80, 90), Mode
 C
@@ -4017,8 +3844,8 @@ C
       If ( X .ge. Xi(1)-Precis .and. X .le. Xi(N+1)+Precis )
      +                                              Go To 40
       If (Iprint .lt. 1) Then
-        Write(msg,1000) X, Xi(1), Xi(N+1)
-        call rprint(msg)
+      CALL Rprintd3('Domain error in Approx, X, Aleft, Aright ',
+     +  X, Xi(1), Xi(N+1))
       Endif
       If ( X .lt. Xi(1) )  X = Xi(1)
       If ( X .gt. Xi(N+1) )  X = Xi(N+1)
@@ -4086,9 +3913,6 @@ C
   170 Continue
       Return
 C--------------------------------------------------------------------
- 1000 Format(37h ****** Domain Error In Approx ******
-     +       4h X = ,D20.10, 10h   Aleft = ,D20.10,
-     +       11h   Aright = ,D20.10)
       End
       Subroutine MRkbas (S, Coef, K, M, Rkb, Dm, Mode)
 C
@@ -4344,7 +4168,7 @@ C**********************************************************************
 C
       Integer Ipivot(Nrow),Ncol,Last,Info, I,J,K,L,Kp1
       Double Precision W(Nrow,Ncol),D(Nrow), Colmax,T,S
-      
+
       Intrinsic Abs
       Intrinsic Max
 C
