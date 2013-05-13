@@ -1,4 +1,4 @@
-5e36900710e49f81e6b1a7f68fd17f22 *DESCRIPTION
+e907fc762eb44c419ff9e4436ca90106 *DESCRIPTION
 734fe560f430d1185279b2f5b269b3b7 *NAMESPACE
 21038af410f34447a2f55153e5ff659b *R/Utilities.R
 8ce6fde61541a0ff14ae7395fed0bdaf *R/bvpshoot.R
@@ -43,7 +43,7 @@ c7123f0df6142ab61184a50609a976e9 *src/bvpSolve_utils.c
 719ba9065607498719f4ddc81d9c53ea *src/call_colmodsys.c
 112836d658f066efe60723a73ece6f01 *src/call_colnew.c
 abb32928ad3349663550df64d6892aa0 *src/call_twpbvp.c
-64fa807616721989fd3ba5bf8ff0d490 *src/coldaeR.f
+851ee319e743e37e811fdf6410150d46 *src/coldaeR.f
 fa75f9d14a1246285260838f7f9fd8d3 *src/colmodR.f
 f6dd35aa705b48d2e4c17c27f74f877d *src/colnewR.f
 74b48129168d872541df1b2e168b24ac *src/colsysR.f

@@ -879,7 +879,7 @@ C
 C**********************************************************************
 C
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      DIMENSION XI(1), XIOLD(*), Z(*), DMZ(*), RHS(*), DMV(*)
+      DIMENSION XI(*), XIOLD(*), Z(*), DMZ(*), RHS(*), DMV(*)
       DIMENSION G(*), W(*), V(*), VALSTR(*), SLOPE(*), ACCUM(*)
       DIMENSION DELZ(*), DELDMZ(*), DQZ(*), DQDMZ(*) , FIXPNT(*)
       DIMENSION DUMMY(1), SCALE(*), DSCALE(*), FC(*), DF(800)

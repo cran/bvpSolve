@@ -1,5 +1,5 @@
 Package: bvpSolve
-Version: 1.2.3
+Version: 1.2.3.1
 Title: Solvers for boundary value problems of ordinary differential
         equations
 Author: Karline Soetaert <karline.soetaert@nioz.nl>, Jeff Cash
@@ -13,7 +13,7 @@ Description: Functions that solve boundary value problems (BVP) of
         method.
 License: GPL (>= 2)
 LazyData: yes
-Packaged: 2013-05-11 15:06:58 UTC; KarlineS
+Packaged: 2013-05-13 11:16:18 UTC; KarlineS
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2013-05-11 22:48:30
+Date/Publication: 2013-05-13 15:04:07
