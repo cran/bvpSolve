@@ -438,7 +438,8 @@ diagnostics.bvpSolve<- function(obj, ...) {
   } else if (Attr$name == "bvptwp") {
   
     if (idid ==0)  cat("  Integration was successful.\n") else
-       cat("  Integration was NOT successful\n")
+			{if (idid < 0 &  (Attr$acdc == FALSE))	cat("  Integration was successful but conditioning parameters NOT stabilized.\n")  else
+       cat("  Integration was NOT successful\n")}
     df <- c( "The return code                               :",   #1
              "The number of function evaluations            :",
              "The number of jacobian evaluations            :",

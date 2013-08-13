@@ -679,8 +679,11 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
     atol <- rep(atol,len=mstar)
   else  if (length(atol) != mstar)
     stop("tol must either be one number or a vector with length=number of state variables")
-  Ipar <- 1
-  Rpar <- 1.0
+  
+  
+  if (is.null(ipar)) ipar <- 1
+  if (is.null(rpar)) ipar <- 1
+  
   if(is.null(initfunc))
     initpar <- NULL # parameter initialisation not needed if function is not a DLL
   else
@@ -704,9 +707,9 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
             as.integer(givmesh),as.integer(givu),as.integer(nmesh),
             as.integer(nmax),as.integer(lwrkfl),as.integer(lwrkin),
             as.double(Xguess), as.double(Yguess),
-            as.double(Rpar), as.integer(Ipar), as.integer(cond),
+            as.double(rpar), as.integer(rpar), as.integer(cond),
             Func, JacFunc, Bound, JacBound, ModelInit, initpar,
-            flist, as.integer(lobatto), type = as.integer(1),
+            flist, as.integer(lobatto), 
             rho, PACKAGE="bvpSolve")
  else
   out <- .Call("call_acdc", as.integer(mstar), as.double(fixpt),
@@ -715,11 +718,11 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
             as.integer(givmesh), as.integer(givu), as.integer(nmesh),
             as.integer(nmax), as.integer(lwrkfl), as.integer(lwrkin),
             as.double(Xguess), as.double(Yguess),
-            as.double(Rpar), as.integer(Ipar), as.integer(cond),
+            as.double(rpar), as.integer(ipar), as.integer(cond),
             as.double(epsini), as.double(eps),
             Func_eps, JacFunc_eps, Bound_eps, JacBound_eps,
             ModelInit, initpar,
-            flist, type = as.integer(0), rho, PACKAGE="bvpSolve")
+            flist, rho, PACKAGE="bvpSolve")
 
   EPS <- attributes(out)$eps
   nn <- attr(out,"istate")

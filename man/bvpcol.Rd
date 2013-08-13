@@ -561,16 +561,19 @@ sol3 <- bvpcol(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
 sol4 <- bvpcol(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                   parms = 0.001, func = Prob24, eps = 0.001)
 
+# This takes a long time
+\dontrun{
 print(system.time(
 sol5 <- bvpcol(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
                   parms = 1e-4, func = Prob24, eps = 1e-4)
 ))
+}
 
-plot(sol, sol2, sol3, sol4, sol5, which = 1, main = "test problem 24",
+plot(sol, sol2, sol3, sol4, which = 1, main = "test problem 24",
      lwd = 2)
 
-legend("topright", col = 1:5, lty = 1:5, lwd = 2,
-       legend = c("0.05", "0.01", "0.001", "0.0001"), title = "eps")
+legend("topright", col = 1:4, lty = 1:4, lwd = 2,
+       legend = c("0.1", "0.05", "0.01", "0.001"), title = "eps")
 
 ## =============================================================================
 ## Example 3  - solved with specification of boundary, and jacobians

@@ -6,7 +6,7 @@
       integer nc
       nc = nchar
       if(nc .lt. 0) nc = len(label)
-      call dblep0k(label, nc, data, ndata)
+      call dblepr(label, nc, data, ndata)
       end
 
       subroutine intpr_k(label, nchar, data, ndata)
@@ -16,9 +16,27 @@
       integer nc
       nc = nchar
       if(nc .lt. 0) nc = len(label)
-      call intp0k(label, nc, data, ndata)
+      call intpr(label, nc, data, ndata)
       end
 
+      subroutine logpr(msg,len,ldum)
+      integer len
+      character (len=*) msg
+      logical ldum
+      character (len=8) logi
+
+      if (ldum) then
+         logi ='  TRUE '
+      else
+         logi ='  FALSE'
+      endif
+
+
+
+      call dblepr(MSG//logi,-1,0,0)
+
+
+      end subroutine
 c ===================================================================================
 c print R-messages
 c ===================================================================================
@@ -28,6 +46,14 @@ C just a string
            call dblepr(msg, -1, 0, 0)
       end subroutine 
 
+C printing with one logical
+      subroutine rprintl1(msg, d1)
+      character (len=*) msg
+      logical d1
+
+      call logpr(msg, -1, d1)
+
+      end subroutine
 C printing with one integer and a double
       subroutine rprintid(msg, i1, d1)
       character (len=*) msg
@@ -63,8 +89,8 @@ C printing with one double
       subroutine rprintd1(msg, d1)
       character (len=*) msg
       double precision d1, DBL(1)
-        DBL(1) = d
-        call dblepr_k(msg, -1, DBL, 1)
+        DBL(1) = d1
+        call dblepr(msg, -1, DBL, 1)
       end subroutine 
 
 C printing with two doubles

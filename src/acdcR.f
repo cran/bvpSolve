@@ -1352,12 +1352,12 @@ c          stab_cond = stab_kappa1 .and. stab_gamma
           if (ill_cond .and. use_c) goto 2000
 
           if (iprint .ge. 1) then
-        CALL Rprintd1('stab_sigma = ', stab_sigma)
-        CALL Rprintd1('stab_kappa = ', stab_kappa)
-        CALL Rprintd1('stab_kappa1 = ',stab_kappa1)
-        CALL Rprintd1('stab_gamma = ', stab_gamma)
-        CALL Rprintd1('stiff_cond = ', stiff_cond)
-        CALL Rprintd1('ill_cond   = ', ill_cond)
+        CALL Rprintl1('stab_sigma = ', stab_sigma)
+        CALL Rprintl1('stab_kappa = ', stab_kappa)
+        CALL Rprintl1('stab_kappa1 = ',stab_kappa1)
+        CALL Rprintl1('stab_gamma = ', stab_gamma)
+        CALL Rprintl1('stiff_cond = ', stiff_cond)
+        CALL Rprintl1('ill_cond   = ', ill_cond)
           end if
         end if
 c endif if (comp_c)
