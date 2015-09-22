@@ -1527,6 +1527,9 @@ C
       COMMON /DAEBAS/ B(28), ACOL(28,7), ASAVE(28,4)
       COMMON /DAEEST/ TOL(40), WGTMSH(40), WGTERR(40), TOLIN(40),
      1                ROOT(40), JTOL(40), LTOL(40), NTOL
+
+      integer nfunc, njac, nstep, nbound, njacbound
+      common/CDAEdiag/nfunc, njac, nstep, nbound, njacbound
 C
       NFXP1 = NFXPNT +1
       GO TO (180, 100, 50, 20, 10), MODE
@@ -1700,6 +1703,8 @@ C...  but set DMV = DMZ in case it is not
      1                     COEF, XIOLD, NOLD, Z, DMZ,
      1                     K, NCOMP, NY, MMAX, M, MSTAR, 3, DUMMY, 1)
          CALL DFSUB (NCY, XI1, ZVAL, YVAL, DF,RPAR,IPAR)
+c francesca: added
+         njac = njac + 1
 
 C...         if index=2, form projection matrices directly
 C...         otherwise use svd to define appropriate projection
@@ -2260,7 +2265,7 @@ C
       COMMON /DAENLN/ NONLIN, ITER, LIMIT, ICARE, IGUESS, INDEX
       COMMON /DAEBAS/ B(28), ACOL(28,7), ASAVE(28,4)
       integer nfunc, njac, nstep, nbound, njacbound
-      common/coldiag/nfunc, njac, nstep, nbound, njacbound
+      common/CDAEdiag/nfunc, njac, nstep, nbound, njacbound
 C
       EXTERNAL DFSUB, DGSUB
 C
@@ -2271,6 +2276,16 @@ C
       ENDIF
       INFC = (MSTAR+NY) * NCOMP
       M1 = MODE + 1
+
+C..Francesca Mazzia Added initialization
+
+      DO  I=1,MSTAR
+        ZVAL(I) = 0.D0
+      END DO
+      DO  I=1,NY
+         YVAL(I) = 0.D0
+      ENDDO
+
       GO TO (10, 30, 30, 30, 310), M1
 C
 C...  linear problem initialization
@@ -2352,10 +2367,12 @@ C
 C...       other nonlinear case
 C
   102      IF ( MODE .NE. 1 )                       GO TO 106
+C.. Francesca Mazzia  y--> yval ?
        CALL APPROX_DAE (IOLD, XII, ZVAL, Y, AT, COEF, XIOLD, NOLD,
      1          Z, DMZ, K, NCOMP, NY, MMAX, M, MSTAR, 2, DUMMY, 0)
        GO TO 110
-  106      CALL APPROX_DAE (I, XII, ZVAL, Y, AT, DUMMY, XI, N, Z, DMZ,
+C.. Francesca Mazzia  y--> yval  ?
+  106    CALL APPROX_DAE (I, XII, ZVAL, Y, AT, DUMMY, XI, N, Z, DMZ,
      1                  K, NCOMP, NY, MMAX, M, MSTAR, 1, DUMMY, 0)
   108      IF ( MODE .EQ. 3 )                       GO TO 120
 C
@@ -2414,7 +2431,8 @@ c karline: added
 C
 C...         evaluate former collocation solution
 C
-  190        CALL APPROX_DAE (I, XCOL, ZVAL, Y, ACOL(1,J), COEF, XI, N,
+C.. Francesca Mazzia  y--> yval ?
+  190      CALL APPROX_DAE (I, XCOL, ZVAL, Y, ACOL(1,J), COEF, XI, N,
      1            Z, DMZ, K, NCOMP, NY, MMAX, M, MSTAR, 4, DUMMY, 0)
          IF ( MODE .EQ. 3 )                     GO TO 210
 C
@@ -2509,10 +2527,12 @@ C
 C...       other nonlinear case
 C
   245      IF ( MODE .NE. 1 )                       GO TO 246
+C.. Francesca Mazzia  y--> yval  ?
        CALL APPROX_DAE (NOLD+1, ARIGHT, ZVAL, Y, AT, COEF,
      +          XIOLD, NOLD, Z, DMZ,
      1          K, NCOMP, NY, MMAX, M, MSTAR, 1, DUMMY, 0)
        GO TO 250
+C.. Francesca Mazzia  y--> yval  ?
   246      CALL APPROX_DAE (N+1, ARIGHT, ZVAL, Y, AT, COEF, XI, N,
      1       Z, DMZ, K, NCOMP, NY, MMAX, M, MSTAR, 1, DUMMY, 0)
   248      IF ( MODE .EQ. 3 )                       GO TO 260
@@ -2675,7 +2695,7 @@ C
       COMMON /DAESID/ ZETA(40), ALEFT, ARIGHT, IZETA, IDUM
       COMMON /DAENLN/ NONLIN, ITER, LIMIT, ICARE, IGUESS, INDEX
       integer nfunc, njac, nstep, nbound, njacbound
-      common/coldiag/nfunc, njac, nstep, nbound, njacbound
+      common/CDAEdiag/nfunc, njac, nstep, nbound, njacbound
 	  
 C
 C...  zero jacobian dg
@@ -2751,7 +2771,8 @@ C**********************************************************************
       COMMON /DAEORD/ K, NCOMP, NY, NDM, MSTAR, KD, KDYM, MMAX, M(20)
       COMMON /DAENLN/ NONLIN, ITER, LIMIT, ICARE, IGUESS, INDEX
       integer nfunc, njac, nstep, nbound, njacbound
-      common/coldiag/nfunc, njac, nstep, nbound, njacbound
+      common/CDAEdiag/nfunc, njac, nstep, nbound, njacbound
+
 	  
 C
 C...  initialize  wi
@@ -2907,6 +2928,8 @@ C
       COMMON /DAEORD/  K, NCD, NY, NCYD, MSTAR, KD, KDUM, MMAX, M(20)
       COMMON /DAEBAS/ B(7,4), ACOL(28,7), ASAVE(28,4)
       COMMON /DAENLN/ NONLIN, ITER, LIMIT, ICARE, IGUESS, INDEX
+      integer nfunc, njac, nstep, nbound, njacbound
+      common/CDAEdiag/nfunc, njac, nstep, nbound, njacbound
 C
 C...  compute local basis
 C
@@ -2962,6 +2985,7 @@ C...  projected collocation
 C...  set up projection matrix and update gi-block
 C
       CALL DFSUB (NCY, XI1, ZVAL, YVAL, DF,RPAR,IPAR)
+      njac = njac + 1
 C
 C...  if index=2 then form projection matrices directly
 C...  otherwise use svd to define appropriate projection

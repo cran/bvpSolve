@@ -41,22 +41,92 @@ static void dll_bvp_deriv_func_forc (int *neq, double *x, double *y,
   derfun(neq, x, y, ydot, rpar, ipar);
 }
 
+/* KARLINE -> FRANCESCA: NUMERICAL FUNCTIONS, IF NOT GIVEN */
+
+static void C_num_jac_func (int *n,  double *x, double *y, double *pd,
+                            double * rpar, int * ipar)
+{
+  int i, j;
+  double perturb;
+
+  for (i = 0; i < *n; i++) ycopy[i]   = y[i];
+
+  jderfun(n, x, y, dy, rpar, ipar);
+  for (i = 0; i < *n; i++) dycopy[i]   = dy[i];
+  for (i = 0; i < *n * *n; i++) pd[i] = 0.;
+  
+  for (j = 0; j < *n; j++) {
+     if (y[j] > 1.)
+       perturb = y[j]*1e-8;
+     else
+       perturb = 1e-8 ;  
+     ycopy[j] = y[j] + perturb;
+     
+     jderfun(n, x, ycopy, dycopy, rpar, ipar);
+     
+     ycopy[j] = y[j];
+     
+     for (i = 0; i < *n; i++) 
+       pd[j* *n + i] = (dycopy[i] - dy[i])/perturb;
+
+  }
+
+}
+
+static void C_num_bound_func (int *ii, int *n, double *y, double *gout,
+                              double * rpar, int * ipar)
+{
+   int i, ib;
+   i =  ii[0] - 1;        /*-1 to go from R to C indexing*/
+
+   ib = iibb[i] - 1;
+
+   gout[0] = y[ib] - bb[i];       
+}
+
+static void C_num_jacbound_func (int *ii, int *n, double *y, double *dg,
+                                 double * rpar, int * ipar)
+{
+  int i;
+  double perturb;
+  double g, gcopy;
+//  warning("entering numerical BOUNDARY jacobian %i %i %g %g\n", *ii, *n, y[0], dg[0]);
+
+  for (i = 0; i < *n; i++) ycopy[i]  = y[i];
+  for (i = 0; i < *n; i++) dg[i] = 0.;
+  for (i = 0; i < *n; i++) {
+    jbndfun(ii, n, y, &g, rpar, ipar);
+
+    if (y[i] > 1.)
+       perturb = y[i]*1e-8;
+    else
+       perturb = 1e-8;  
+
+    ycopy[i] = y[i] + perturb;
+    jbndfun(ii, n, ycopy, &gcopy, rpar, ipar);
+    ycopy[i] = y[i];
+    dg[i] = (gcopy - g)/perturb;
+  }
+}
+
+
 /* interface between fortran function calls and R functions */
 
 static void C_bvp_deriv_func (int *n,  double *x, double *y, double *ydot,
   double * rpar, int * ipar)
 {
   int i;
-  SEXP R_fcall, ans;
-                             REAL(X)[0]   = *x;
+  SEXP R_fcall, X, ans;
+
   for (i = 0; i < *n ; i++)  REAL(Y)[i]   = y[i];
 
+  PROTECT(X = ScalarReal(*x));                    incr_N_Protect();
   PROTECT(R_fcall = lang3(R_bvp_deriv_func,X,Y)); incr_N_Protect();
   PROTECT(ans = eval(R_fcall, R_envir));          incr_N_Protect();
 
   for (i = 0; i < *n ; i++) ydot[i] = REAL(VECTOR_ELT(ans,0))[i];
   
-  my_unprotect(2);
+  my_unprotect(3);
 }
 
 /* interface between fortran call to jacobian and R function */
@@ -64,17 +134,19 @@ static void C_bvp_jac_func (int *n,  double *x, double *y, double *pd,
                             double * rpar, int * ipar)
 {
   int i;
-  SEXP R_fcall, ans;
-                           REAL(X)[0]   = *x;
+  SEXP R_fcall, X, ans;
+
   for (i = 0; i < *n; i++) REAL(Y)[i]   = y[i];
 
+  PROTECT(X = ScalarReal(*x));                  incr_N_Protect();
   PROTECT(R_fcall = lang3(R_bvp_jac_func,X,Y)); incr_N_Protect();
   PROTECT(ans = eval(R_fcall, R_envir));        incr_N_Protect();
 
   for (i = 0; i < *n * *n; i++)  pd[i] = REAL(ans)[i];
   
-  my_unprotect(2);
+  my_unprotect(3);
 }
+
 
 /* interface between fortran call to boundary condition and corresponding R function */
 
@@ -82,33 +154,37 @@ static void C_bvp_bound_func (int *ii, int *n, double *y, double *gout,
                               double * rpar, int * ipar)
 {
   int i;
-  SEXP R_fcall, ans;
-                             INTEGER(J)[0] = *ii;
+  SEXP R_fcall, J, ans;
+
   for (i = 0; i < *n ; i++)  REAL(Y)[i] = y[i];
 
+  PROTECT(J = ScalarInteger(*ii));                incr_N_Protect();
   PROTECT(R_fcall = lang3(R_bvp_bound_func,J,Y)); incr_N_Protect();
   PROTECT(ans = eval(R_fcall, R_envir));          incr_N_Protect();
   
   gout[0] = REAL(ans)[0];       /* only one element returned... */
   
-  my_unprotect(2);
+  my_unprotect(3);
 }
+
 /*interface between fortran call to jacobian of boundary and corresponding R function */
 
 static void C_bvp_jacbound_func (int *ii, int *n, double *y, double *dg,
                                  double * rpar, int * ipar)
 {
   int i;
-  SEXP R_fcall, ans;
-                           INTEGER(J)[0] = *ii;
+  SEXP R_fcall, J, ans;
+
   for (i = 0; i < *n; i++) REAL(Y)[i] = y[i];
 
+  PROTECT(J = ScalarInteger(*ii));                   incr_N_Protect();
   PROTECT(R_fcall = lang3(R_bvp_jacbound_func,J,Y)); incr_N_Protect();
   PROTECT(ans = eval(R_fcall, R_envir));             incr_N_Protect();
 
   for (i = 0; i < *n ; i++)  dg[i] = REAL(ans)[i];
-  my_unprotect(2);
+  my_unprotect(3);
 }
+
 
 /* MAIN C-FUNCTION, CALLED FROM R-code */
 
@@ -119,7 +195,7 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
     SEXP Rpar, SEXP Ipar, SEXP UseC, 
     SEXP derivfunc, SEXP jacfunc, SEXP boundfunc,
     SEXP jacboundfunc, SEXP Initfunc, SEXP Parms, SEXP flist, 
-    SEXP Lobatto, SEXP rho)
+    SEXP Lobatto, SEXP Absent, SEXP Rwork, SEXP rho)
 
 {
 /******************************************************************************/
@@ -135,13 +211,15 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
   int  liseries, *iseries, indnms, nxdim; // type;
   int *ltol, *iwrk, *iset, ntol, iflag, nfixpnt, linear, givmesh, 
       givu, nmesh, isDll, nugdim, nmshguess, lobatto;
+  int *absent;
+  double *rwork;
   int full, useC;
   
   /* pointers to functions passed to FORTRAN */
   C_deriv_func_type    *deriv_func;
-  C_jac_func_type      *jac_func;
-  C_bound_func_type    *bound_func;
-  C_jacbound_func_type *jacbound_func;
+  C_jac_func_type      *jac_func = NULL;
+  C_bound_func_type    *bound_func = NULL;
+  C_jacbound_func_type *jacbound_func = NULL;
 
 /******************************************************************************/
 /******                         STATEMENTS                               ******/
@@ -155,6 +233,14 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
 
   ncomp   = INTEGER(Ncomp)[0];    /* number of equations */
   lobatto = INTEGER(Lobatto)[0];  /* 0 = bvptwp , 1 = bvptwpl*/
+
+  ii = LENGTH(Absent);
+  absent = (int *) R_alloc(ii, sizeof(int));
+     for (j=0; j<ii; j++) absent[j] = INTEGER(Absent)[j];
+
+  ii = LENGTH(Rwork);
+  rwork = (double *) R_alloc(ii, sizeof(double));
+     for (j=0; j<ii; j++) rwork[j] = REAL(Rwork)[j];
 
   nlbc   = INTEGER(Nlbc)[0];     /* number of left boundary conditions */
   nmax   = INTEGER(Nmax)[0];     /* max number of mesh points */
@@ -189,7 +275,11 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
   // check this - Francesca/Jeff:
   nxdim = nmax;
   xx   =(double *) R_alloc(nmax, sizeof(double));
+  if (givmesh) {
   for (j = 0; j < nmesh; j++) xx[j] = REAL(Xguess)[j];
+  } else {
+  for (j = 0; j < nmesh; j++) xx[j] = 0;
+  }
   for (j = nmesh; j < nmax; j++) xx[j] = 0;
 
   // to be used in fortran code initu
@@ -210,7 +300,11 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
   
   ii = nmax*ncomp;
   u   =(double *) R_alloc(ii, sizeof(double));
+   if (givu) {
    for (j = 0; j < nmesh*ncomp; j++) u[j] = REAL(Yguess)[j];
+   } else { 
+   for (j = 0; j < nmesh*ncomp; j++) u[j] = 0;
+   }
    for (j = nmesh*ncomp; j < nmax*ncomp; j++) u[j] = 0;
       
   wrk = (double *) R_alloc(lwrkfl, sizeof(double));
@@ -237,8 +331,6 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
 
   /* initialise global R-variables... */
   if (isDll == 0) {
-    PROTECT(X  = NEW_NUMERIC(1));               incr_N_Protect();
-    PROTECT(J = NEW_INTEGER(1));                incr_N_Protect();
     PROTECT(Y = allocVector(REALSXP,ncomp));    incr_N_Protect();
   }
 
@@ -251,37 +343,81 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
   /* pointers to functions passed to FORTRAN */
   if (isDll) {   /* DLL addresses passed to fortran */
       deriv_func    = (C_deriv_func_type *)    R_ExternalPtrAddr(derivfunc);
-      jac_func      = (C_jac_func_type *)      R_ExternalPtrAddr(jacfunc);
-      bound_func    = (C_bound_func_type *)    R_ExternalPtrAddr(boundfunc);
-      jacbound_func = (C_jacbound_func_type *) R_ExternalPtrAddr(jacboundfunc);
+      
+      if (absent[0] == 0)  
+        jac_func      = (C_jac_func_type *)   R_ExternalPtrAddr(jacfunc);
+      
+      if (absent[1] == 0)
+        bound_func    = (C_bound_func_type *)  R_ExternalPtrAddr(boundfunc);
+      
+      if (absent[2] == 0)   /* not given*/
+        jacbound_func = (C_jacbound_func_type *) R_ExternalPtrAddr(jacboundfunc);
 
 	  /* here overruling deriv_func if forcing */
       if (isForcing) {
         derfun =     (C_deriv_func_type *) R_ExternalPtrAddr(derivfunc);
         deriv_func = (C_deriv_func_type *) dll_bvp_deriv_func_forc;
       }
+      
   } else {      /* interface functions between fortran and R */
       deriv_func = C_bvp_deriv_func;
       R_bvp_deriv_func = derivfunc;
 
-      jac_func = C_bvp_jac_func;
-      R_bvp_jac_func = jacfunc;
+      if (absent[0] == 0) {
+        jac_func = C_bvp_jac_func;
+        R_bvp_jac_func = jacfunc;
+      } 
 
-      bound_func = C_bvp_bound_func;
-      R_bvp_bound_func = boundfunc;
-
-      jacbound_func = C_bvp_jacbound_func;
-      R_bvp_jacbound_func = jacboundfunc;
+      if (absent[1] == 0) {
+        bound_func = C_bvp_bound_func;
+        R_bvp_bound_func = boundfunc;
+      }
+      
+      if (absent[2] == 0) {
+        jacbound_func = C_bvp_jacbound_func;
+        R_bvp_jacbound_func = jacboundfunc;
+      }
     }
-
+/* if numerical approximates should be used */    
+    if (absent[0] == 1) {
+        dy     = (double *) R_alloc(ncomp, sizeof(double));
+        dycopy = (double *) R_alloc(ncomp, sizeof(double));
+        ycopy  = (double *) R_alloc(ncomp, sizeof(double)); 
+        jac_func = (C_jac_func_type *)      C_num_jac_func;
+        jderfun  = deriv_func;
+    }
+    if (absent[1] == 1) {
+      bound_func = (C_bound_func_type *) C_num_bound_func;
+      iibb = (int *) R_alloc(ncomp, sizeof(int));
+      for (j = 0; j < ncomp; j++)
+        iibb[j] = absent[3 + j];
+      bb = (double *) R_alloc(ncomp, sizeof(double));
+      for (j = 0; j < ncomp; j++)
+        bb[j] = rwork[j];
+    }
+    if (absent[2] == 1) {
+        jacbound_func = (C_jacbound_func_type *) C_num_jacbound_func;
+        jbndfun = bound_func;
+        if (absent[0] != 1)
+          ycopy  = (double *) R_alloc(ncomp, sizeof(double)); 
+    }
+    
+    
 /* Call the fortran function twpbvpc
 // CHECK liseries with jeff/francesca!
+// francesca liseries is the maximum possible different mesh, 
+// it is not related to nmax, usually 500 is ok.
 
 */
-  liseries = nmax;
+  liseries = 500;
   iseries = (int *)    R_alloc(liseries, sizeof(int));
   nugdim = ncomp;
+  if (givu){
   nmshguess = nmesh;
+  } else
+  { 
+  nmshguess = 1;
+  }
 
   if (lobatto == 1)
 	F77_CALL(twpbvplc) (&ncomp, &nlbc, &aleft, &aright, &nfixpnt, fixpnt,
@@ -328,6 +464,8 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
   INTEGER(ISTATE)[0] = iflag;
   for (j = 0; j < 6; j++)
     INTEGER(ISTATE)[1+j] = iset[j];
+  INTEGER(ISTATE)[7]=0;
+  INTEGER(ISTATE)[8]=0;  
   INTEGER(ISTATE)[9] = nmax;
   INTEGER(ISTATE)[10] = nmesh;
   INTEGER(ISTATE)[11] = lwrkfl;

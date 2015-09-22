@@ -20,6 +20,71 @@ void F77_NAME(colmod)(int*, int*, double *, double *, double *, int *, int *,
 /*    Subroutine Appsln(Xx,Z,Fspace,Ispace)                                   */
 void F77_NAME(mappsln)(double *, double *, double *, int *);
 
+
+static void C_num_epsjac_func (double *x, double *y, double *pd,
+                            int *n,  double * eps, double * rpar, int * ipar)
+{
+  int i, j;
+  double perturb;
+
+  for (i = 0; i < mstar; i++) ycopy[i]   = y[i];
+
+  jepsderfun(x, y, dy, eps, rpar, ipar);
+  for (i = 0; i < n_eq; i++) dycopy[i]  = dy[i];
+  
+  for (j = 0; j < mstar; j++) {
+     if (y[j] > 1.)
+       perturb = y[j]*1e-8;
+     else
+       perturb = 1e-8 ;  
+     ycopy[j] = y[j] + perturb;
+     
+     jepsderfun(x, ycopy, dycopy, eps, rpar, ipar);
+     
+     ycopy[j] = y[j];
+     
+     for (i = 0; i < n_eq; i++) 
+       pd[j* n_eq + i] = (dycopy[i] - dy[i])/perturb;
+
+  }
+}
+
+static void C_num_epsbound_func (int *ii, double *y, double *gout,
+                              double * eps, double * rpar, int * ipar)
+{
+   int i, ib;
+   
+   i =  ii[0] - 1;        /*-1 to go from R to C indexing*/
+
+   ib = iibb[i] - 1;
+
+   gout[0] = y[ib] - bb[i];       
+}
+
+static void C_num_epsjacbound_func (int *ii, double *y, double *dg,
+                                 double * eps, double * rpar, int * ipar)
+{
+  int i;
+  double perturb;
+
+  for (i = 0; i < mstar; i++) ycopy[i]  = y[i];
+
+  for (i = 0; i < mstar; i++) {
+    jepsbndfun(ii, y, g, eps, rpar, ipar);
+
+    if (y[i] > 1.)
+       perturb = y[i]*1e-8;
+    else
+       perturb = 1e-8;  
+
+    ycopy[i] = y[i] + perturb;
+    jepsbndfun(ii, ycopy, gcopy, eps, rpar, ipar);
+    ycopy[i] = y[i];
+    dg[i] = (gcopy[0] - g[0])/perturb;
+  }
+}
+
+
 /* -----------------------------------------------------------------------------
                         - when model in compiled code
 ----------------------------------------------------------------------------- */
@@ -33,13 +98,15 @@ static void dll_colmod_deriv_func_forc (double *x, double *y,
 {
   updatedeforc(x);
   epsval[0] = eps[0];
+  rpar[ipar[0]] = eps[0];
   derfun(&n_eq, x, y, ydot, rpar, ipar);
 }
 
 static void dll_colmod_deriv_func (double *x, double *y,
                          double *ydot, double *eps, double *rpar, int *ipar)
 {
-  epsval[0] = eps[0];   /* value of parameter */
+  epsval[0] = eps[0];       /* value of parameter */
+  rpar[ipar[0]] = eps[0];   /* value of parameter */
   derfun(&n_eq, x, y, ydot, rpar, ipar);
 }
 
@@ -47,6 +114,7 @@ static void dll_colmod_jac_func (double *x, double *y,
                          double *pd, int * n, double *eps, double *rpar, int *ipar)
 {
   epsval[0] = eps[0];   /* value of parameter */
+  rpar[ipar[0]] = eps[0];   /* value of parameter */
   jacfun(n, x, y, pd, rpar, ipar);
 }
 
@@ -54,6 +122,7 @@ static void dll_colmod_bound_func (int *ii, double *y, double *gout,
                         double *eps, double *rpar, int *ipar)
 {
   epsval[0] = eps[0];   /* value of parameter */
+  rpar[ipar[0]] = eps[0];   /* value of parameter */
   boundfun(ii, &n_eq, y, gout, rpar, ipar);
 }
 
@@ -61,6 +130,7 @@ static void dll_colmod_jacbound_func (int *ii, double *y, double *dg,
                         double *eps, double *rpar, int *ipar)
 {
   epsval[0] = eps[0];   /* value of parameter */
+  rpar[ipar[0]] = eps[0];     /* value of parameter */
   jacboundfun(ii, &n_eq, y, dg, rpar, ipar);
 }
 
@@ -75,10 +145,9 @@ static void C_colmod_guess (double *x, double *y,
 {
   int i;
   double p;
-  SEXP R_fcall, ans, R_fcall2, ans2;
-  
-  REAL(X)[0]   = *x;
+  SEXP R_fcall, X, ans, R_fcall2, ans2;
 
+  PROTECT(X = ScalarReal(*x));                     incr_N_Protect();
   PROTECT(R_fcall = lang2(R_cont_guess_func, X));  incr_N_Protect();
   PROTECT(ans = eval(R_fcall, R_envir));           incr_N_Protect();
 
@@ -91,7 +160,7 @@ static void C_colmod_guess (double *x, double *y,
   for (i = 0; i < n_eq; i++) y[i] = REAL(ans)[i];
   for (i = 0; i < n_eq; i++) ydot[i] = (REAL(ans2)[i]-y[i])/p;
 
-  my_unprotect(4);
+  my_unprotect(5);
 }
 
 /* derivative function                                                        */
@@ -99,17 +168,18 @@ static void C_colmod_derivs (double *x, double *y,
                         double *ydot, double *eps, double *rpar, int *ipar)
 {
   int i;
-  SEXP R_fcall, ans;
+  SEXP R_fcall, X, ans;
+
                                 REAL(EPS)[0] = *eps;
-                                REAL(X)[0]   = *x;
   for (i = 0; i < mstar ; i++)  REAL(Y)[i]   = y[i];
 
+  PROTECT(X = ScalarReal(*x));                         incr_N_Protect();
   PROTECT(R_fcall = lang4(R_cont_deriv_func,X,Y,EPS)); incr_N_Protect();
   PROTECT(ans = eval(R_fcall, R_envir));               incr_N_Protect();
 
   for (i = 0; i < n_eq ; i++) ydot[i] = REAL(VECTOR_ELT(ans,0))[i];
 
-  my_unprotect(2);
+  my_unprotect(3);
 }
 
 
@@ -118,16 +188,17 @@ static void C_colmod_jac (double *x, double *y, double *pd, int *neq,
                         double *eps, double *rpar, int *ipar)
 {
   int i;
-  SEXP R_fcall, ans;
+  SEXP R_fcall, X, ans;
+
                               REAL(EPS)[0] = *eps;
-                              REAL(X)[0]   = *x;
   for (i = 0; i < mstar; i++) REAL(Y)[i]   = y[i];
 
+  PROTECT(X = ScalarReal(*x));                       incr_N_Protect();
   PROTECT(R_fcall = lang4(R_cont_jac_func,X,Y,EPS)); incr_N_Protect();
   PROTECT(ans = eval(R_fcall, R_envir));             incr_N_Protect();
 
   for (i = 0; i < *neq * mstar; i++)  pd[i] = REAL(ans)[i];
-  my_unprotect(2);
+  my_unprotect(3);
 }
 
 /*  boundary condition                                                        */
@@ -135,16 +206,18 @@ static void C_colmod_bound (int *ii, double *y, double *gout, double *eps,
                           double *rpar, int *ipar)
 {
   int i;
-  SEXP R_fcall, ans;
+  SEXP R_fcall, J, ans;
+  
                              REAL(EPS)[0]  = *eps;
-                             INTEGER(J)[0] = *ii;
+
   for (i = 0; i < mstar ; i++)  REAL(Y)[i] = y[i];
 
+  PROTECT(J = ScalarInteger(*ii));                     incr_N_Protect();
   PROTECT(R_fcall = lang4(R_cont_bound_func,J,Y,EPS)); incr_N_Protect();
   PROTECT(ans = eval(R_fcall, R_envir));               incr_N_Protect();
   /* only on e element returned... */
   gout[0] = REAL(ans)[0];
-  my_unprotect(2);
+  my_unprotect(3);
 }
 
 /* jacobian of boundary condition                                             */
@@ -152,32 +225,24 @@ static void C_colmod_jacbound (int *ii, double *y, double *dg, double *eps,
                              double *rpar, int *ipar)
 {
   int i;
-  SEXP R_fcall, ans;
+  SEXP R_fcall, J, ans;
+  
                              REAL(EPS)[0]  = *eps;
-                             INTEGER(J)[0] = *ii;
+
   for (i = 0; i < mstar; i++) REAL(Y)[i] = y[i];
 
+  PROTECT(J = ScalarInteger(*ii));                        incr_N_Protect();
   PROTECT(R_fcall = lang4(R_cont_jacbound_func,J,Y,EPS)); incr_N_Protect();
   PROTECT(ans = eval(R_fcall, R_envir));                  incr_N_Protect();
 
   for (i = 0; i < mstar ; i++)  dg[i] = REAL(ans)[i];
-  my_unprotect(2);
+  my_unprotect(3);
 }
 
 /* -----------------------------------------------------------------------------
   give name to data types
 ----------------------------------------------------------------------------- */
 
-typedef void C_deriv_func2_type(double *, double *,double *, double *,
-                                double *, int *);
-typedef void C_bound_func2_type(int *, double *, double *,double *,
-                                double *, int *);
-typedef void C_jac_func2_type  (double *, double *, double *, int *, double *,
-                                double *, int *);
-typedef void C_jacbound_func2_type(int *, double *, double *, double *,
-                                double *, int *);
-typedef void C_guess_func2_type(double *, double *, double *, double *, 
-                                double *, int *);
 
 /* -----------------------------------------------------------------------------
                   MAIN C-FUNCTION, CALLED FROM R-code
@@ -188,7 +253,7 @@ SEXP call_colmodsys(SEXP Ncomp, SEXP Mstar, SEXP M, SEXP Xout, SEXP Aleft,
 		SEXP Rpar, SEXP Ipar, SEXP Epsini, SEXP Eps, SEXP derivfunc,
 		SEXP jacfunc, SEXP boundfunc, SEXP jacboundfunc, SEXP guessfunc,
     SEXP Initfunc, SEXP Parms, SEXP flist,
-    SEXP Rwork, SEXP Iwork, SEXP rho)
+    SEXP Rwork, SEXP Iwork, SEXP Absent, SEXP RRwork, SEXP rho)
 {
 /******************************************************************************/
 /******                   DECLARATION SECTION                            ******/
@@ -201,13 +266,15 @@ SEXP call_colmodsys(SEXP Ncomp, SEXP Mstar, SEXP M, SEXP Xout, SEXP Aleft,
   double *aleft, *aright, *zeta, *fspace, *tol, *fixpnt, *z;
   double epsini, epsmin, xout, *rpar;
   int *m, *ispace, *ipar, *iset, *ltol, iflag, *icount, FullOut;
+  int *absent;
+  double *rwork;
 
 /* pointers to functions passed to FORTRAN                                    */
-  C_deriv_func2_type    *deriv_func;
-  C_jac_func2_type      *jac_func;
-  C_jacbound_func2_type *jacbound_func;
-  C_bound_func2_type    *bound_func;
-  C_guess_func2_type    *guess_func;
+  C_deriv_func2_type    *deriv_func = NULL;
+  C_jac_func2_type      *jac_func = NULL;
+  C_jacbound_func2_type *jacbound_func = NULL;
+  C_bound_func2_type    *bound_func = NULL;
+  C_guess_func2_type    *guess_func = NULL;
 
 /******************************************************************************/
 /******                         STATEMENTS                               ******/
@@ -266,6 +333,14 @@ SEXP call_colmodsys(SEXP Ncomp, SEXP Mstar, SEXP M, SEXP Xout, SEXP Aleft,
     for (j=0; j < ii; j++) ispace[j] = INTEGER(Iwork)[j];
   }
 
+  ii = LENGTH(Absent);
+  absent = (int *) R_alloc(ii, sizeof(int));
+     for (j=0; j<ii; j++) absent[j] = INTEGER(Absent)[j];
+
+  ii = LENGTH(RRwork);
+  rwork = (double *) R_alloc(ii, sizeof(double));
+     for (j=0; j<ii; j++) rwork[j] = REAL(RRwork)[j];
+
   epsmin = REAL(Eps)[0];
   epsini = REAL(Epsini)[0];
 
@@ -275,7 +350,7 @@ SEXP call_colmodsys(SEXP Ncomp, SEXP Mstar, SEXP M, SEXP Xout, SEXP Aleft,
   ii =  LENGTH(Ipar);
   ipar = (int *) R_alloc(ii, sizeof(int));
     for (j = 0; j < ii;j++) ipar[j] = INTEGER(Ipar)[j];
-  icount = (int *)  R_alloc(6, sizeof(int));
+  icount = (int *)  R_alloc(7, sizeof(int));
 
 /* initialise global R-variables...                                           */
   /* is function a dll ?*/
@@ -285,14 +360,14 @@ SEXP call_colmodsys(SEXP Ncomp, SEXP Mstar, SEXP M, SEXP Xout, SEXP Aleft,
    isDll = 0;
   }
 
-  PROTECT(X  = NEW_NUMERIC(1));               incr_N_Protect();
   if (isDll == 0) {
     PROTECT(EPS = NEW_NUMERIC(1));              incr_N_Protect();
-    PROTECT(J = NEW_INTEGER(1));                incr_N_Protect();
     PROTECT(Y = allocVector(REALSXP,mstar));    incr_N_Protect();
   }
   /* Initialization of Parameters and Forcings (DLL functions)  */
   isForcing = initForcings(flist);
+  epsval = (double *) R_alloc(1, sizeof(double)); epsval[0] = 0.;
+
   initParms(Initfunc, Parms);
 
   R_envir = rho;
@@ -305,38 +380,78 @@ SEXP call_colmodsys(SEXP Ncomp, SEXP Mstar, SEXP M, SEXP Xout, SEXP Aleft,
   }
   /* pointers to functions passed to FORTRAN */
   if (isDll) {   /* DLL addresses passed to fortran */
-      deriv_func    = (C_deriv_func2_type *)    dll_colmod_deriv_func;
-      jac_func      = (C_jac_func2_type *)      dll_colmod_jac_func;
-      bound_func    = (C_bound_func2_type *)    dll_colmod_bound_func;
-      jacbound_func = (C_jacbound_func2_type *) dll_colmod_jacbound_func;
+     deriv_func    = (C_deriv_func2_type *)    dll_colmod_deriv_func;
+     derfun        = (C_deriv_func_type *)     R_ExternalPtrAddr(derivfunc);
 
-      derfun        = (C_deriv_func_type *)     R_ExternalPtrAddr(derivfunc);
-      jacfun        = (C_jac_func_type *)       R_ExternalPtrAddr(jacfunc);
-      boundfun      = (C_bound_func_type *)     R_ExternalPtrAddr(boundfunc);
-      jacboundfun   = (C_jacbound_func_type *)  R_ExternalPtrAddr(jacboundfunc);
+     if (absent[0] == 0) { 
+       jac_func      = (C_jac_func2_type *)      dll_colmod_jac_func;
+       jacfun        = (C_jac_func_type *)       R_ExternalPtrAddr(jacfunc);
+     }
+     if (absent[1] == 0) { 
+       bound_func    = (C_bound_func2_type *)    dll_colmod_bound_func;
+       boundfun      = (C_bound_func_type *)     R_ExternalPtrAddr(boundfunc);
+     }
+     if (absent[2] == 0) { 
+       jacbound_func = (C_jacbound_func2_type *) dll_colmod_jacbound_func;
+       jacboundfun   = (C_jacbound_func_type *)  R_ExternalPtrAddr(jacboundfunc);
+     }
 
 	  /* here overruling deriv_func if forcing */
       if (isForcing) {
         deriv_func = (C_deriv_func2_type *) dll_colmod_deriv_func_forc;
       }
   } else {      /* interface functions between fortran and R */
+
       deriv_func = (C_deriv_func2_type *) C_colmod_derivs;
       R_cont_deriv_func = derivfunc;
 
-      jac_func = C_colmod_jac;
-      R_cont_jac_func = jacfunc;
+      if (absent[0] == 0) {
+        jac_func = C_colmod_jac;
+        R_cont_jac_func = jacfunc;
+      }
 
-      bound_func = C_colmod_bound;
-      R_cont_bound_func = boundfunc;
-
-      jacbound_func = C_colmod_jacbound;
-      R_cont_jacbound_func = jacboundfunc;
+      if (absent[1] == 0) {
+        bound_func = C_colmod_bound;
+        R_cont_bound_func = boundfunc;
+      }
+      
+      if (absent[2] == 0) {
+        jacbound_func = C_colmod_jacbound;
+        R_cont_jacbound_func = jacboundfunc;
+      }
    }
 
+    if (absent[0] == 1) {
+        dy     = (double *) R_alloc(ncomp, sizeof(double));
+        dycopy = (double *) R_alloc(ncomp, sizeof(double));
+
+        jac_func = (C_jac_func2_type *) C_num_epsjac_func;
+        jepsderfun  = deriv_func;
+    }
+    
+    if (absent[1] == 1) {
+      bound_func = (C_bound_func2_type *) C_num_epsbound_func;
+      iibb = (int *) R_alloc(mstar, sizeof(int));
+      for (j = 0; j < mstar; j++)
+        iibb[j] = absent[3 + j];
+      bb = (double *) R_alloc(mstar, sizeof(double));
+      for (j = 0; j < mstar; j++)
+        bb[j] = rwork[j];
+    }
+    
+    if (absent[2] == 1) {
+      jacbound_func = (C_jacbound_func2_type *) C_num_epsjacbound_func;
+      jepsbndfun = bound_func;
+      g = (double *) R_alloc(1, sizeof(double));
+      gcopy = (double *) R_alloc(1, sizeof(double));
+
+    }
+   ycopy  = (double *) R_alloc(mstar, sizeof(double)); 
    guess_func = (C_guess_func2_type *) C_colmod_guess;
    R_cont_guess_func = guessfunc;
 
 /* Call the fortran function                                                  */
+
 	  F77_CALL(colmod) (&ncomp, m, aleft, aright, zeta, iset, ltol,
         tol, fixpnt, ispace, fspace, &iflag, &epsini, &epsmin,
         deriv_func,jac_func,bound_func,jacbound_func,

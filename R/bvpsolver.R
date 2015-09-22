@@ -1,3 +1,7 @@
+#
+  is.compiled <- function (FF)
+   (is.character(FF) || class(FF) == "CFunc")
+
 
 ##==============================================================================
 ## Solving boundary value problems of ordinary differential equations
@@ -9,7 +13,7 @@ bvptwp<- function(yini = NULL, x, func, yend = NULL, parms = NULL, order = NULL,
      jacbound = NULL, leftbc = NULL, posbound = NULL, islin = FALSE, nmax = 1000, 
      ncomp = NULL, atol = 1e-8, cond = FALSE, lobatto = FALSE, allpoints = TRUE,
      dllname = NULL, initfunc = dllname, rpar = NULL, ipar = NULL, nout = 0,
-     forcings = NULL, initforc = NULL, fcontrol=NULL, verbose = FALSE,
+     outnames = NULL, forcings = NULL, initforc = NULL, fcontrol=NULL, verbose = FALSE,
      epsini = NULL, eps = epsini,  ...)   {
    if (is.null(eps))
     bvpsolver(1,       # type 1 = bvptwp
@@ -18,7 +22,7 @@ bvptwp<- function(yini = NULL, x, func, yend = NULL, parms = NULL, order = NULL,
      yguess, jacfunc, bound, 
      jacbound, leftbc, posbound, 
      islin, nmax, ncomp, atol, 
-     dllname, initfunc, rpar, ipar, nout,
+     dllname, initfunc, rpar, ipar, nout, outnames, 
      forcings, initforc, fcontrol, verbose,
      cond, lobatto, allpoints, colp = NULL, fullOut = TRUE,
      bspline = TRUE, eps = NULL, epsini = NULL, dae = NULL, ... )
@@ -30,7 +34,7 @@ bvptwp<- function(yini = NULL, x, func, yend = NULL, parms = NULL, order = NULL,
      order, ynames, xguess, yguess,
      jacfunc, bound, jacbound, leftbc,
      posbound, islin, nmax, ncomp, atol,
-     dllname, initfunc, rpar, ipar, nout,
+     dllname, initfunc, rpar, ipar, nout, outnames,
      forcings, initforc, fcontrol, verbose,
      cond, lobatto = FALSE, allpoints, colp = NULL, fullOut = TRUE,
      bspline = TRUE, eps = eps, epsini = epsini, dae = NULL,  ... )
@@ -41,11 +45,12 @@ bvptwp<- function(yini = NULL, x, func, yend = NULL, parms = NULL, order = NULL,
 ## using collocation method "colnew", "colsys", "colmod", "coldae"
 ##==============================================================================
 
-bvpcol<- function(yini = NULL, x, func, yend = NULL, parms = NULL, order = NULL, 
+bvpcol <- function(yini = NULL, x, func, yend = NULL, parms = NULL, order = NULL, 
      ynames = NULL, xguess = NULL, yguess = NULL, jacfunc = NULL, bound = NULL, 
      jacbound = NULL, leftbc = NULL, posbound = NULL, islin = FALSE, nmax = 1000, 
      ncomp = NULL, atol = 1e-8, colp=NULL, bspline = FALSE, fullOut = TRUE, 
-    dllname = NULL, initfunc = dllname, rpar = NULL, ipar = NULL, nout = 0,
+    dllname = NULL, initfunc = dllname, rpar = NULL, ipar = NULL, 
+    nout = 0, outnames = NULL, 
     forcings = NULL, initforc = NULL, fcontrol = NULL, verbose = FALSE,
     epsini = NULL, eps = epsini, dae = NULL, ...)   {
 
@@ -56,7 +61,7 @@ bvpcol<- function(yini = NULL, x, func, yend = NULL, parms = NULL, order = NULL,
      yguess, jacfunc, bound, 
      jacbound, leftbc, posbound, 
      islin, nmax, ncomp, atol, 
-     dllname, initfunc, rpar, ipar, nout,
+     dllname, initfunc, rpar, ipar, nout, outnames,
      forcings, initforc, fcontrol, verbose,
      cond = FALSE, lobatto = FALSE, allpoints = TRUE, colp = colp, fullOut = fullOut,
      bspline = bspline, eps = NULL, epsini = NULL, dae = dae,... )
@@ -71,7 +76,7 @@ bvpcol<- function(yini = NULL, x, func, yend = NULL, parms = NULL, order = NULL,
      yguess, jacfunc, bound,
      jacbound, leftbc, posbound,
      islin, nmax, ncomp, atol,
-     dllname, initfunc, rpar, ipar, nout,
+     dllname, initfunc, rpar, ipar, nout, outnames, 
      forcings, initforc, fcontrol, verbose,
      cond = FALSE, lobatto = FALSE, allpoints = TRUE, colp = colp, fullOut = fullOut,
      bspline = bspline, eps = eps, epsini = epsini, dae = NULL, ... )
@@ -92,18 +97,44 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
      jacbound = NULL, leftbc = NULL, posbound = NULL,
      islin = FALSE, nmax = 1000, ncomp = NULL, atol = 1e-8,
      dllname = NULL, initfunc = dllname, rpar = NULL, ipar = NULL, nout = 0,
-     forcings = NULL, initforc = NULL, fcontrol=NULL, verbose = FALSE,
+     outnames = NULL, forcings = NULL, initforc = NULL, fcontrol=NULL, verbose = FALSE,
      cond = FALSE, lobatto = FALSE, allpoints = TRUE, colp = NULL, fullOut = TRUE,
      bspline = TRUE, eps = NULL, epsini = NULL, dae = NULL, ...)   {
-
-  rho <- environment(func)
 
   aleft  <- x[1]
   aright <- x[length(x)]
 
+  CheckFunc <- function (FF)
+   (is.function(FF) || is.character(FF) || class(FF) == "CFunc")
+
+
 ##------------------------------------------------------------------------------
 ## error checking...
 ##------------------------------------------------------------------------------
+  if (is.list(func)) {            
+      if (!is.null(jacfunc) & "jacfunc" %in% names(func))
+         stop("If 'func' is a list that contains jacfunc, argument 'jacfunc' should be NULL")
+      if (!is.null(bound) & "bound" %in% names(func))
+         stop("If 'func' is a list that contains bound, argument 'bound' should be NULL")
+      if (!is.null(jacbound) & "jacbound" %in% names(func))
+         stop("If 'func' is a list that contains jacbound, argument 'jacbound' should be NULL")
+      if (!is.null(initfunc) & "initfunc" %in% names(func))
+         stop("If 'func' is a list that contains initfunc, argument 'initfunc' should be NULL")
+      if (!is.null(dllname) & "dllname" %in% names(func))
+         stop("If 'func' is a list that contains dllname, argument 'dllname' should be NULL")
+      if (!is.null(initforc) & "initforc" %in% names(func))
+         stop("If 'func' is a list that contains initforc, argument 'initforc' should be NULL")
+     if (! is.null(func$jacfunc))  jacfunc <- func$jacfunc
+     if (! is.null(func$bound))    bound <- func$bound
+     if (! is.null(func$jacbound)) jacbound <- func$jacbound
+     if (! is.null(func$initfunc)) initfunc <- func$initfunc
+     if (! is.null(func$dllname))  dllname  <- func$dllname
+     if (! is.null(func$initforc)) initforc <- func$initforc
+     func <- func$func
+  }
+  
+  rho <- environment(func)
+  
   if (is.null(yini)   && is.null(bound))
     stop("either 'yini' and 'yend' or 'bound' should be inputted")
   if (!is.null(bound) && is.null(posbound)&& is.null(leftbc))
@@ -112,28 +143,19 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
     stop("if 'yini' is given, 'yend' should also be given")
   if (!is.null(yini)  && !is.null(bound))
     stop("either 'yini' or bound should be given, not both")
-  if (!is.function(func) && !is.character(func))
-    stop("`func' must be a function or character vector")
   if (is.character(func) && (is.null(dllname) || !is.character(dllname)))
     stop("You need to specify the name of the dll or shared library where func can be found (without extension)")
-  if (!is.null(jacfunc) && !(is.function(jacfunc) || is.character(jacfunc)))
-    stop("`jacfunc' must be a function or character vector")
-  if (!is.null(jacfunc) && !(is.function(jacfunc) || is.character(jacfunc)))
-    stop("`jacfunc' must be a function or character vector")
-  if (!is.null(bound) && !(is.function(bound) || is.character(bound)))
-    stop("`bound' must be a function or character vector")
-  if (!is.null(jacbound) && !(is.function(jacbound) || is.character(jacbound)))
-    stop("`jacbound' must be a function or character vector")
+  if (!CheckFunc(func))
+    stop("`func' must be a function or character vector or a compiled function")
+  if (!is.null(jacfunc) && !CheckFunc(jacfunc))
+    stop("`jacfunc' must be a function or character vector or a compiled function")
+  if (!is.null(bound) && !CheckFunc(bound))
+    stop("`bound' must be a function or character vector or a compiled function")
+  if (!is.null(jacbound) && !CheckFunc(jacbound))
+    stop("`jacbound' must be a function or character vector or a compiled function")
   if (length(x) > nmax)
         stop ("length of 'x' (", length(x), "), should not be > nmax (", nmax, ")")
-  if (is.character(func)) {
-      if (!is.character(jacfunc))
-         stop("If 'func' is dynloaded, so must 'jacfunc' be")
-      if (!is.character(bound))
-         stop("If 'func' is dynloaded, so must 'bound' be")
-      if (!is.character(jacbound))
-         stop("If 'func' is dynloaded, so must 'jacbound' be")
-  }
+
 
 ##------------------------------------------------------------------------------
 ## Boundary conditions (specified by yini and yend)
@@ -146,7 +168,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
   nalg <- 0    # number of algebraic equations, in case a DAE
   if (!is.null(dae)) nalg <- dae$nalg
 
-  if (! is.null(yini)) {  # yini is either a vector - or a function
+  if (! is.null(yini)) {  # yini is a vector
     y      <- yini
     mstar  <- length(y)       # summed order of the differential equations
     if (! is.null(order)) {
@@ -264,43 +286,78 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
   jacPresent      <- TRUE
   jacboundPresent <- TRUE
 
-  if (is.character(func)) {             # The functions are in a DLL
+  if ( is.null(bound)) {
+    iini <- sum(!is.na(Y))
+    iend <- sum(!is.na(yend))
+    iibb <- c(which( !is.na(Y)), which(!is.na(yend)))
+    bb   <- c(Y[!is.na(Y)], yend[!is.na(yend)])
+  }
+  if (is.compiled(func) ) {             # The functions are in a DLL
+    
+    if (! is.null(order))
+      if (type < 2 & max(order) > 1)
+     stop("cannot combine compiled code with equations of higher order, if solver is 'bvptwp'")
+     
     if (sum(duplicated (c(func,initfunc,jacfunc))) >0)
       stop("func, initfunc, or jacfunc cannot be the same")
 
-    if (! is.null(initfunc))  # KS: to allow absence of initfunc
-      if (is.loaded(initfunc, PACKAGE = dllname, type = "") ||
+    if (is.compiled(initfunc)) { # KS: to allow absence of initfunc
+      if (class(initfunc) == "CFunc")
+        ModelInit <- body(initfunc)[[2]]
+      else if (is.loaded(initfunc, PACKAGE = dllname, type = "") ||
         is.loaded(initfunc, PACKAGE = dllname, type = "Fortran"))  {
         ModelInit <- getNativeSymbolInfo(initfunc, PACKAGE = dllname)$address
       } else if (initfunc != dllname && ! is.null(initfunc))
         stop(paste("'initfunc' not loaded ",initfunc))
-
+   }
     # Easier to deal with NA in C-code
     if (is.null(initfunc)) ModelInit <- NA
 
     funcname <- func
+    
     ## get the pointer and put it in func
-    if (is.loaded(funcname, PACKAGE = dllname)) {
+    if (class(func) == "CFunc")
+      Func <- body(func)[[2]]
+    else if (is.loaded(funcname, PACKAGE = dllname)) {
       Func <- getNativeSymbolInfo(funcname, PACKAGE = dllname)$address
     } else stop(paste("bvp function not loaded",funcname))
 
     ## the Jacobian
-    if (is.loaded(jacfunc, PACKAGE = dllname))  {
-      JacFunc <- getNativeSymbolInfo(jacfunc, PACKAGE = dllname)$address
-    } else
-      stop(paste("jacobian function not loaded ",jacfunc))
-
+    JacFunc <- NULL
+    if (is.compiled(jacfunc)){
+      if (class(jacfunc) == "CFunc")
+        JacFunc <- body(jacfunc)[[2]]
+      else if (is.loaded(jacfunc, PACKAGE = dllname))  {
+        JacFunc <- getNativeSymbolInfo(jacfunc, PACKAGE = dllname)$address
+      } else
+        stop(paste("jacobian function not loaded ",jacfunc))
+    } else if (! is.null(jacfunc))
+      stop ("'jacfunc' cannot be R-code if func is in compiled code")
+    
     ## the boundary
-    if (is.loaded(bound, PACKAGE = dllname))  {
+    Bound <- NULL
+    if (is.compiled(bound)){
+     if (class(bound) == "CFunc")
+      Bound <- body(bound)[[2]]
+    else if (is.loaded(bound, PACKAGE = dllname))  {
       Bound <- getNativeSymbolInfo(bound, PACKAGE = dllname)$address
     } else
       stop(paste("boundary function not loaded ",bound))
+    } else if (! is.null(bound))
+      stop ("'bound' cannot be R-code if func is in compiled code")
 
+    
     ## the boundary Jacobian
-    if (is.loaded(jacbound, PACKAGE = dllname))  {
+    JacBound <- NULL
+    if (is.compiled(jacbound)){
+    if (class(jacbound) == "CFunc")
+      JacBound <- body(jacbound)[[2]]
+    else if (is.loaded(jacbound, PACKAGE = dllname))  {
       JacBound <- getNativeSymbolInfo(jacbound, PACKAGE = dllname)$address
     } else
       stop(paste("boundary jac function not loaded ",jacbound))
+    }  else if (! is.null(jacbound))
+      stop ("'jacbound' cannot be R-code if func is in compiled code")
 
     if (type %in% c(0,3)) {
       Func_eps <- Func
@@ -466,7 +523,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
      stop("Model function must return a list\n")
   NN  <- length(tmp[[1]])    # number of differential equations
   if (type >= 2 & NN > 20)
-    stop ("number of equnations must be <= 20 for bvpcol")
+    stop ("number of equations must be <= 20 for bvpcol")
   if (NN != neq)
     if (mstar !=  neq)
     stop(paste("The number of function evaluations returned by func() (",
@@ -547,16 +604,12 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
 
 ## in case boundary function is not defined...
   if ( is.null(bound)) {
-    iini <- sum(!is.na(Y))
-    iend <- sum(!is.na(yend))
-    iibb <- c(which( !is.na(Y)), which(!is.na(yend)))
-    bb   <- c(Y[!is.na(Y)], yend[!is.na(yend)])
 
     if (type == 3 || type == 0)
       Bound_eps <- function(i, state, eps) {
         if (is.function(yini)) {
           parms[1] <- eps
-          y   <-yini(state, parms, ...)
+          y   <- yini(state, parms, ...)
           bb  <- c(y[!is.na(y)], yend[!is.na(yend)])
         }
         return(state[iibb[i]]-bb[i])
@@ -564,7 +617,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
     else
       Bound  <- function(i, state) {
         if (is.function(yini)) {
-         y   <-yini(state, parms, ...)
+         y   <- yini(state, parms, ...)
          bb  <- c(y[!is.na(y)], yend[!is.na(yend)])
         }
         return(state[iibb[i]]-bb[i])
@@ -680,9 +733,25 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
   else  if (length(atol) != mstar)
     stop("tol must either be one number or a vector with length=number of state variables")
   
+# Karline: nout
+  if (nout > 0) {
   
-  if (is.null(ipar)) ipar <- 1
-  if (is.null(rpar)) ipar <- 1
+    if (! is.compiled(func))
+      stop("'nout' > 0 makes sense only for compiled code")
+
+    if (! is.null(outnames) & length(outnames) != nout)
+      stop ("length of 'outnames' should be equal to 'nout'") 
+
+    ipar <- c(nout, ipar)
+    rpar <- c(rep(0., nout), rpar) 
+  } else if (! is.null(outnames))
+    stop ("if 'outnames' is given, 'nout' should be equal to its length")  
+
+  if (! is.null(eps))
+    rpar <- c(rpar, 0.)
+
+  if (is.null(ipar)) ipar <- 0
+  if (is.null(rpar)) rpar <- 1.
   
   if(is.null(initfunc))
     initpar <- NULL # parameter initialisation not needed if function is not a DLL
@@ -700,6 +769,16 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
      stop (" eps must be smaller of equal to epsini")
   }
 
+ absent <- c(0, 0, 0) # do not use compiled code for jac, bnd, jacbnd
+ rwork <- 0
+ if (is.null(jacfunc)) absent[1] <- 1
+ if (is.null(jacbound)) absent[3] <- 1
+ if (is.null(bound)) {
+    absent[2] <- 1
+    absent <- c(absent, iibb)
+    rwork <- bb
+ }
+ 
  if (type == 1)
   out <- .Call("call_bvptwp",as.integer(mstar), as.double(fixpt),
             as.double(aleft),as.double(aright),as.integer(leftbc),
@@ -707,10 +786,10 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
             as.integer(givmesh),as.integer(givu),as.integer(nmesh),
             as.integer(nmax),as.integer(lwrkfl),as.integer(lwrkin),
             as.double(Xguess), as.double(Yguess),
-            as.double(rpar), as.integer(rpar), as.integer(cond),
+            as.double(rpar), as.integer(ipar), as.integer(cond),
             Func, JacFunc, Bound, JacBound, ModelInit, initpar,
-            flist, as.integer(lobatto), 
-            rho, PACKAGE="bvpSolve")
+            flist, as.integer(lobatto), as.integer(absent), 
+            as.double(rwork), rho, PACKAGE="bvpSolve")
  else
   out <- .Call("call_acdc", as.integer(mstar), as.double(fixpt),
             as.double(aleft), as.double(aright), as.integer(leftbc),
@@ -721,13 +800,21 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
             as.double(rpar), as.integer(ipar), as.integer(cond),
             as.double(epsini), as.double(eps),
             Func_eps, JacFunc_eps, Bound_eps, JacBound_eps,
-            ModelInit, initpar,
-            flist, rho, PACKAGE="bvpSolve")
+            ModelInit, initpar, flist, as.integer(absent), 
+            as.double(rwork), rho, PACKAGE="bvpSolve")
+
 
   EPS <- attributes(out)$eps
+  
   nn <- attr(out,"istate")
   rn <- attr(out,"rstate")
   mesh <- nn[11]
+
+
+  if (!jacPresent)
+     nn[2] <- nn[2] + nn[3] * (mstar+1)
+  nn[2] <- nn[2] + 1  # add test function evaluation
+
   attr(out,"istate") <- NULL
 
 #(  if(verbose) print(names(baseenv()$last.warning))  # dangerous...
@@ -737,6 +824,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
           if (!is.null(Ynames)) Ynames else as.character(1:mstar))
   out <- cbind(out[1:mesh],matrix(data=out[-(1:mesh)],nrow=mesh,byrow=TRUE))
   # select only the rows corresponding to x-values
+
   if (! allpoints)
     if (nrow(out) > length(x))
       out <- out [which(out[,1]%in% x),]
@@ -758,13 +846,44 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
                 if (!is.null(Nmtot)) Nmtot else
                                      as.character((mstar+1) : (mstar + Nglobal)))
   }
-  dimnames(out) <- list(NULL,nm)
+
+
+dimnames(out) <- list(NULL,nm)
+
+   if (nout > 0) {
+	   
+	   if (! is.compiled(func))
+		   stop("'nout' > 0 makes sense only for compiled code")
+	   
+	   if (! is.null(outnames) & length(outnames) != nout)
+		   stop ("length of 'outnames' should be equal to 'nout'") 
+	   
+	   ipar <- c(nout, ipar)
+	   rpar <- c(rep(0., nout), rpar) 
+   } else if (! is.null(outnames))
+	   stop ("if 'outnames' is given, 'nout' should be equal to its length")  
+   
+   
+# Karline: nout
+  if (nout > 0) {
+    vout <- matrix(nrow = nrow(out), ncol = nout, data = NA)
+    if (! is.null(outnames)) 
+      colnames(vout) <- outnames
+    if (class(func) == "CFunc") {
+      for (j in 1:nrow(out)) 
+      vout[j,] <- DLLfunc(func, parms = parms, y = out[j,-1], 
+         times = out[j,1], dllname = NA, nout = nout, 
+         initfunc = NULL)$var      
+   } else if (is.loaded(funcname, PACKAGE = dllname)) {
+      for (j in 1:nrow(out)) 
+        vout[j,] <- DLLfunc(funcname, parms = parms, y = out[j,-1], 
+         times = out[j,1], dllname = dllname, initfunc = initfunc)$var      
+   }
+   out <- cbind(out, vout) 
+  }
+
   class(out) <- c("bvpSolve","matrix")  # a boundary value problem
-
-  nn[2] <- nn[2] + 1  # add test function evaluation
-  if (!jacPresent)
-       nn[2] <- nn[2] + nn[3] * (mstar+1)
-
+  
   if (type == 1) attr(out,"acdc") <- FALSE else attr(out,"acdc") <- TRUE
   names(nn) <- c("flag",	"nfunc", "njac", "nbound", "njacbound", "nstep",
     "ureset","","","nmax","nmesh","nrwork","niwork")
@@ -773,6 +892,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
   attr(out,"rstate") <- rn
   attr(out,"name") <- "bvptwp"
   attr(out,"eps")     <- EPS
+  
   out
 
 ## =============================================
@@ -882,7 +1002,22 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
   iset[5] = max(iset[5], length(rwork))     # length of fspace
 
   iset[10] <- 0
-  if (is.null(ipar)) ipar <- 1
+
+# Karline: nout
+  if (nout > 0) {
+    if (! is.compiled(func))
+      stop("'nout' > 0 makes sense only for compiled code")
+
+    if (! is.null(outnames) & length(outnames) != nout)
+      stop ("length of 'outnames' should be equal to 'nout'") 
+  
+    ipar <- c(nout, ipar)
+    rpar <- c(rep(0., nout), rpar) 
+  } else if (! is.null(outnames))
+    stop ("if 'outnames' is given, 'nout' should be equal to its length")  
+  if (! is.null(eps))
+    rpar <- c(rpar, 0.)
+  if (is.null(ipar)) ipar <- 0
   if (is.null(rpar)) rpar <- 1
 
   if (type == 3){
@@ -905,6 +1040,17 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
   if(nalg > 0) {
     bspline <- 2   #coldae
   }
+  
+ absent <- c(0, 0, 0) # do not use compiled code for jac, bnd, jacbnd
+ rrwork <- 0
+ if (is.null(jacfunc)) absent[1] <- 1
+ if (is.null(jacbound)) absent[3] <- 1
+ if (is.null(bound)) {
+    absent[2] <- 1
+    absent <- c(absent, iibb)
+    rrwork <- bb
+ }
+
   storage.mode(y) <- storage.mode(x) <- "double"
   if (type == 2)
   out <- .Call("call_colnew",as.integer(neq),as.double(x),
@@ -914,7 +1060,8 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
             as.double(tol),
             as.double(fixpnt), as.double (rpar), as.integer (ipar),
             Func, JacFunc, Bound, JacBound, GuessFunc, ModelInit, initpar,
-            flist, type = as.integer(bspline), rho,  PACKAGE="bvpSolve")
+            flist, type = as.integer(bspline), as.integer(absent), 
+            as.double(rrwork), rho,  PACKAGE = "bvpSolve")
   else if (type == 3)
   out <- .Call("call_colmodsys",as.integer(neq),as.integer(mstar),
             as.integer(order),as.double(x),as.double(aleft),as.double(aright),
@@ -923,7 +1070,8 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
             as.double(epsini), as.double(eps),
             Func_eps, JacFunc_eps, Bound_eps, JacBound_eps, GuessFunc,
             ModelInit, initpar, flist,
-            as.double(rwork), as.integer(iwork), rho,  PACKAGE="bvpSolve")
+            as.double(rwork), as.integer(iwork), as.integer(absent), 
+            as.double(rrwork), rho,  PACKAGE="bvpSolve")
 
   EPS <- attributes(out)$eps
   nn  <- attributes(out)$istate
@@ -953,13 +1101,31 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
                 if (!is.null(Nmtot)) Nmtot else
                                      as.character((mstar+1) : (mstar + Nglobal)))
   }
+  dimnames(out) <- list(nm,NULL)
+
+# Karline: nout - note: out is transposed here...
+  if (nout > 0) {
+    vout <- matrix(nrow = ncol(out), ncol = nout, data = NA)
+    if (! is.null(outnames)) 
+      colnames(vout) <- outnames
+    if (class(func) == "CFunc") {
+      for (j in 1:ncol(out)) 
+      vout[j,] <- DLLfunc(func, parms = parms, y = out[-1,j], 
+         times = out[1,j], dllname = NA, nout = nout, 
+         initfunc = NULL)$var      
+   } else if (is.loaded(funcname, PACKAGE = dllname)) {
+      for (j in 1:ncol(out))     
+        vout[j,] <- DLLfunc(funcname, parms = parms, y = out[-1,j], 
+         times = out[1,j], dllname = dllname, initfunc = initfunc)$var      
+   }
+   out <- rbind(out, t(vout) )
+  }  
   class(out) <- c("bvpSolve","matrix")  # a boundary value problem
   attr(out,"name")    <- "bvpcol"
   if (type == 2) attr(out,"colmod") <- FALSE else attr(out,"colmod") <- TRUE
 
   attr(out,"bspline") <- bspline
   attr(out,"eps")     <- EPS
-  dimnames(out) <- list(nm,NULL)
 
   names(ic)[1:6] <- c("nfunc", "njac", "nbound", "njacbound","ncont", "nsuccescont")
   names(nn)[1:10] <- c("flag", "nfunc", "njac", "nbound", "njacbound","ncont", "nmesh","ncoll","neqs","ncomps")

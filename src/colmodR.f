@@ -663,6 +663,7 @@ C     intialise counters
       njac = 0
       nbound = 0
       njacbound = 0
+      maxmesh = 0
 
 C.... Compute Machine
 C.... Dependent Constant  Precis = 100 * Machine Unit Roundoff

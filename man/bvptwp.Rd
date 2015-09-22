@@ -28,9 +28,9 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
        leftbc = NULL, posbound = NULL, islin = FALSE, nmax = 1000, 
        ncomp = NULL, atol = 1e-8, cond = FALSE, lobatto = FALSE,
        allpoints = TRUE, dllname = NULL, initfunc = dllname,
-       rpar = NULL, ipar = NULL, nout = 0, forcings = NULL, 
-       initforc = NULL, fcontrol = NULL, verbose = FALSE,
-        epsini = NULL, eps = epsini, ...)
+       rpar = NULL, ipar = NULL, nout = 0, outnames = NULL, 
+       forcings = NULL, initforc = NULL, fcontrol = NULL, 
+       verbose = FALSE, epsini = NULL, eps = epsini, ...)
 }
 \arguments{
   \item{yini }{either a vector with the initial (state) variable values for
@@ -240,6 +240,11 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
     to perform this check in the code. See deSolve's package vignette
     \code{"compiledCode"}.
   }
+  \item{outnames }{only used if function is specified in compiled code and 
+    \code{nout} > 0: the names of output variables calculated in the compiled 
+    function. These names will be used to label the output matrix. 
+    The length of \code{outnames} should be = \code{nout}.
+  }
   \item{forcings }{only used if \file{dllname} is specified: a list with
     the forcing function data sets, each present as a two-columned matrix,
     with (time,value); interpolation outside the interval
@@ -421,8 +426,6 @@ bvptwp(yini = NULL, x, func, yend = NULL, parms = NULL,
       Hybrid Mesh Selection Algorithms Based on Conditioning for
       Two-Point Boundary Value Problems, Journal of Numerical Analysis,
      Industrial and Applied Mathematics.
-
-  \url{http://www.ma.ic.ac.uk/~jcash/BVP\_software}
 }
 
 \examples{
@@ -548,7 +551,7 @@ f2<- function(x, y, parms, R) {
 }
 
 df2 <- function(x, y, parms, R) {
- df <- matrix(nrow = 4, ncol = 4, byrow = TRUE, data = c(
+  matrix(nrow = 4, ncol = 4, byrow = TRUE, data = c(
              0,        1,     0,     0,
              0,        0,     1,     0,
              0,        0,     0,     1,

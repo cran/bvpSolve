@@ -21,7 +21,6 @@
   \tabular{ll}{
     Package: \tab bvpSolve\cr
     Type:    \tab Package\cr
-    Version: \tab 1.2.2\cr
     License: \tab GNU Public License 2 or above\cr
   }
 
@@ -52,6 +51,8 @@
   Francesca Mazzia
 }
 \references{
+  Francesca Mazzia, Jeff R. Cash, Karline Soetaert (2014).  Solving boundary value problems in the open source software R: Package bvpSolve.  Opuscula mathematica, 34(2), 387--403.  URL http://dx.doi.org/10.7494/OpMath.2014.34.2.387
+
   J.R. Cash and M.H. Wright, (1991) A deferred correction method for nonlinear
   two-point boundary value problems: implementation and numerical evaluation,
   SIAM J. Sci. Stat. Comput. 12,  971-989.
@@ -68,8 +69,6 @@
   U. Ascher, J. Christiansen and R. D. Russell,  (1981)
   collocation software for boundary-value odes,
   acm trans. math software 7, 209-222.
-
-  \url{http://www.ma.ic.ac.uk/~jcash/BVP\_software}
 }
 \seealso{
   \code{\link{bvptwp}}, a deferred correction method based on mono-

@@ -25,8 +25,8 @@ yini <- c(-1, NA, 0, 0, NA, NA)
 yend <- c(1 , NA, 0, 0, NA, NA)
 
 
-fsub <- function (t,Y,pars,eps)
-{ return(list(c(f1 <- Y[2],
+fsub <- function (t, Y, eps)  {
+ return(list(c(f1 <- Y[2],
                 f2 <- (Y[1]*Y[4] - Y[3]*Y[2])/eps,
 	              f3 <- Y[4],
               	f4 <- Y[5],
@@ -39,30 +39,34 @@ fsub <- function (t,Y,pars,eps)
 
 # bvptwp does...
 print(system.time(Sol <- bvptwp(x = x, func = fsub, 
-                  yini = yini, yend = yend, eps = 0.01)))
+                  yini = yini, yend = yend, eps = 0.01, parms = 0.01)))
 
 pairs(Sol, col = "blue", lty = 2)
 
 # For successively smaller values of eps:
 print(system.time(Sol2 <- bvptwp(x = x, func = fsub, 
                   xguess = Sol[,1], yguess = t(Sol[,-1]),
-                  yini = yini, yend = yend, eps=0.001)))
+                  yini = yini, yend = yend, eps=0.001, epsini = 0.01,
+                  parms=0.001)))
 pairs(Sol2, col = "red", lty = 2)
 
 # For successively smaller values of eps:
 print(system.time(Sol3 <- bvptwp(x = x, func = fsub, 
                   xguess = Sol2[,1], yguess = t(Sol2[,-1]),
-                  yini = yini, yend = yend, eps = 0.0001)))
+                  yini = yini, yend = yend, eps = 0.0001, 
+                  epsini = 0.001, parms = 0.0001)))
 pairs(Sol3, col = "darkgreen", lty = 2)
 
 
 # For successively smaller values of eps:
 print(system.time(Sol4 <- bvptwp(x = x, func = fsub, 
                   xguess = Sol3[,1], yguess = t(Sol3[,-1]),
-                  yini = yini, yend = yend, eps = 5e-5)))
+                  yini = yini, yend = yend, eps = 5e-5, 
+                  epsini = 1e-4, parms = 5e-5)))
 pairs(Sol4, col = "orange", lty = 2)
 
-print(system.time(Sol5 <- bvptwp(atol = 1e-5, x = x, func = fsub,  cond=TRUE, 
-                  xguess = Sol4[,1], yguess = t(Sol4[,-1]),
-                  yini = yini, yend = yend, eps = 1e-6 )))
+# with conditioning 
+print(system.time(Sol5 <- bvptwp(atol = 1e-5, x = x, func = fsub, cond = TRUE, 
+                  xguess = Sol3[,1], yguess = t(Sol3[,-1]),
+                  yini = yini, yend = yend, eps = 5e-5 , parms=5e-5)))
 pairs(Sol5, col = "yellow2", lty = 2)

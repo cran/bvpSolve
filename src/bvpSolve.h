@@ -5,7 +5,7 @@
 /*============================================================================
   global R variables 
 ============================================================================*/
-SEXP X, Y, J, EPS;
+SEXP Y, EPS;
 
 /*============================================================================
   global C variables 
@@ -46,10 +46,38 @@ typedef void C_jac_func_type      (int *, double *, double *,double *, double *,
 typedef void C_jacbound_func_type (int *, int *, double *, double *, double *, int *);
 typedef void C_guess_func_type    (double *, double *, double *);
 
+C_deriv_func_type    *jderfun;    /* if DLL */
 C_deriv_func_type    *derfun;    /* if DLL */
 C_bound_func_type    *boundfun;
+C_bound_func_type    *jbndfun;
 C_jac_func_type      *jacfun;
 C_jacbound_func_type *jacboundfun;
+
+typedef void C_acdc_deriv_func_type(int *, double *, double *,double *,
+                                    double *, double *, int *);
+typedef void C_acdc_bound_func_type(int *, int *, double *, double *,
+                                    double *, double *, int *);
+typedef void C_acdc_jac_func_type  (int *,  double *, double *, double *,
+                                    double *, double *, int *);
+typedef void C_acdc_jacbound_func_type(int *, int *, double *, double *,
+                                    double *, double *, int *);
+C_acdc_deriv_func_type    *jaderfun;    /* if DLL */
+C_acdc_bound_func_type    *jabndfun;
+
+typedef void C_deriv_func2_type(double *, double *,double *, double *,
+                                double *, int *);
+typedef void C_bound_func2_type(int *, double *, double *,double *,
+                                double *, int *);
+typedef void C_jac_func2_type  (double *, double *, double *, int *, double *,
+                                double *, int *);
+typedef void C_jacbound_func2_type(int *, double *, double *, double *,
+                                double *, int *);
+typedef void C_guess_func2_type(double *, double *, double *, double *, 
+                                double *, int *);
+C_deriv_func2_type     *jepsderfun;
+C_bound_func2_type     *jepsbndfun;
+double *dy, *dycopy, *ycopy, *ycopy2, *bb, *g, *gcopy;
+int * iibb;
 
 /*============================================================================
   solver R- global functions 

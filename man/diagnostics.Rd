@@ -44,7 +44,7 @@
   \code{bvptwp}, will also return the \emph{conditioning parameters}. They are:
   kappa, kappa1, kappa2, sigma and gamma1.
   
-  See \url{http://www.scpe.org/vols/vol10/no4/SCPE_10_4_02.pdf}
+  See \url{http://www.scpe.org/index.php/scpe/article/view/626}
   
 the kappa's are based on the Inf-norm, gamma1 is based on the 1-norm,
 If kappa, kappa1 and gamma1 are  of moderate size, the problem is well

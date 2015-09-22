@@ -393,6 +393,8 @@ c ksks: add precis as argument: machine precision...
       iset(5) = nstep
       iset(6) = ureset
 
+
+
       return
       end
 
@@ -591,6 +593,9 @@ cf       number of failure of Newton iteration
        indnms = indnms + 1
        iseries(indnms) = nmsh
        indnmsold = nmsh
+       if (iprint .eq. 1) THEN
+            CALL Rprinti1('Start 4th order, indnms', indnms)
+       ENDIF
        endif
 
        if (indnms .ge. liseries) then
@@ -925,9 +930,9 @@ c     call dcopy(nmold, xx, 1, xxold, 1)
 
 
       call matcop(nudim, ncomp, ncomp, nmsh, u, uold)
-*  Copy the current mesh into the xxold array. KSKS THIS WAS TOGGLED OFF - RESET IT....
-      nmold = nmsh
-      call dcopy(nmold, xx, 1, xxold, 1)
+*  Copy the current mesh into the xxold array. KSKS THIS WAS TOGGLED OFF - RESET IT.... Francesca this was again commented
+c      nmold = nmsh
+c      call dcopy(nmold, xx, 1, xxold, 1)
 
 
 *  Save the old deferred correction vector def in def6.
@@ -1047,6 +1052,9 @@ c     call dcopy(nmold, xx, 1, xxold, 1)
              end if
        end if
 
+       if (iprint .eq. 1) THEN
+         CALL Rprinti1('Exit main', iflbvp)
+       ENDIF
 
       return
 

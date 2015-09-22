@@ -640,7 +640,7 @@ Elastica <- function (x, y, pars) {
           0))
 }
 
-Sol <- bvptwp(func = Elastica,
+Sol <- bvpcol(func = Elastica,
               yini = c(x = 0,  y = 0, p = NA,   k = 0,  F = NA),
               yend = c(x = NA, y = 0, p = -pi/2,k = NA, F = NA),
               x = seq(0, 0.5, len = 16))
@@ -659,10 +659,8 @@ plot(Sol)
 
 
 ###################################################
-### code chunk number 71: bvpSolve.Rnw:1213-1225
+### code chunk number 71: bvpSolve.Rnw:1213-1223
 ###################################################
-
-
 jacfunc <- function (x, y, pars) {
       Jac <- matrix(nrow = 5, ncol = 5, data = 0)
       Jac[3,4] <- 1.0
@@ -676,7 +674,7 @@ jacfunc <- function (x, y, pars) {
 
 
 ###################################################
-### code chunk number 72: bvpSolve.Rnw:1228-1234
+### code chunk number 72: bvpSolve.Rnw:1226-1232
 ###################################################
 bound <- function (i, y, pars)  {
     if      (i <= 2) return(y[i])
@@ -687,7 +685,7 @@ bound <- function (i, y, pars)  {
 
 
 ###################################################
-### code chunk number 73: bvpSolve.Rnw:1236-1244
+### code chunk number 73: bvpSolve.Rnw:1234-1242
 ###################################################
 jacbound <- function(i, y, pars)  {
     JJ <- rep(0, 5)
@@ -700,25 +698,25 @@ jacbound <- function(i, y, pars)  {
 
 
 ###################################################
-### code chunk number 74: bvpSolve.Rnw:1249-1253
+### code chunk number 74: bvpSolve.Rnw:1247-1251
 ###################################################
-Sol4 <- bvptwp(leftbc = 3, ynames = c("x", "y", "p", "k", "F"),
+Sol4 <- bvpcol(leftbc = 3, ynames = c("x", "y", "p", "k", "F"),
               func = Elastica, jacfunc = jacfunc,
               bound = bound, jacbound = jacbound,
               x = seq(0, 0.5, len=16))
 
 
 ###################################################
-### code chunk number 75: bvpSolve.Rnw:1482-1486
+### code chunk number 75: bvpSolve.Rnw:1480-1484
 ###################################################
-outF <- bvptwp(ncomp = 5,
+outF <- bvpcol(ncomp = 5,
                x = seq(0, 0.5, len = 16), leftbc = 3, func = "fsub", 
                jacfunc = "dfsub", bound = "gsub", jacbound = "dgsub",
                dllname = "bvpSolve")
 
 
 ###################################################
-### code chunk number 76: bvpSolve.Rnw:1545-1549
+### code chunk number 76: bvpSolve.Rnw:1543-1547
 ###################################################
 fun <- function(t,y,pars)
   list(c( y[2],
@@ -727,14 +725,14 @@ fun <- function(t,y,pars)
 
 
 ###################################################
-### code chunk number 77: bvpSolve.Rnw:1552-1554
+### code chunk number 77: bvpSolve.Rnw:1550-1552
 ###################################################
 p    <- 1e-5
 a    <- 3
 
 
 ###################################################
-### code chunk number 78: bvpSolve.Rnw:1559-1563
+### code chunk number 78: bvpSolve.Rnw:1557-1561
 ###################################################
 sol  <- bvptwp(yini = c(y = -0.1/sqrt(p+0.01), dy = NA),
                yend = c(     0.1/sqrt(p+0.01),      NA),
@@ -755,13 +753,13 @@ plot(sol, type = "l")
 
 
 ###################################################
-### code chunk number 81: bvpSolve.Rnw:1651-1652
+### code chunk number 81: bvpSolve.Rnw:1649-1650
 ###################################################
 parms <- c(a = 3, p = 1e-7)
 
 
 ###################################################
-### code chunk number 82: bvpSolve.Rnw:1671-1683
+### code chunk number 82: bvpSolve.Rnw:1669-1681
 ###################################################
 Out  <- NULL
 x    <- seq(-0.1, 0.1, by = 0.001)
@@ -778,7 +776,7 @@ for (pp in pseq) {
 
 
 ###################################################
-### code chunk number 83: bvpSolve.Rnw:1688-1688
+### code chunk number 83: bvpSolve.Rnw:1686-1686
 ###################################################
 
 

@@ -9,6 +9,7 @@
 ## =============================================================================
 
 require(bvpSolve)
+require(rootSolve)
 
 mathieu<- function(t, y, lambda = 15)  {
  list(c(y[2], -(lambda-10*cos(2*t)) * y[1]))

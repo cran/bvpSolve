@@ -91,7 +91,7 @@
   Sea Research (NIOZ)\\
   4401 NT Yerseke, Netherlands \\
   E-mail: \email{karline.soetaert@nioz.nl}\\
-  URL: \url{http://www.nioz.nl}\\
+  URL: \url{https://www.nioz.nl/staff-detail?id=784400}\\
    \\
   Jeff Cash\\
   Imperial College London\\
@@ -107,7 +107,7 @@
   70125 BARI                 \\
   Italy 
   E-mail: \email{mazzia@dm.uniba.it}\\
-  URL: \url{http://pitagora.dm.uniba.it/\~mazzia}\\
+  URL: \url{http://www.dm.uniba.it/~mazzia/mazzia/}\\
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% R/Sweave specific LaTeX commands.
@@ -223,7 +223,7 @@ options(width=70)
   \begin{itemize}
     \item We start with a simple example, comprising one second-order ODE (
       test problem 7 from the website of Jeff Cash 
-      (\url{http://www.ma.ic.ac.uk/~jcash/BVP_software/readme.php})
+      (\url{http://wwwf.imperial.ac.uk/~jcash/BVP_software/PROBLEMS.PDF})
     \item This is followed by a more complex example, which consists of 
       6 first-order ODEs, the ''swirling flow III'' problem \citep{Asher95}. 
       This example is used to demonstrate how to
@@ -262,7 +262,7 @@ options(width=70)
 \section{A Simple BVP Example}
 
   Here is a simple BVP ODE (which is problem 7 from the test problems available
-  from \url{http://www.ma.ic.ac.uk/~jcash/BVP_software/readme.php} ):
+  from \url{http://wwwf.imperial.ac.uk/~jcash/BVP_software/PROBLEMS.PDF} ):
 
   \begin{eqnarray*}
     \xi y'' + x y' - y &=&  -(1 + \xi \pi ^2) \cos(\pi x) -\pi x \sin(\pi x)\\
@@ -1148,7 +1148,7 @@ conditions, are estimated numerically. It is however possible - and faster -
 to provide the analytical solution of the Jacobian.
 
 As an example, the \code{elastica} problem is implemented
-(\url{http://www.ma.ic.ac.uk/~jcash/BVP_software}).
+(\url{http://wwwf.imperial.ac.uk/~jcash/BVP_software/readme.php}).
 
 The original system reads:
 \begin{eqnarray}
@@ -1179,7 +1179,7 @@ Elastica <- function (x, y, pars) {
           0))
 }
 
-Sol <- bvptwp(func = Elastica,
+Sol <- bvpcol(func = Elastica,
               yini = c(x = 0,  y = 0, p = NA,   k = 0,  F = NA),
               yend = c(x = NA, y = 0, p = -pi/2,k = NA, F = NA),
               x = seq(0, 0.5, len = 16))
@@ -1211,8 +1211,6 @@ Now several extra functions are defined, specifying
 
 This is done in the \R-code below:
 <<>>=
-
-
 jacfunc <- function (x, y, pars) {
       Jac <- matrix(nrow = 5, ncol = 5, data = 0)
       Jac[3,4] <- 1.0
@@ -1247,7 +1245,7 @@ If this input is used, the number of left boundary conditions (\code{leftbc}),
 and either the number of state variables (\code{ncomp}), or their names
 (\code{ynames}) needs to be specified.
 <<>>=
-Sol4 <- bvptwp(leftbc = 3, ynames = c("x", "y", "p", "k", "F"),
+Sol4 <- bvpcol(leftbc = 3, ynames = c("x", "y", "p", "k", "F"),
               func = Elastica, jacfunc = jacfunc,
               bound = bound, jacbound = jacbound,
               x = seq(0, 0.5, len=16))
@@ -1283,7 +1281,7 @@ interface needed by the integrator source codes.
 
 \subsection{The Elastica Problem in FORTRAN}
 Below is an implementation of the elastica model in \proglang{FORTRAN}:
-(slightly modified from \url{http://www.ma.ic.ac.uk/~jcash/BVP_software}):
+(slightly modified from \url{http://wwwf.imperial.ac.uk/~jcash/BVP_software/readme.php}):
 
 \begin{verbatim}
 c  The differential system:
@@ -1470,7 +1468,7 @@ the name of the DLL):
 
 dyn.load("elastica.dll")
 
-outF <- bvptwp(ncomp = 5,
+outF <- bvpcol(ncomp = 5,
                x = seq(0, 0.5, len = 16), leftbc = 3, func = "fsub", 
                jacfunc = "dfsub", bound = "gsub", jacbound = "dgsub",
                dllname = "elastica")
@@ -1480,7 +1478,7 @@ dyn.unload("elastica.dll")
 \end{verbatim}
 %% the elastica problem implemented in C has been made a part of the package
 <<include=FALSE, echo = FALSE>>=
-outF <- bvptwp(ncomp = 5,
+outF <- bvpcol(ncomp = 5,
                x = seq(0, 0.5, len = 16), leftbc = 3, func = "fsub", 
                jacfunc = "dfsub", bound = "gsub", jacbound = "dgsub",
                dllname = "bvpSolve")

@@ -29,13 +29,15 @@ c ==============================================================================
 
       ureset = ureset + 1
 
+
       IF (giv_u) THEN
        if (iprint .ne. -1) then
-             CALL Rprint('initu = 0.d0')
+             CALL Rprint('initu = xguess')
        endif
 
        call interp(ncomp, nmsh, xx, nudim, u,
      *                  nugdim,nmguess, xguess, uguess)
+
 
       ELSE
        if (iprint .ne. -1) then
@@ -84,6 +86,8 @@ c     cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         MINMG=0.0d+0
         KPPA=0.0d+0
+        idmx = 1
+        idmn = 1
 
         IF (FIRSTCOL) THEN
 
@@ -273,13 +277,16 @@ c estimation of the infinity norm using the Hager algorithm
 c the initial vector depends on the value of sigma
 c algorithm called kappastiffbvp
 
+
  450    if (sigma .lt. 10 .and. itmax .eq. 0 ) then
+         idmx=max(idmx,1)
           do l=1,N
             work(l)=1.0d0/dble(N+10)
           end do
             work(idmx)=(1.0d0+10.0d0)/dble(N+10)
             its = 1
        else
+          idmx=max(idmx,1)
            do 380 l=1,N
               WORK(l)=0.0d0
  380       continue
@@ -314,9 +321,8 @@ c computation of kappa
            DO l=nrwtop+1,N-ncomp+nrwtop
               kappa2_n = kappa2_n+ abs(WORK(l))
            END DO
-
+         CKAPPA2 = kappa2_n
          IF ( kappa1_n + kappa2_n .gt. CKAPPA ) THEN
-           CKAPPA2 = kappa2_n
            CKAPPA = kappa1_n+kappa2_n
            CKAPPA1 = kappa1_n
          ELSEIF (itmax .ne. 0) THEN
@@ -348,6 +354,7 @@ c solve the linear system
 c test for convergence
 
       ZNORM=0
+      indnm = 1
       DO I=1,N
          IF ( ABS(WORK(I)) .GT. ZNORM) THEN
             ZNORM = ABS(WORK(I))
@@ -1094,6 +1101,10 @@ c ==============================================================================
       call errest (ncomp, nmsh, ntol, ltol, tol,
      *          nudim, u, uold, etest8, err8, errok)
 
+      if (iprint .eq. 1) THEN
+             CALL Rprint('errorOK conv8')
+      ENDIF
+
       if (errok)  then
          succes = .true.
          return
@@ -1140,6 +1151,9 @@ c we do not use u but uold
 *   (2) the number of mesh points decreased, the 6th and 8th order
 *       errors did not satisfy the termination tests, but they did not
 *       increase so much that the mesh needed to be doubled.
+      if (iprint .eq. 1) THEN
+             CALL Rprint('err8 .le. err6 conv8')
+      ENDIF
 
       er6old = err6
       er8old = err8
@@ -1193,6 +1207,10 @@ c we do not use u but uold
 
       else
 
+
+      if (iprint .eq. 1) THEN
+             CALL Rprint('else err8 .le. err6 conv8')
+      ENDIF
 *  err8 is greater than err6
 
 *  For a linear problem, set all elements of etest8 to one,
@@ -1241,6 +1259,10 @@ c               call matcop(nudim, ncomp, ncomp, nmold, u, uold)
          endif
 *     end of logic for err8 greater than err6
       endif
+
+      if (iprint .eq. 1) THEN
+             CALL Rprint('exit conv8')
+      ENDIF
 
       return
 
@@ -3113,7 +3135,7 @@ c ==============================================================================
          first = .false.
          rlndec = dlog(erdcid)
       endif
-
+      phihat=0
       maxmsh = .false.
 
       frcpow = one/ipow
@@ -3282,6 +3304,7 @@ c ==============================================================================
 *  certain estimates.
 *  If jtkout is not zero, previous points contiguous to this
 *  point have been removed, and phihat retains its previous value.
+
 
             slen = slen + rlen
 
@@ -4430,7 +4453,7 @@ c  the points are configured for an interpolation.  the artificial
 c  interval will be just  (a,b).   set  endpnt  so that  xtry
 c  lies in the larger of the intervals  (a,0)  and  (0,b).
 c
-  640 if (xmidpt .lt. zero) endpnt = a
+  640 if (xmidpt .le. zero) endpnt = a
       if (xmidpt .gt. zero) endpnt = b
 c
 c  if a bound has remained the same for three iterations, set  endpnt
@@ -4442,7 +4465,7 @@ c
 c
 c  the points are configured for an extrapolation.
 c
-  660 if (xw .lt. zero) endpnt = b
+  660 if (xw .le. zero) endpnt = b
       if (xw .gt. zero) endpnt = a
 c
 c  compute the default value of  xtry.
@@ -4580,6 +4603,7 @@ c ==============================================================================
 *  By construction, xx(1) = xxold(1).  Copy the first ncomp
 *  components of uold into those of u.
 
+
       call dcopy(ncomp, uold(1,1), 1, u(1,1), 1)
 
       i = 2
@@ -4615,6 +4639,9 @@ c ==============================================================================
 
   100 continue
       call dcopy(ncomp, uold(1,nmold), 1, u(1,nmsh), 1)
+
+
+
       return
       end
 
@@ -4774,7 +4801,7 @@ c ==============================================================================
       endif
 
       maxmsh = .false.
-
+      phihat = 0
       frcpow = one/ipow
       ddouble = .false.
       nmold = nmsh

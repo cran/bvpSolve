@@ -1,8 +1,7 @@
 \name{bvpcol}
 \alias{bvpcol}
 \title{
-  Solves multipoint boundary value problems of ordinary differential equations
-  or differential algebraic equations, using a collocation method.
+  Solves multipoint boundary value problems of ordinary differential equations or differential algebraic equations, using a collocation method.
 }
 \description{
   Solves Boundary Value Problems For Ordinary Differential Equations (ODE)
@@ -41,9 +40,9 @@ bvpcol (yini = NULL, x, func, yend = NULL, parms = NULL,
         leftbc = NULL, posbound = NULL, islin = FALSE, nmax = 1000, 
         ncomp = NULL, atol = 1e-8, colp = NULL, bspline = FALSE,
         fullOut = TRUE, dllname = NULL, initfunc = dllname, 
-        rpar = NULL, ipar = NULL, nout = 0, forcings = NULL, 
-        initforc = NULL, fcontrol = NULL, verbose = FALSE,
-        epsini = NULL, eps = epsini, dae = NULL, ...)
+        rpar = NULL, ipar = NULL, nout = 0, outnames = NULL,
+        forcings = NULL, initforc = NULL, fcontrol = NULL, 
+        verbose = FALSE, epsini = NULL, eps = epsini, dae = NULL, ...)
 }
 \arguments{
   \item{yini }{either a vector with the initial (state) variable values for
@@ -270,6 +269,11 @@ bvpcol (yini = NULL, x, func, yend = NULL, parms = NULL,
     indeed the number of output variables calculated in the dll - you have
     to perform this check in the code. See deSolve's package vignette
     \code{"compiledCode"}.
+  }
+  \item{outnames }{only used if function is specified in compiled code and 
+    \code{nout} > 0: the names of output variables calculated in the compiled 
+    function. These names will be used to label the output matrix.
+    The length of \code{outnames} should be = \code{nout}.
   }
   \item{forcings }{only used if \file{dllname} is specified: a list with
     the forcing function data sets, each present as a two-columned matrix,

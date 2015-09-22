@@ -47,7 +47,7 @@
 
 \Abstract{
   This document implements several testproblems
-  that can be found on \url{http://www.ma.ic.ac.uk/~jcash/BVP_software/PROBLEMS.PDF},
+  that can be found on \url{http://wwwf.imperial.ac.uk/~jcash/BVP_software/readme.html},
   using solvers from package \bvp \citep{bvpSolve}.
 }
 
@@ -58,7 +58,7 @@
   Royal Netherlands Institute of Sea Research (NIOZ)\\
   4401 NT Yerseke, Netherlands \\
   E-mail: \email{karline.soetaert@nioz.nl}\\
-  URL: \url{http://www.nioz.nl}\\
+  URL: \url{https://www.nioz.nl/staff-detail?id=784400}\\
    \\
   Jeff Cash\\
   Imperial College London\\
@@ -74,7 +74,7 @@
   70125 Bari                 \\
   Italy 
   E-mail: \email{mazzia@dm.uniba.it}\\
-  URL: \url{http://pitagora.dm.uniba.it/\~mazzia}\\
+  URL: \url{http://www.dm.uniba.it/~mazzia/mazzia/}\\
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% R/Sweave specific LaTeX commands.
@@ -123,7 +123,7 @@ options(width=70)
   \end{eqnarray*}
   
   In this document, all boundary value problems that can be found on
-  \url{http://www.ma.ic.ac.uk/~jcash/BVP_software}, are implemented and solved
+  \url{http://wwwf.imperial.ac.uk/~jcash/BVP_software/PROBLEMS.PDF}, are implemented and solved
   using solvers from package \bvp.
   
   Most of the time, for each solver, the default settings are used, 
@@ -580,7 +580,7 @@ xi    <-0.1
 mod1 <- bvpshoot(yini = c(0, NA), yend = c(2, NA), 
            order = 2, x = seq(-1, 1, by = 0.01), func=Prob10, guess = 0)
 xi   <- 0.05
-mod2 <- bvptwp(yini = c(0, NA), yend = c(2, NA), 
+mod2 <- bvpcol(yini = c(0, NA), yend = c(2, NA), 
            order = 2, x = seq(-1, 1, by = 0.01), func=Prob10)
 xi   <- 0.01
 mod3 <- bvptwp(yini = c(0, NA), yend = c(2, NA), 

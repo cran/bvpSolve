@@ -428,7 +428,7 @@ xi    <-0.1
 mod1 <- bvpshoot(yini = c(0, NA), yend = c(2, NA), 
            order = 2, x = seq(-1, 1, by = 0.01), func=Prob10, guess = 0)
 xi   <- 0.05
-mod2 <- bvptwp(yini = c(0, NA), yend = c(2, NA), 
+mod2 <- bvpcol(yini = c(0, NA), yend = c(2, NA), 
            order = 2, x = seq(-1, 1, by = 0.01), func=Prob10)
 xi   <- 0.01
 mod3 <- bvptwp(yini = c(0, NA), yend = c(2, NA), 
