@@ -2,7 +2,7 @@
 to the integration routines */
 
 #include "bvpSolve.h"
-
+#include "externalptr.h"
 int    finit = 0;
 
 /*         -----     Check for presence of forcing functions     -----        */
@@ -36,7 +36,7 @@ int initForcings(SEXP flist) {
 
        fmethod =INTEGER(Ivec)[i];
 
-	     initforcings = (init_func *) R_ExternalPtrAddr(initforc);
+	     initforcings = (init_func *) R_ExternalPtrAddrFn_(initforc);
 	     initforcings(Initdeforc);
 
        isForcing = 1;

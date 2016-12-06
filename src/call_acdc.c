@@ -1,6 +1,7 @@
 #include <time.h>
 #include <string.h>
 #include "bvpSolve.h"
+#include "externalptr.h"
 
 /* -----------------------------------------------------------------------------
   definition of the calls to the fortran functions
@@ -374,10 +375,10 @@ SEXP call_acdc(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
       if (absent[2] == 0)
         jacbound_func = (C_acdc_jacbound_func_type *) dll_bvp_jacbound_func;
 
-      derfun        = (C_deriv_func_type *)         R_ExternalPtrAddr(derivfunc);
-      jacfun        = (C_jac_func_type *)           R_ExternalPtrAddr(jacfunc);
-      boundfun      = (C_bound_func_type *)         R_ExternalPtrAddr(boundfunc);
-      jacboundfun   = (C_jacbound_func_type *)      R_ExternalPtrAddr(jacboundfunc);
+      derfun        = (C_deriv_func_type *)         R_ExternalPtrAddrFn_(derivfunc);
+      jacfun        = (C_jac_func_type *)           R_ExternalPtrAddrFn_(jacfunc);
+      boundfun      = (C_bound_func_type *)         R_ExternalPtrAddrFn_(boundfunc);
+      jacboundfun   = (C_jacbound_func_type *)      R_ExternalPtrAddrFn_(jacboundfunc);
 
 	  /* here overruling deriv_func if forcing  */
       if (isForcing) {

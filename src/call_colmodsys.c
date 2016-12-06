@@ -1,6 +1,7 @@
 #include <time.h>
 #include <string.h>
 #include "bvpSolve.h"
+#include "externalptr.h"
 
 /* -----------------------------------------------------------------------------
   definition of the calls to the fortran functions -
@@ -381,19 +382,19 @@ SEXP call_colmodsys(SEXP Ncomp, SEXP Mstar, SEXP M, SEXP Xout, SEXP Aleft,
   /* pointers to functions passed to FORTRAN */
   if (isDll) {   /* DLL addresses passed to fortran */
      deriv_func    = (C_deriv_func2_type *)    dll_colmod_deriv_func;
-     derfun        = (C_deriv_func_type *)     R_ExternalPtrAddr(derivfunc);
+     derfun        = (C_deriv_func_type *)     R_ExternalPtrAddrFn_(derivfunc);
 
      if (absent[0] == 0) { 
        jac_func      = (C_jac_func2_type *)      dll_colmod_jac_func;
-       jacfun        = (C_jac_func_type *)       R_ExternalPtrAddr(jacfunc);
+       jacfun        = (C_jac_func_type *)       R_ExternalPtrAddrFn_(jacfunc);
      }
      if (absent[1] == 0) { 
        bound_func    = (C_bound_func2_type *)    dll_colmod_bound_func;
-       boundfun      = (C_bound_func_type *)     R_ExternalPtrAddr(boundfunc);
+       boundfun      = (C_bound_func_type *)     R_ExternalPtrAddrFn_(boundfunc);
      }
      if (absent[2] == 0) { 
        jacbound_func = (C_jacbound_func2_type *) dll_colmod_jacbound_func;
-       jacboundfun   = (C_jacbound_func_type *)  R_ExternalPtrAddr(jacboundfunc);
+       jacboundfun   = (C_jacbound_func_type *)  R_ExternalPtrAddrFn_(jacboundfunc);
      }
 
 	  /* here overruling deriv_func if forcing */

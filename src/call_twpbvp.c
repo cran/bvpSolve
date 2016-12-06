@@ -1,6 +1,7 @@
 #include <time.h>
 #include <string.h>
 #include "bvpSolve.h"
+#include "externalptr.h"
 
 /* definition of the calls to the fortran functions - in files twpbvpc.f,
 twpbvplc.f, twpbvpa.f */
@@ -342,20 +343,20 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
 
   /* pointers to functions passed to FORTRAN */
   if (isDll) {   /* DLL addresses passed to fortran */
-      deriv_func    = (C_deriv_func_type *)    R_ExternalPtrAddr(derivfunc);
+      deriv_func    = (C_deriv_func_type *)    R_ExternalPtrAddrFn_(derivfunc);
       
       if (absent[0] == 0)  
-        jac_func      = (C_jac_func_type *)   R_ExternalPtrAddr(jacfunc);
+        jac_func      = (C_jac_func_type *)   R_ExternalPtrAddrFn_(jacfunc);
       
       if (absent[1] == 0)
-        bound_func    = (C_bound_func_type *)  R_ExternalPtrAddr(boundfunc);
+        bound_func    = (C_bound_func_type *)  R_ExternalPtrAddrFn_(boundfunc);
       
       if (absent[2] == 0)   /* not given*/
-        jacbound_func = (C_jacbound_func_type *) R_ExternalPtrAddr(jacboundfunc);
+        jacbound_func = (C_jacbound_func_type *) R_ExternalPtrAddrFn_(jacboundfunc);
 
 	  /* here overruling deriv_func if forcing */
       if (isForcing) {
-        derfun =     (C_deriv_func_type *) R_ExternalPtrAddr(derivfunc);
+        derfun =     (C_deriv_func_type *) R_ExternalPtrAddrFn_(derivfunc);
         deriv_func = (C_deriv_func_type *) dll_bvp_deriv_func_forc;
       }
       

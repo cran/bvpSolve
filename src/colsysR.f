@@ -462,7 +462,7 @@ c     of de boor and weiss (to appear in toms).
 c
 c
 c----------------------------------------------------------------------
-      implicit real*8 (a-h,o-z)
+      implicit real(kind=8) (a-h,o-z)
       common /order/ k,nc,mstar,kd,kdm,mnsum,mt(20)
       common /appr/ n,nold,nmax,nalpha,mshflg,mshnum,mshlmt,mshalt
       common /side/ tzeta(40),tleft,tright,izeta
@@ -542,14 +542,18 @@ c
       mnsum = 0
       do  40 i=1,ncomp
            mnsum = mnsum + m(i)**2
-   40 mstar = mstar + m(i)
+           mstar = mstar + m(i)
+   40 Continue
       do 50 i=1,ncomp
-   50 mt(i) = m(i)
+        mt(i) = m(i)
+   50 Continue
       do 60 i=1,mstar
-   60 tzeta(i) = zeta(i)
+        tzeta(i) = zeta(i)
+   60 Continue
       do 70 i=1,ntol
            lttol(i) = ltol(i)
-   70 tolin(i) = tol(i)
+           tolin(i) = tol(i)
+   70 Continue
       tleft = aleft
       tright = aright
       nc = ncomp
@@ -559,9 +563,8 @@ c
 c...  print the input data for checking.
 c
 
-   80 continue
 
-  100 continue
+
 c
 c...  check for correctness of data
 c
@@ -640,14 +643,17 @@ c
       np1 = n + 1
       if (iguess .eq. 4)  np1 = np1 + nold + 1
       do 120 i=1,naldif
-  120 fspace( laldif+i-1 )  =  fspace( np1+i )
+        fspace( laldif+i-1 )  =  fspace( np1+i )
+  120 Continue
       np1 = nold + 1
       if (iguess .eq. 4)                            go to 140
       do 130 i=1,np1
-  130 fspace( lxiold+i-1 )  =  fspace( lxi+i-1 )
+        fspace( lxiold+i-1 )  =  fspace( lxi+i-1 )
+  130 Continue
       go to 160
   140 do 150 i=1,np1
-  150 fspace( lxiold+i-1 )  =  fspace( n+1+i )
+        fspace( lxiold+i-1 )  =  fspace( n+1+i )
+  150 Continue
   160 continue
 c
 c...  initialize collocation points, constants, mesh.
@@ -687,7 +693,8 @@ c
       if (iguess .ge. 2)                            go to 230
       np1 = n + 1
       do 210 i = 1,np1
-  210 fspace(i + lxiold - 1) = fspace(i + lxi - 1)
+        fspace(i + lxiold - 1) = fspace(i + lxi - 1)
+  210 Continue
       nold = n
       if (nonlin .eq. 0 .or. iguess .eq. 1)         go to 230
 c
@@ -695,7 +702,8 @@ c...  system provides first approximation of the solution.
 c...  choose  z(j) = 0   for j=1,..,mstar.
 c
       do 220 i = 1,nalpha
-  220 fspace(i + lalpha - 1) = 0.d0
+        fspace(i + lalpha - 1) = 0.d0
+  220 Continue
       call sysappdif (fspace(laldif), fspace(lalpha), fspace(lxi),
      1     n, k, nc, mt, mstar)
   230 continue
@@ -717,10 +725,12 @@ c...  prepare output
       ispace(6) = naldif + n + 2
       ispace(7) = ispace(6) + 65
       do 240 i=1,ncomp
-  240 ispace(7+i) = m(i)
+        ispace(7+i) = m(i)
+  240 Continue
       do 250 i=1,naldif
-  250 fspace(n+1+i) = fspace(laldif-1+i)
-  259 icount(1) = nfunc
+        fspace(n+1+i) = fspace(laldif-1+i)
+  250 Continue
+      icount(1) = nfunc
       icount(2) = njac
       icount(3) = nbound
       icount(4) = njacbound
@@ -776,7 +786,7 @@ c     imesh  - a control variable for subroutines sysnewmsh and syserrchk
 c
 c***********************************************************************
 c
-      implicit real*8 (a-h,o-z)
+      implicit real(kind=8) (a-h,o-z)
       external fsub, dfsub, gsub, dgsub, guess
       dimension xi(*), xiold(*), xij(*), alpha(*), aldif(*), rhs(*)
       dimension a(*), valstr(*), slope(*), accum(*), ipiv(*), integs(*)
@@ -794,12 +804,15 @@ c
       relmin = 1.d-3
       rstart = 1.d-2
       lmtfrz = 4
+      anscl = 1.d0
+      ifrz = 0
 c
 c...  compute the maximum tolerance
 c
       check = 0.d0
       do 10 i=1,ntol
-   10 check = dmax1 (tolin(i), check )
+        check = dmax1 (tolin(i), check )
+   10 Continue
       falpha = dfloat(nalpha)
       imesh = 1
       icon = 0
@@ -839,7 +852,8 @@ c...       update the old mesh
 c
    40      np1 = n + 1
            do 50 i=1,np1
-   50      xiold(i) = xi(i)
+             xiold(i) = xi(i)
+   50      Continue
            nold = n
 c
 c...       prepare table of divided differences and call  syserrchk
@@ -901,14 +915,16 @@ c...       update the old mesh.
 c
            np1 = n + 1
            do 80 i=1,np1
-   80      xiold(i) = xi(i)
+             xiold(i) = xi(i)
+   80      Continue
            nold = n
    90      continue
 c
 c...       update   alpha , compute new  rhs  and its norm
 c
            do 100 i=1,nalpha
-  100      alpha(i) = alpha(i) + dalpha(i)
+             alpha(i) = alpha(i) + dalpha(i)
+  100      Continue
            call sysappdif (aldif, alpha, xi, n, k, ncomp, m, mstar)
            call syslsyslv (iflag, xi, xiold, xij, dalpha, aldif, rhs,
      1          alpha, a, ipiv, integs, rnorm, 1, fsub,
@@ -928,7 +944,8 @@ c
            icon = 0
            relax = rstart
            do 110 i=1,nalpha
-  110      alpha(i) = alpha(i) - dalpha(i)
+             alpha(i) = alpha(i) - dalpha(i)
+  110      Continue
            call sysappdif (aldif, alpha, xi, n, k, ncomp, m, mstar)
            iter = 0
            go to 140
@@ -976,7 +993,8 @@ c...       update the old mesh
 c
            np1 = n + 1
            do 160 i=1,np1
-  160      xiold(i) = xi(i)
+             xiold(i) = xi(i)
+  160      Continue
            nold = n
            go to 190
   170      continue
@@ -985,8 +1003,9 @@ c...       predict relaxation factor for newton step.
 c
            andif = 0.d0
            do 180 i=1,nalpha
-  180      andif = andif + (ealpha(i) - dalpha(i))**2
+             andif = andif + (ealpha(i) - dalpha(i))**2
      1     / (alpha(i)*alpha(i) + precis)
+  180      Continue
            relax = relax * anscl / dmax1( dsqrt(andif/falpha),
      1     precis)
            if (relax .gt. 1.d0)  relax = 1.d0
@@ -994,10 +1013,11 @@ c
            ipred = 1
            iter = iter + 1
 c
-c...       determine a new  alpha  and find new  rhs  and its norm
+c...       determine a new  alpha  and find new  rhs  and its norm           
 c
            do 200 i=1,nalpha
-  200      alpha(i) = alpha(i) + relax * dalpha(i)
+             alpha(i) = alpha(i) + relax * dalpha(i)
+  200      Continue
   210      call sysappdif (aldif, alpha, xi, n, k, ncomp, m, mstar)
            call syslsyslv (iflag, xi, xiold, xij, dalpha, aldif, rhs,
      1          alpha, a, ipiv, integs, rnorm, 1, fsub,
@@ -1020,7 +1040,8 @@ c
              scale = alpha(i) - relax*dalpha(i)
              scale = 1.d0 / (scale*scale + precis)
              anorm = anorm + dalpha(i) * dalpha(i) * scale
-  220      anfix = anfix + ealpha(i) * ealpha(i) * scale
+             anfix = anfix + ealpha(i) * ealpha(i) * scale
+  220      Continue
            anorm = dsqrt(anorm / falpha)
            anfix = dsqrt(anfix / falpha)
            anscl = dsqrt(anscl / falpha)
@@ -1070,7 +1091,8 @@ c
   270      icor = 1
            if (relax .lt. relmin)                     go to 430
            do 280 i=1,nalpha
-  280      alpha(i) = alpha(i) + (relax-rlxold) * dalpha(i)
+            alpha(i) = alpha(i) + (relax-rlxold) * dalpha(i)
+  280      Continue
            rlxold = relax
            go to 210
 c
@@ -1131,9 +1153,11 @@ c...       since convergence obtained, update coeffs with term from
 c...       the fixed jacobian iteration.
 c
            do 390 i=1,naldif
-  390      aldif(i) = aldif(i) + a(i)
+             aldif(i) = aldif(i) + a(i)
+  390      Continue
            do 400 i=1,nalpha
-  400      alpha(i) = alpha(i) + ealpha(i)
+             alpha(i) = alpha(i) + ealpha(i)
+  400      Continue
   405    if ((anfix.lt.precis.or.rnorm.lt.precis).and.iprint.lt.1) then
       CALL Rprinti1('Convergence after iteration ',Iter)
            endif 
@@ -1165,7 +1189,7 @@ c
 c
 c...       check for error tolerance satisfaction
 c
-  450      call syserrchk(imesh,xiold,aldif,valstr,a,mstar,ifin)
+  450      call syserrchk(imesh,xiold,aldif,valstr,mstar,ifin)
            if (imesh .eq. 1 .or. ifin .eq. 0 .and.
      1          icare .ne. 2)                       go to 460
            iflag = 1
@@ -1278,7 +1302,7 @@ c            valstr - is assigned values needed in  syserrchk  for the
 c                     error estimate.
 c***********************************************************************
 c
-      implicit real*8 (a-h,o-z)
+      implicit real(kind=8) (a-h,o-z)
       common /order/k,ncomp,mstar,kd,kdm,mnsum,m(20)
       common /appr/ n,nold,nmax,nalpha,mshflg,mshnum,mshlmt,mshalt
       common /errors/ tol(40),wgtmsh(40),tolin(40),root(40),
@@ -1292,7 +1316,19 @@ c karline: added dimension of dummy double precision 'dumm'
       dimension xi(*), xiold(*), xij(*), aldif(*), fixpnt(*), dumm(1)
 c
       nfxp1 = nfxpnt +1
-      go to (180, 100, 50, 20, 10), mode
+
+      if (mode .eq. 1) then
+        goto  180
+      else if (mode .eq. 2) then
+        goto  100
+      else if (mode .eq. 3) then
+        goto  50
+      else if (mode .eq. 4) then
+        goto  20
+      else if (mode .eq. 5) then
+        goto  10
+      endif 
+C      go to (180, 100, 50, 20, 10), mode
 c
 c...  mode=5   set mshlmt=1 so that no mesh selection is performed
 c
@@ -1316,7 +1352,8 @@ c
       i = 0
       do 30 j = 1, nold, 2
            i = i + 1
-   30 xi(i) = xiold(j)
+           xi(i) = xiold(j)
+   30  Continue
    40 continue
       np1 = n + 1
       xi(1) = aleft
@@ -1344,7 +1381,7 @@ c...       determine where the j-th fixed point should fall in the
 c...       new mesh - this is xi(iright) and the (j-1)st fixed
 c...       point is in xi(ileft)
 c
-           nmin = (xright-aleft) / (aright-aleft) * dfloat(n) + 1.5d0
+           nmin = int((xright-aleft)/(aright-aleft)*dfloat(n) + 1.5d0)
            if (nmin .gt. n-nfxpnt+j)  nmin = n - nfxpnt + j
            iright = max0 (ileft+1, nmin)
    60      xi(iright) = xright
@@ -1356,7 +1393,8 @@ c
            if ( nregn .eq. 0 )                      go to 80
            dx = (xright - xleft) / dfloat(nregn+1)
            do 70 i = 1,nregn
-   70      xi(ileft+i) = xleft + dfloat(i) * dx
+             xi(ileft+i) = xleft + dfloat(i) * dx
+   70      Continue
    80      ileft = iright
            xleft = xright
    90 continue
@@ -1411,7 +1449,7 @@ c...  at the relative positions 1/6, 2/6, 4/6 and 5/6 in
 c...  each subinterval.
 c
   140 kstore = 1
-      do 150 i = 1,n
+      do 155 i = 1,n
            x = xi(i)
            hd6 = (xi(i+1) - xi(i)) / 6.d0
            do 150 j = 1,4
@@ -1422,6 +1460,7 @@ c
      2            dumm,0)
              kstore = kstore + mstar
   150 continue
+  155 continue
   160 mshflg = 0
       mshnum = 1
       mode = 2
@@ -1432,7 +1471,8 @@ c
       do 170 i = 1,n
            xi(j) = (xiold(i) + xiold(i+1)) / 2.d0
            xi(j+1) = xiold(i+1)
-  170 j = j + 2
+           j = j + 2
+  170  Continue
       n = n2
       go to 320
 c
@@ -1457,8 +1497,9 @@ c
       do 190 j = 1,ntol
            jj = jtol(j)
            jv = ltol(j)
-  190 slope(1) = dmax1(slope(1),(dabs(d2(jj)-d1(jj))*wgtmsh(j)*
-     1oneovh / (1.d0 + dabs(zv(jv)))) **root(j))
+       slope(1) = dmax1(slope(1),(dabs(d2(jj)-d1(jj))*wgtmsh(j)*
+     1  oneovh / (1.d0 + dabs(zv(jv)))) **root(j))
+  190 Continue
       slphmx = slope(1) * (xiold(2) - xiold(1))
       accum(2) = slphmx
       iflip = 1
@@ -1479,8 +1520,9 @@ c
            do 200 j = 1,ntol
              jj = jtol(j)
              jv = ltol(j)
-  200      slope(i) = dmax1(slope(i),(dabs(d2(jj)-d1(jj))*wgtmsh(j)*
+           slope(i) = dmax1(slope(i),(dabs(d2(jj)-d1(jj))*wgtmsh(j)*
      1     oneovh / (1.d0 + dabs(zv(jv)))) **root(j))
+  200      Continue
 c
 c...       accumulate approximate integral of function to be
 c...       equidistributed
@@ -1488,13 +1530,14 @@ c
            temp = slope(i) * (xiold(i+1)-xiold(i))
            slphmx = dmax1(slphmx,temp)
            accum(i+1) = accum(i) + temp
-  210 iflip = - iflip
+           iflip = - iflip
+  210  Continue
       avrg = accum(nold+1) / dfloat(nold)
       degequ = avrg / dmax1(slphmx,precis)
 c
 c...  naccum=expected n to achieve .1x user requested tolerances
 c
-      naccum = accum(nold+1) + 1.d0
+      naccum = int(accum(nold+1) + 1.d0)
       if (iprint .lt. 0)  then
       CALL Rprintd1('Mesh info, degree of equidistribution = ',Degequ)
       CALL Rprinti1('Prediction for required N =  ', Naccum)
@@ -1542,13 +1585,14 @@ c
       xi(n+1) = aright
       do 310 i = 1, nfxp1
            if (i .eq. nfxp1)                        go to 250
+           lnew=lold
            do 230 j = lold, noldp1
              lnew = j
              if (fixpnt(i) .le. xiold(j))           go to 240
   230      continue
   240      continue
            accr = accum(lnew) + (fixpnt(i)-xiold(lnew))*slope(lnew-1)
-           nregn = (accr-accl) / accum(noldp1) * dfloat(n) - .5d0
+           nregn = int((accr-accl) / accum(noldp1) * dfloat(n) - .5d0)
            nregn = min0(nregn, n - in - nfxp1 + i)
            xi(in + nregn + 1) = fixpnt(i)
            go to 260
@@ -1561,14 +1605,16 @@ c
            do 290 j = 1, nregn
              in = in + 1
              temp = temp + tsum
+             lcarry = lold
              do 270 l = lold, lnew
                lcarry = l
                if (temp .le. accum(l))              go to 280
   270        continue
   280        continue
              lold = lcarry
-  290      xi(in) = xiold(lold-1) + (temp - accum(lold-1)) /
+             xi(in) = xiold(lold-1) + (temp - accum(lold-1)) /
      1     slope(lold-1)
+  290     Continue
   300      in = in + 1
            accl = accr
            lold = lnew
@@ -1580,13 +1626,14 @@ c...  regardless of how the new mesh is chosen, the new collocation
 c...  points xij in (aleft,aright) are generated here
 c
       k2 = 1
-      do 330 i = 1,n
+      do 335 i = 1,n
            h = (xi(i+1) - xi(i)) / 2.d0
            xm = (xi(i+1) + xi(i)) / 2.d0
            do 330 j = 1,k
              xij(k2) = rho(j) * h + xm
              k2 = k2 + 1
   330 continue
+  335 continue
       np1 = n + 1
 
       nalpha = n * k * ncomp + mstar
@@ -1626,7 +1673,7 @@ c              points
 c
 c***********************************************************************
 c
-      implicit real*8 (a-h,o-z)
+      implicit real(kind=8) (a-h,o-z)
       common /colloc/ rho(7),wgterr(40)
       common /order/ k,ncomp,mstar,kd,kdm,mnsum,m(20)
       common /bsplin/ vncol(66,7), vnsave(66,5), vn(66)
@@ -1651,12 +1698,13 @@ c...  assign weights for error estimate
 c
       koff = k * ( k + 1 ) / 2
       iextra = 1
-      do 10 j = 1,ncomp
+      do 15 j = 1,ncomp
            lim = m(j)
            do 10 l = 1,lim
              wgterr(iextra) = cnsts1(koff - lim + l)
              iextra = iextra + 1
    10 continue
+   15 continue
 c
 c...  assign array values for mesh selection: wgtmsh, jtol, and root
 c
@@ -1677,7 +1725,23 @@ c
 c
 c...  specify collocation points
 c
-      go to (50,60,70,80,90,100,110),k
+      if (k .eq. 1) then
+        goto  50
+      else if (k .eq. 2) then
+        goto  60
+      else if (k .eq. 3) then
+        goto  70
+      else if (k .eq. 4) then
+        goto  80
+      else if (k .eq. 5) then
+        goto  90
+      else if (k .eq. 6) then
+        goto  100
+      else if (k .eq. 7) then
+        goto  110
+      endif
+
+C      go to (50,60,70,80,90,100,110),k
    50 rho(1) = 0.d0
       go to 120
    60 rho(2) = .57735026918962576451d0
@@ -1733,7 +1797,7 @@ c
       call sysbspfix (1.d0/6.d0, vnsave(1,5), k, ncomp, m)
       return
       end
-      subroutine syserrchk(imesh,xiold,aldif,valstr,work,mstar,ifin)
+      subroutine syserrchk(imesh,xiold,aldif,valstr,mstar,ifin)
 c
 c***********************************************************************
 c
@@ -1750,6 +1814,7 @@ c                 estimate. the array values are assigned in
 c                 subroutine  sysconsts.
 c        errest - storage for error estimates
 c        err    - temporary storage used for error estimates
+c Francesca eliminated unused argment
 c        work   - space to be used to store values of z at the
 c                 mesh points for printout. its dimension is
 c                 mstar * nmax.
@@ -1766,8 +1831,8 @@ c                 the array valstr. (0 for no, 1 for yes)
 c
 c**********************************************************************
 c
-      implicit real*8 (a-h,o-z)
-      dimension err(40),z(40),errest(40) ,dmval(20)
+      implicit real(kind=8) (a-h,o-z)
+      dimension err(40),z(40),errest(40)
       common /order/k,ncomp,mstr,kd,kdm,mnsum,m(20)
       common /appr/ n,nold,nmax,nalpha,mshflg,mshnum,mshlmt,mshalt
       common /side/  zeta(40), aleft, aright, izeta
@@ -1776,8 +1841,8 @@ c
       common /colloc/ rho(7),wgterr(40)
       common /nonln/ precis,nonlin,iter,limit,icare,iprint,iguess,ifreez
       common /bsplin/ vncol(66,7), vnsave(66,5), vn(66)
-C Karline: added dumm(1)	  
-      dimension xiold(*), aldif(*), valstr(*), work(mstar,*),dumm(1)
+C Karline: added dumm(1)      
+      dimension xiold(*), aldif(*), valstr(*),dumm(1)
 c
       ifin = 1
       noldp1 = nold + 1
@@ -1793,7 +1858,8 @@ c...  imesh = 2 so error estimates are to be generated and tested
 c...  to see if the tolerance requirements are satisfied.
 c
       do 40 j = 1,mstar
-   40 errest(j) = 0.d0
+        errest(j) = 0.d0
+   40 Continue
       do 100 iback = 1,nold
            i = nold +1 -iback
 c
@@ -1811,8 +1877,9 @@ c
            mshflg = 1
            do 50 j = 1,mstar
              z(j) = 0.d0
-   50      err(j) = 0.d0
-           do 60 j = 1,2
+             err(j) = 0.d0
+   50      Continue
+           do 65 j = 1,2
              jj = 5 - j
              knew = ( 4 * (i-1) + 3 - j ) * mstar + 1
              kstore = ( 2 * (i-1) + 2 - j ) * mstar + 1
@@ -1826,6 +1893,7 @@ c
                knew = knew + 1
                kstore = kstore + 1
    60      continue
+   65      continue
 c
 c...       test whether the tolerance requirements are satisfied
 c...       in the i-th interval.
@@ -1833,9 +1901,11 @@ c
            if (ifin .eq. 0)                         go to 80
            do 70 j = 1, ntol
              ltolj = ltol(j)
-   70      if ( err(ltolj) .gt. tolin(j) * (z(ltolj)+1.d0) )  ifin = 0
+            if ( err(ltolj) .gt. tolin(j) * (z(ltolj)+1.d0) ) ifin = 0
+   70      Continue
    80      do 90 l = 1,mstar
-   90      errest(l) = dmax1(errest(l),err(l))
+             errest(l) = dmax1(errest(l),err(l))
+   90      Continue
   100 continue
 
 C karline: toggled off lot of printing
@@ -1896,7 +1966,7 @@ c      iguess = 1 when current soln is user specified
 c             = 0 otherwise
 c
 c*********************************************************************
-      implicit real*8 (a-h,o-z)
+      implicit real(kind=8) (a-h,o-z)
       common /order/ k, ncomp, mstar, kd, kdm, mnsum, m(20)
       common /side/  zeta(40), aleft, aright, izeta
       common /bsplin/  vncol(66,7), vnsave(66,5), vn(66)
@@ -1905,7 +1975,7 @@ c*********************************************************************
       common /hi/   dn1, dn2, dn3
       external dfsub, dgsub
       dimension  alpho(*), xi(*), xiold(*), xij(*), alpha(*)
-C Karline: added dimension dummy(1)	  
+C Karline: added dimension dummy(1)   
       dimension aldif(*), rhs(*), a(*), ipiv(*), integs(3,*),dummy(1)
       dimension z(40), f(40), df(800), dmval(20)
       dimension rpar(*), ipar(*)
@@ -1914,12 +1984,21 @@ C Karline: added dimension dummy(1)
       common/coldiag/nfunc, njac, nstep, nbound, njacbound
 c
       m1 = mode + 1
-      go to (10, 30, 30, 310), m1
+      if (m1 .eq. 1) then
+        goto  10
+      else if (m1 .eq. 2 .or. m1 .eq. 3) then
+        goto  30
+      else if (m1 .eq. 4) then
+        goto  310
+      endif
+      
+C      go to (10, 30, 30, 310), m1
 c
 c...  linear problem initialization
 c
    10 do 20 i=1,mstar
-   20 z(i) = 0.d0
+        z(i) = 0.d0
+   20 Continue
 c
 c...  initialization
 c
@@ -1945,7 +2024,8 @@ c
            lside = lside + 1
            go to 50
    60      nrow = kd + lside
-   70 integs(1,i) = nrow
+           integs(1,i) = nrow
+   70  Continue
 c
 c...  the do loop 290 sets up the linear system of equations.
 c
@@ -1987,7 +2067,12 @@ c
 c...         case where user provided current approximation
 c
              call guess (zeta(izeta), z, dmval, rpar, ipar)
-             go to (130, 140), mode
+      if (mode .eq. 1) then
+        goto  130
+      else if (mode .eq. 2) then
+        goto  140
+      endif
+C             go to (130, 140), mode
 c
 c...         other nonlinear case
 c
@@ -2020,12 +2105,27 @@ c
 c...         this value corresponds to a collocation (interior)
 c...         point. build the corresponding  ncomp  equations.
 c
-  160        if (iguess .ne. 1)  go to (210, 170, 230), m1
+  160        if (iguess .ne. 1) THEN
+             if (m1 .eq. 1) then
+               goto  210
+             else if (m1 .eq. 2) then
+               goto  170
+             else if (m1 .eq. 3) then
+              goto  230
+             endif
+
+C  160        if (iguess .ne. 1)  go to (210, 170, 230), m1              
+             ENDIF
 c
 c...         use initial approximation provided by the user.
 c
              call guess(xx, z, dmval, rpar, ipar)
-             go to (190, 250), mode
+      if (mode .eq. 1) then
+        goto  190
+      else if (mode .eq. 2) then
+        goto  250
+      endif
+C             go to (190, 250), mode
 c
 c...         find  rhs  values
 c
@@ -2061,7 +2161,8 @@ c
 
              do 220 j=1,ncomp
                id = id + 1
-  220        rhs(id) = f(j)
+               rhs(id) = f(j)
+  220        Continue
              id = id - ncomp
              go to 250
 c
@@ -2117,7 +2218,7 @@ c
       ialpho = 0
       irhs = 0
       isto = 0
-      do 320 i=1,n
+      do 325 i=1,n
            nrow = integs(1,i)
            irhs = irhs + isto
            istart = isto + 1
@@ -2127,9 +2228,11 @@ c
              ialpho = ialpho + 1
              rhs(irhs) = rhs(irhs) + alpho(ialpho)
   320 continue
+  325 Continue
       call syssbblok (a, integs, n, ipiv, rhs, alpho)
       do 330 i=1,nalpha
-  330 alpho(i) = alpho(i) - alpha(i)
+        alpho(i) = alpho(i) - alpha(i)
+  330 Continue
       return
       end
       subroutine sysbldblk (i, x, ll, q, nrow, nc, z, df, ncomp,
@@ -2175,7 +2278,7 @@ c               bsplines representing u     .
 c                                      jcomp
 c
 c**********************************************************************
-      implicit real*8 (a-h,o-z)
+      implicit real(kind=8) (a-h,o-z)
       common /appr/ n,nold,nmax,nalpha,mshflg,mshnum,mshlmt,mshalt
       common /order/  k, nd, mstar, kd, kdm, mnsum, m(20)
       common /side/   zeta(40), aleft, aright, izeta
@@ -2189,13 +2292,20 @@ c**********************************************************************
 c
       nk = nc
       if (mode .eq. 2)  nk = nc + ncomp - 1
-      do 10 j=nc,nk
+      do 15 j=nc,nk
            do 10 l=1,kdm
-   10 q(j,l)=0.d0
+             q(j,l)=0.d0
+   10      Continue
+   15 Continue
 c
 c...  branch according to  m o d e
 c
-      go to (20, 130), mode
+      IF (MODE .EQ. 1) THEN
+        GOTO  20
+      ELSE IF (MODE .EQ. 2) THEN
+        GOTO  130
+      ENDIF
+c      go to (20, 130), mode
 c
 c...  x is a boundary point
 c
@@ -2211,7 +2321,8 @@ c
       if (iter .ge. 1 .or. nonlin .eq. 0)           go to 40
       value = 0.d0
       do 30 j=1,mstar
-   30 value = value + dg(j) * z(j)
+         value = value + dg(j) * z(j)
+   30 Continue
       alpho(ialpho) =  value
    40 iq = 0
       iqm = mstar
@@ -2230,9 +2341,11 @@ c...       subinterval.
 c
            do 60 l=1,mj
              do 50 j=1,mj
-   50        q(id, iq+l) = q(id, iq+l) + dg(idg+j) *
+               q(id, iq+l) = q(id, iq+l) + dg(idg+j) *
      1       basef(ibasef + j)
-   60      ibasef = ibasef + mj1
+   50        Continue
+            ibasef = ibasef + mj1
+   60      Continue
 c
 c...       the b-splines which are nonzero on the current
 c...       subinterval only.
@@ -2240,18 +2353,22 @@ c
            if (kmj .le. 0)                          go to 90
            do 80 l=1,kmj
              do 70 j=1,mj
-   70        q(id, iqm+l) = q(id, iqm+l) + dg(idg+j) *
+                q(id, iqm+l) = q(id, iqm+l) + dg(idg+j) *
      1       basef(ibasef+j)
-   80      ibasef = ibasef + mj1
+   70        Continue
+             ibasef = ibasef + mj1
+   80      Continue
 c
 c...       the b-splines which are nonzero on the succeeding
 c...       subinterval as well.
 c
    90      do 110 l=1,mj
              do 100 j=1,mj
-  100        q(id, iq+kd+l) = q(id, iq+kd+l) + dg(idg+j) *
+               q(id, iq+kd+l) = q(id, iq+kd+l) + dg(idg+j) *
      1       basef(ibasef+j)
-  110      ibasef = ibasef + mj1
+  100        Continue
+             ibasef = ibasef + mj1
+  110      Continue
 c
            idg =idg + mj
            iq = iq + mj
@@ -2279,7 +2396,8 @@ c
            ialpho = ialpho + 1
            value = 0.d0
            do 140 j=1,mstar
-  140      value = value + df(jj,j) * z(j)
+             value = value + df(jj,j) * z(j)
+  140      Continue
            alpho(ialpho) = alpho(ialpho) - value
   150      id = jj + nc - 1
            iq=0
@@ -2301,9 +2419,11 @@ c
              do 170 l=1,mj
                if (jcomp . eq. jj) q(id, iq+l) = basef(ibasef+mj1)
                do 160 j=1,mj
-  160          q(id, iq+l) = q(id, iq+l) - df(jj, idf+j) *
+                 q(id, iq+l) = q(id, iq+l) - df(jj, idf+j) *
      1         basef(ibasef+j)
-  170        ibasef = ibasef + mj1
+  160          Continue
+               ibasef = ibasef + mj1
+  170        Continue
 c
 c...         the b-splines which are nonzero on the current
 c...         subinterval only.
@@ -2312,9 +2432,11 @@ c
              do 190 l=1,kmj
                if (jcomp .eq. jj) q(id, iqm+l) = basef(ibasef+mj1)
                do 180 j=1,mj
-  180          q(id, iqm+l) = q(id, iqm+l) -
+                 q(id, iqm+l) = q(id, iqm+l) -
      1         df(jj, idf+j) * basef(ibasef+j)
-  190        ibasef = ibasef + mj1
+  180          Continue
+               ibasef = ibasef + mj1
+  190        Continue
 c
 c...         the b-splines which are nonzero on the succeeding
 c...         subinterval as well.
@@ -2322,9 +2444,11 @@ c
   200        do 220 l=1,mj
                if (jcomp .eq. jj) q(id, iq+kd+l) = basef(ibasef+mj1)
                do 210 j=1,mj
-  210          q(id, iq+kd+l) = q(id, iq+kd+l) - df(jj, idf+j) *
+                 q(id, iq+kd+l) = q(id, iq+kd+l) - df(jj, idf+j) *
      1         basef(ibasef+j)
-  220        ibasef = ibasef + mj1
+  210        Continue
+             ibasef = ibasef + mj1
+  220    Continue
 c
              idf = idf + mj
              iq = iq + mj
@@ -2353,8 +2477,8 @@ c           from the work arrays  ispace  and  fspace .
 c
 c*****************************************************************
 c
-      implicit real*8 (a-h,o-z)
-C Karline: added dumm(1)	  
+      implicit real(kind=8) (a-h,o-z)
+C Karline: added dumm(1)      
       dimension z(*), fspace(*), ispace(*), dumm(1)
       is6 = ispace(6) + 1
       is5 = ispace(1) + 2
@@ -2395,12 +2519,25 @@ c              uj (evaluated if modhi=1)
 c
 c***********************************************************************
 c
-      implicit real*8 (a-h,o-z)
+      implicit real(kind=8) (a-h,o-z)
       common /nonln/ precis,nonlin,iter,limit,icare,iprint,iguess,ifreez
       common /side/  zeta(40), aleft, aright, izeta
       dimension z(*), vn(*), xi(*), aldif(*), m(*), dmval(*)
 c
-      go to (10, 60, 70, 10, 80), mode
+      dnk2  = 0.0d0
+      ivnhi = 1
+      IF (MODE .EQ. 1) THEN
+        GOTO  10
+      ELSE IF (MODE .EQ. 2) THEN
+        GOTO  60
+      ELSE IF (MODE .EQ. 3) THEN
+        GOTO  70
+      ELSE IF (MODE .EQ. 4) THEN
+        GOTO  10
+      ELSE IF (MODE .EQ. 5) THEN
+        GOTO  80
+      ENDIF
+C      go to (10, 60, 70, 10, 80), mode
 c
 c...  mode = 1 or 4,  locate i so  xi(i) .le. x .lt. xi(i+1)
 c
@@ -2442,7 +2579,8 @@ c
 c...  mode .ne. 4  determine z(u(x))
 c
    80 do 90 l=1,mstar
-   90 z(l) = 0.d0
+        z(l) = 0.d0
+   90 Continue
       indif = 0
       k5 = 1
       if (modhi .eq. 0)                             go to 110
@@ -2453,7 +2591,8 @@ c
       dnk2 = dfloat(k) / (xi(i+1) - xi(i))
       incomp = 0
       do 100 j=1,ncomp
-  100 dmval(j) = 0.d0
+        dmval(j) = 0.d0
+  100 Continue
 c
 c...  evaluate  z( u(x) ).
 c
@@ -2466,11 +2605,13 @@ c
              left = i * k + mj - kmr
              do 120 l = 1, kmr
                leftpl = left + l
-  120        z(k5) = z(k5) + aldif(indif+leftpl) * vn(ivn+l)
+               z(k5) = z(k5) + aldif(indif+leftpl) * vn(ivn+l)
+  120        Continue
              kmr = kmr - 1
              ivn = ivn - kmr
              k5 = k5 + 1
-  130      indif = indif + nalphj
+             indif = indif + nalphj
+  130      Continue
            if (modhi .eq. 0)                        go to 150
 c
 c...       evaluate  dmval(j) = mj-th derivative of uj.
@@ -2478,8 +2619,9 @@ c
            incomp = incomp + (mj-1) * nalphj
            left = (i-1) * k + mj - 1
            do 140 l = 1, k
-  140      dmval(j) = dmval(j) + dnk2 * (aldif(incomp+left+l+1) -
+              dmval(j) = dmval(j) + dnk2 * (aldif(incomp+left+l+1) -
      1     aldif(incomp+left+l)) * vn(ivnhi+l)
+  140      Continue
            incomp = incomp + nalphj
   150 continue
       return
@@ -2503,7 +2645,7 @@ c     rhox   = (xi(i+1)-x)/(xi(i+1)-xi(i))
 c
 c***********************************************************************
 c
-      implicit real*8 (a-h,o-z)
+      implicit real(kind=8) (a-h,o-z)
       dimension vn(*), m(*)
       xrho = 1.d0 - rhox
       ivn = 0
@@ -2517,8 +2659,10 @@ c
            do 10 j=1,l
              rep =  vn(ivn-l+j)
              vn(ivn+j) = vnp + rep * rhox
-   10      vnp = rep * xrho
-   20 vn(ivn+l+1) = vnp
+             vnp = rep * xrho
+   10      Continue
+          vn(ivn+l+1) = vnp
+   20  Continue
 c
 c...  compute second group of mesh independent b-spline values
 c
@@ -2532,8 +2676,10 @@ c
            do 30 j=inc,k
              rep = vn(ivn-l-k+j)
              vn(ivn+j) = vnp + rep  * rhox
-   30      vnp = rep * xrho
-   40 vn(ivn+k+1) = vnp
+             vnp = rep * xrho
+   30      Continue
+         vn(ivn+k+1) = vnp
+   40 Continue
       return
       end
       subroutine sysbspvar (i, x, vn, xi, n, k, ncomp, m)
@@ -2550,7 +2696,7 @@ c     x     - satisfies xi(i) .le. x .le. xi(i+1)
 c
 c**********************************************************************
 c
-      implicit real*8 (a-h,o-z)
+      implicit real(kind=8) (a-h,o-z)
       dimension vn(*), xi(*), m(*)
       md1 = m(ncomp) -1
       if(md1 .le. 0)                                return
@@ -2574,14 +2720,17 @@ c
            do 10 j=1,l
              rep = vn(ivn-l-k+j)
              vn(ivn+j) = vnp + rep  * rho2
-   10      vnp = rep * xrho2
+             vnp = rep * xrho2
+   10      Continue
            vn(ivn+l+1) = vnp + rho1 * vn(ivn-k+1)
            vnp = vn(ivn-l) * xrho1
            do 20 j=1,l
              rep = vn(ivn+j-l)
              vn(ivn+k+j) = vnp + rep * rho3
-   20      vnp = rep * xrho3
-   30 vn(ivn+k+l+1) = vnp
+             vnp = rep * xrho3
+   20      Continue
+           vn(ivn+k+l+1) = vnp
+   30   Continue
       return
       end
       subroutine sysbspder (vn, xmesh, n, x, i, basef, mode)
@@ -2624,18 +2773,27 @@ c                 dent constants
 c
 c***********************************************************************
 c
-      implicit real*8 (a-h,o-z)
+      implicit real(kind=8) (a-h,o-z)
       common /order/ k, ncomp, mstar, kd, kdm, mnsum, m(20)
       common /hi/    dn1, dn2, dn3
       common /eqord/ ind(5), ineq(20), mnd(5), nd, neq
       dimension basef(*), vn(*), xmesh(*)
       dimension alphd(80), alphdo(80), alphn(280) , alphno(280)
 c
-      go to (10, 20, 30, 40), mode
+      IF (MODE .EQ. 1) THEN
+        GOTO  10
+      ELSE IF (MODE .EQ. 2) THEN
+        GOTO  20
+      ELSE IF (MODE .EQ. 3) THEN
+        GOTO  30
+      ELSE IF (MODE .EQ. 4) THEN
+        GOTO  40
+      ENDIF
+C      go to (10, 20, 30, 40), mode
 c
 c...  mode = 1   compute subinterval dependent constants
 c
-   10 xil = xmesh(1)
+   10 xil = xmesh(1)                                                                  
       if (i .gt. 1)  xil = xmesh(i-1)
       xir = xmesh(n+1)
       if (i .lt. n)  xir = xmesh(i+2)
@@ -2666,10 +2824,12 @@ c...  initialize arrays alphdo and alphno
 c
       do 50 j=1,kmd
            alphdo (j)  = 0.d0
-   50 alphdo(j+kmd) = 1.d0
+           alphdo(j+kmd) = 1.d0
+   50 Continue
       kup = kmd * md
       do 60 j=1,kup
-   60 alphdo(j+inl) = 0.d0
+        alphdo(j+inl) = 0.d0
+   60 Continue
       ndm1 = nd - 1
       nrest = md2m2  - k
       inn = 0
@@ -2680,16 +2840,19 @@ c
            mn2 = mnd(nn) + 2
            do 70 j = 1,md2m2
              alphno(j+inn) = 0.d0
-   70      alphno(j+inn+md2m2) = 1.d0
+             alphno(j+inn+md2m2) = 1.d0
+   70      Continue
            kup = md2m2 * mnd(nn)
            do 80 j=1,kup
-   80      alphno(j+inn+inl) = 0.d0
-   90 inn = inn + mn2 * md2m2
+             alphno(j+inn+inl) = 0.d0
+   80      Continue
+          inn = inn + mn2 * md2m2
+   90 Continue
   100 inns = inn
 c
 c...  initialize b-spline derivative values basef
 c
-      do 120 j=1,nd
+      do 125 j=1,nd
            k1 = ind(j)
            mj = mnd(j)
            kmj = k + mj
@@ -2698,8 +2861,11 @@ c
            do 120 l=1,kmj
              basef(k1) = vn(ivn+l)
              do 110 jj=1,mj
-  110        basef(k1+jj) = 0.d0
-  120 k1 = k1 + mj1
+                basef(k1+jj) = 0.d0
+  110        Continue
+          k1 = k1 + mj1
+  120    Continue
+  125  Continue
 c
 c...  for each derivative nr do loop 310
 c
@@ -2729,7 +2895,8 @@ c
                in = in + k * md1
                basef(in) = basef(in) + alphd(jink) * vn(ivn+j+k)
                jin = jin - kmd
-  130        jink = jink - kmd
+               jink = jink - kmd
+  130        Continue
   140      continue
   150      mdr1 = mdr + 1
            if ( mdr1 .gt. k)                        go to 180
@@ -2741,7 +2908,8 @@ c
                alphd(jin) = dn2 * (alphdo(jin) - alphdo(jin1))
                in = k1 + (l-1) * md1
                basef(in) = basef(in) + alphd(jin) * vn(ivn+j)
-  160        jin = jin - kmd
+               jin = jin - kmd
+  160        Continue
   170      continue
   180      continue
            if (nd .eq. 1)                           go to 230
@@ -2766,29 +2934,31 @@ c...         compute portion of b-spline derivative values (basef)
 c...         using divided differences previously calculated for the
 c...         highest order solution component in alphd.
 c
-             do 190 j=1,jr1
+             do 195 j=1,jr1
                jr = j + nr
                jin = jr + nr1 * kmd + md - mj
                do 190 l=j,jr
                  in = k1 + (l-1) * mj1
                  basef(in) = basef(in) + alphd(jin) * vn(ivn+j)
                  jin = jin - kmd
-  190        continue
-             do 200 j=md,kmjr
+  190          continue
+  195        Continue
+             do 205 j=md,kmjr
                jr = j + nr
                jin = jr + nr1 * kmd
                do 200 l=j,jr
                  in = k1 + (l-1) * mj1
                  basef(in) = basef(in) + alphd(jin) * vn(ivn+j)
                  jin = jin - kmd
-  200        continue
+  200          continue
+  205        Continue
 c
 c...         finish computing b-spline derivative values using the
 c...         new nr(th) divided differences alphn
 c
              jr2 = md2m2 - kmjr
              if (jr2 .le. 0)                        go to 220
-             do 210 jj=1,jr2
+             do 215 jj=1,jr2
                j = jj + jr1
                jr = j + nr
                jin = jr + nr1 * md2m2 + inn
@@ -2799,6 +2969,7 @@ c
                  basef(in) = basef(in) + alphn(jin) * vn(ivn+j)
                  jin = jin - md2m2
   210        continue
+  215       Continue
   220      continue
   230      continue
 c
@@ -2809,10 +2980,12 @@ c
            if (nr .eq. md)                          go to 300
            nr2 = nr + 2
            inj = nr
-           do 240 l=2,nr2
+           do 245 l=2,nr2
              inj = inj + kmd
              do 240 j=1,kmdr
-  240      alphdo(j+inj) = alphd(j+inj)
+                alphdo(j+inj) = alphd(j+inj)
+  240        Continue
+  245      Continue
            if (nd .eq. 1)                           go to 300
            if (nrest .le. 0)                        go to 300
            inn = 0
@@ -2823,27 +2996,33 @@ c
              jr1 = min0 (kmnr-md+1, md-1)
              inj = nr + inn
              inl = nr + md - mn
-             do 250 l=2,nr2
+             do 255 l=2,nr2
                inj = inj + md2m2
                inl = inl + kmd
                do 250 j=1,jr1
-  250        alphno(inj+j) = alphd(inl+j)
+                 alphno(inj+j) = alphd(inl+j)
+  250          Continue
+  255        continue
              mup = min0 (kmnr, md2m2)
              inj = nr + inn
              inl = nr
-             do 260 l=2,nr2
+             do 265 l=2,nr2
                inj = inj + md2m2
                inl = inl + kmd
                do 260 j =md,mup
-  260        alphno(inj+j) = alphd(inl+j)
+                 alphno(inj+j) = alphd(inl+j)
+  260          Continue
+  265        Continue
              jr2 = md2m2 - kmnr
              if (jr2 .le. 0)                        go to 280
              inj = nr + inn
-             do 270 l=2,nr2
+             do 275 l=2,nr2
                inj = inj + md2m2
                do 270 jj = 1,jr2
                  jin = inj + jj + jr1
-  270        alphno(jin) = alphn(jin)
+                 alphno(jin) = alphn(jin)
+  270          Continue
+  275        Continue
   280        inn = inn + (mn+2) * md2m2
   290      continue
   300      continue
@@ -2851,19 +3030,21 @@ c
 c
 c...  properly normalize basef values
 c
-      do 320 j=1,nd
+      do 325 j=1,nd
            in = ind(j)
            icons = 1
            mj = mnd(j)
            kmj = k + mj
            mj1 = mj + 1
-           do 320 nr = 1,mj
+           do 322 nr = 1,mj
              icons = icons * (kmj-nr)
              in = in + 1
              do 320 l=1,kmj
                lbasef = in + (l-1) * mj1
                basef(lbasef) = basef(lbasef) * dfloat(icons)
   320 continue
+  322 Continue
+  325 Continue
 c
 c...  copy basef values corresponding to equal order solution components
 c
@@ -2878,7 +3059,8 @@ c
            ntot = (k+mj)*(1+mj)
            in2 = ind(jd)
            do 350 l=1,ntot
-  350      basef(in1-1+l) = basef(in2-1+l)
+             basef(in1-1+l) = basef(in2-1+l)
+  350      Continue
   360 continue
       return
       end
@@ -2901,7 +3083,7 @@ c                             i=r,...,k+n+mj; r=1,...,mj; j=1,...,ncomp
 c
 c***********************************************************************
 c
-      implicit real*8 (a-h,o-z)
+      implicit real(kind=8) (a-h,o-z)
       dimension aldif(*), alpha(*), xi(*), m(*)
       kd = k * ncomp
       incomp = 0
@@ -2925,15 +3107,18 @@ c...       copy alpha into the first rows (nr=0) of aldif
 c
            do 10 l=1,mj
              aldif(k5) = alpha(k3+l)
-   10      k5 = k5 + 1
+             k5 = k5 + 1
+   10      Continue
            do 50 i = 1, n
              if (kmj .eq. 0)                        go to 30
              do 20 l = 1, kmj
                aldif(k5) = alpha(k1+k4+l)
-   20        k5 = k5 + 1
+               k5 = k5 + 1
+   20        Continue
    30        do 40 l = 1, mj
                aldif(k5) = alpha(k2+k3+l)
-   40        k5 = k5 + 1
+               k5 = k5 + 1
+   40        Continue
              k1 = k1 + kd
              k2 = k2 + kd
    50      continue
@@ -2952,11 +3137,13 @@ c
 c...         for xi(1),xi(2), the divided difference is a special case
 c
              do 60 l=1,nr
-   60        aldif(inn1+l) = 0.d0
+               aldif(inn1+l) = 0.d0
+   60        Continue
              do 70 l = nr, mjm1
                l1 = l + 1
-   70        aldif(inn1+l1) = (aldif(inn+l1) - aldif(inn+l)) *
+             aldif(inn1+l1) = (aldif(inn+l1) - aldif(inn+l)) *
      1       dnk2
+   70        Continue
              ibeg1 = mj
              ibeg2 = k + nr
 c
@@ -2974,12 +3161,14 @@ c...           the actual calculations involve two loops
 c
                do 80 l = 1, kmjr
                  l1 = ibeg1 + l
-   80          aldif(inn1+l1) = (aldif(inn+l1) - aldif(inn+l1-1)) *
+               aldif(inn1+l1) = (aldif(inn+l1) - aldif(inn+l1-1)) *
      1         dnk1
+   80           Continue     
                do 90 l = 1, mjr
                  l1 = ibeg2 + l
-   90          aldif(inn1+l1) = (aldif(inn+l1) - aldif(inn+l1-1)) *
+              aldif(inn1+l1) = (aldif(inn+l1) - aldif(inn+l1-1)) *
      1         dnk2
+   90     Continue
                ibeg1 = ibeg1 + k
                ibeg2 = ibeg2 + k
   100        continue
@@ -3011,7 +3200,7 @@ c                          j
 c
 c***********************************************************************
 c
-      implicit real*8 (a-h,o-z)
+      implicit real(kind=8) (a-h,o-z)
       common /appr/ n,nold,nmax,nalpha,mshflg,mshnum,mshlmt,mshalt
       common /order/ k,ncomp,mstar,kd,kdm,mnsum,m(20)
       dimension uhigh(*) , ar(20), arm1(20)
@@ -3037,16 +3226,19 @@ c...       calculated to obtain the (k+mj-1)st divided difference
 c
            do 10 l=1,kmr
              leftpl = left + l
-   10      arm1(l+mj-1) = aldif(incomp+leftpl)
+             arm1(l+mj-1) = aldif(incomp+leftpl)
+   10      Continue
            incomp = incomp + nalphj
            kpmj1 = kpmj - 1
            do 40 nr = mj,kpmj1
              kmr = kmr - 1
              dnk2 = dn2 * dfloat(kmr)
              do 20 l = 1,kmr
-   20        ar(l+nr) = dnk2 * (arm1(l+nr) - arm1(l+nr-1))
+               ar(l+nr) = dnk2 * (arm1(l+nr) - arm1(l+nr-1))
+   20        Continue
              do 30 l=nr,kpmj1
-   30        arm1(l+1) = ar(l+1)
+               arm1(l+1) = ar(l+1)
+   30        Continue
    40      continue
            uhigh(j) = ar(kpmj)
    50 continue
@@ -3162,9 +3354,11 @@ c
            ipivot(i) = i
            rowmax = 0.d0
            do 10 j=1,ncol
-   10      rowmax = dmax1(rowmax, dabs(w(i,j)))
+             rowmax = dmax1(rowmax, dabs(w(i,j)))
+   10      Continue
            if (rowmax .eq. 0.d0)                    go to 90
-   20 d(i) = rowmax
+           d(i) = rowmax
+   20   Continue
 c
 c...  gauss elimination with pivoting of scaled rows, loop over
 c...  k=1,.,last
@@ -3211,12 +3405,14 @@ c...       row from remaining rows, i.e., the rows ipivot(k+1),...,
 c...       ipivot(nrow), to make k-th entry zero. save the multiplier
 c...       in its place.
 c
-           do 60 i=kp1,nrow
+           do 65 i=kp1,nrow
              ipivi = ipivot(i)
              w(ipivi,k) = w(ipivi,k)/w(ipivk,k)
              ratio = -w(ipivi,k)
              do 60 j=kp1,ncol
-   60      w(ipivi,j) = ratio*w(ipivk,j) + w(ipivi,j)
+               w(ipivi,j) = ratio*w(ipivk,j) + w(ipivi,j)
+   60        Continue
+   65   Continue
            k = kp1
 c
 c...       check for having reached the next block.
@@ -3278,18 +3474,22 @@ c
 c
 c...  put the remainder of block i into ai1
 c
-      do 10 m=1,mmax
+      do 15 m=1,mmax
            ip = ipivot(last+m)
            do 10 j=1,jmax
-   10 ai1(m,j) = ai(ip,last+j)
+             ai1(m,j) = ai(ip,last+j)
+   10      Continue
+   15 Continue 
       if (jmax .eq. ncoli1)                         return
 c
 c...  zero out the upper right corner of ai1
 c
       jmaxp1 = jmax + 1
-      do 20 j=jmaxp1,ncoli1
+      do 30 j=jmaxp1,ncoli1
            do 20 m=1,mmax
-   20 ai1(m,j) = 0.d0
+             ai1(m,j) = 0.d0
+   20      Continue
+   30 Continue
       return
       end
       subroutine syssbblok ( bloks, integs, nbloks, ipivot, b, x )
@@ -3327,7 +3527,8 @@ c
      1          b(indexb), x(indexx) )
            index = nrow*integs(2,i) + index
            indexb = indexb + nrow
-   10 indexx = indexx + last
+           indexx = indexx + last
+   10  Continue
 c
 c...  back substitution pass
 c
@@ -3340,8 +3541,9 @@ c
            index = index - nrow*ncol
            indexb = indexb - nrow
            indexx = indexx - last
-   20 call syssubbak ( bloks(index), ipivot(indexb), nrow, ncol,
+       call syssubbak ( bloks(index), ipivot(indexb), nrow, ncol,
      1     last, x(indexx) )
+   20 Continue
       return
       end
       subroutine syssubfor ( w, ipivot, nrow, last, b, x )
@@ -3380,8 +3582,10 @@ c
            jmax = min0(k-1,last)
            sum = 0.d0
            do 10 j=1,jmax
-   10      sum = w(ip,j)*x(j) + sum
-   20 x(k) = b(ip) - sum
+             sum = w(ip,j)*x(j) + sum
+   10      Continue
+         x(k) = b(ip) - sum
+   20 Continue
 c
 c...  transfer modified right sides of equations ipivot(last+1),...,
 c...  ipivot(nrow) to next block.
@@ -3390,7 +3594,8 @@ c
       if (nrowml .eq. 0)                            go to 40
       lastp1 = last+1
       do 30 k=lastp1,nrow
-   30 b(nrowml+k) = x(k)
+        b(nrowml+k) = x(k)
+   30 Continue
    40 return
       end
       subroutine syssubbak ( w, ipivot, nrow, ncol, last, x )
@@ -3421,7 +3626,8 @@ c
       if (k .eq. ncol)                              go to 30
       kp1 = k+1
    10 do 20 j=kp1,ncol
-   20 sum = w(ip,j)*x(j) + sum
+        sum = w(ip,j)*x(j) + sum
+   20 continue
    30 x(k) = (x(k) - sum)/w(ip,k)
       if (k .eq. 1)                                 return
       kp1 = k

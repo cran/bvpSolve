@@ -1,5 +1,5 @@
 Package: bvpSolve
-Version: 1.3.2
+Version: 1.3.3
 Title: Solvers for Boundary Value Problems of Differential Equations
 Author: Karline Soetaert <karline.soetaert@nioz.nl>,
         Jeff Cash <j.cash@imperial.ac.uk>,
@@ -15,8 +15,8 @@ License: GPL (>= 2)
 LazyData: yes
 Repository: CRAN
 Repository/R-Forge/Project: bvpsolve
-Repository/R-Forge/Revision: 237
-Repository/R-Forge/DateTimeStamp: 2015-09-11 14:28:19
-Date/Publication: 2015-09-22 13:00:34
+Repository/R-Forge/Revision: 244
+Repository/R-Forge/DateTimeStamp: 2016-12-06 07:56:06
+Date/Publication: 2016-12-06 14:04:39
 NeedsCompilation: yes
-Packaged: 2015-09-19 03:46:08 UTC; rforge
+Packaged: 2016-12-06 08:06:26 UTC; rforge

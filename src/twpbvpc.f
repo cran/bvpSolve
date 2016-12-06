@@ -467,7 +467,7 @@ c      save frscal
 
 c karline: added ill_cond_newt
       logical stab_kappa, stab_gamma, stab_cond, stiff_cond, ill_cond
-      logical stab_kappa1, ill_cond_newt, comparekappa
+      logical stab_kappa1, ill_cond_newt
 
       parameter (zero = 0.0d+0, one = 1.0d+0)
       parameter (third = 0.33d+0, fourth = 0.25d+0)
@@ -666,9 +666,9 @@ c
           ckappa1old = ckappa1
           ckappaold = ckappa
 
-           call CONDESTIM(aleft,aright,nmsh,ncomp,N,xx,topblk,nlbc,
+           call CONDESTIM(aleft,aright,ncomp,N,xx,topblk,nlbc,
      *      ncomp, ajac, ncomp,2*ncomp,ninter,botblk,ncomp-nlbc,
-     *   ipvblk,isign,amg,c1,wrkrhs,ckappa1,gamma1,sigma,ckappa,ckappa2)
+     *   ipvblk,amg,c1,wrkrhs,ckappa1,gamma1,sigma,ckappa,ckappa2)
 
 
           if (iprint .ge. 0) then
@@ -715,7 +715,7 @@ c endif if (comp_c)
      *           ratdc, rerr, ipivlu, nmold, xxold,
      *           smooth, reaft6, onto6, strctr, trst6, ddouble ,
      *           fsub, maxmsh, succes, first4,
-     *           amg,stab_cond,ckappa,stiff_cond,wrkrhs,
+     *           amg,stab_cond,stiff_cond,wrkrhs,
      *           nfxpnt, fixpnt, irefin, rpar,ipar,
      *           nmguess,xguess,nygdim,yguess)
 
@@ -729,9 +729,9 @@ c endif if (comp_c)
            ckappaold  =ckappa
            N =nmsh*ncomp
            ninter=nmsh-1
-           call CONDESTIM(aleft,aright,nmsh,ncomp,N,xx,topblk,nlbc,
+           call CONDESTIM(aleft,aright,ncomp,N,xx,topblk,nlbc,
      *       ncomp, ajac, ncomp,2*ncomp,ninter,botblk,ncomp-nlbc,
-     *   ipvblk,isign,amg,c1,wrkrhs,ckappa1,gamma1,sigma,ckappa,ckappa2)
+     *   ipvblk,amg,c1,wrkrhs,ckappa1,gamma1,sigma,ckappa,ckappa2)
 
           if (iprint .ge. 0) then
            CALL Rprintd1('stiffness = ', sigma)
@@ -778,8 +778,8 @@ c karline: added ill_cond_newt
      *       nmold, xxold, uold, ratdc,
      *       iorder, iflnwt, itnwt, ddouble , maxmsh,
      *       numbig,nummed,wrkrhs,amg,stab_cond,stiff_cond,
-     *       ill_cond_newt,nfail4,nfxpnt,fixpnt, irefin,itcond,
-     *       itcondmax,rpar,ipar,nmguess,xguess,nygdim, yguess)
+     *       nfail4,nfxpnt,fixpnt, irefin,itcond,
+     *       itcondmax,nmguess,xguess,nygdim, yguess)
 
 
       endif
@@ -886,7 +886,7 @@ c     call dcopy(nmold, xx, 1, xxold, 1)
      *              rerr, ermx, ratdc,
      *              reaft6, ddouble , succes, maxmsh,
      *              numbig, nummed,
-     *              wrkrhs,amg, stab_cond,ckappa1,gamma1,ckappa,
+     *              wrkrhs,amg, stab_cond,
      *              stiff_cond,itcond, itcondmax)
 
 
@@ -1007,12 +1007,12 @@ c      call dcopy(nmold, xx, 1, xxold, 1)
 
          call conv8( ncomp, nmsh, ntol, ltol, tol,
      *              nfxpnt, fixpnt, linear, nmax,
-     *              xx, nudim, u, def, def6, def8, uold,
+     *              xx, nudim, u,  def6, def8, uold,
      *              ihcomp, irefin, ermx, err6,
      *              etest8, strctr,
      *              ddouble , nmold, xxold, maxmsh, succes, first8,
-     *              wrkrhs,amg, stab_cond,ckappa1,gamma1,ckappa,
-     *     stiff_cond,rpar,ipar,nmguess, xguess,nygdim, yguess)
+     *              wrkrhs,amg, stab_cond,
+     *     stiff_cond,nmguess, xguess,nygdim, yguess)
 
       else
 

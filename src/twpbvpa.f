@@ -51,9 +51,9 @@ c ==============================================================================
 
 c ===================================================================================
 
-      SUBROUTINE CONDESTIM(ALEFT,ARIGHT,NMSH,NCOMP,N,XX,TOPBLK,
+      SUBROUTINE CONDESTIM(ALEFT,ARIGHT,NCOMP,N,XX,TOPBLK,
      *            NRWTOP,NOVRLP,ARRAY,
-     *          NRWBLK,NCLBLK,NBLOKS,BOTBLK,NRWBOT,IPVCD,ISIGN,OMG,
+     *          NRWBLK,NCLBLK,NBLOKS,BOTBLK,NRWBOT,IPVCD,OMG,
      *          C1,WORK,KPPA,GAMMA,SIGMA,CKAPPA,CKAPPA2)
 
 C     **************************************************************
@@ -67,10 +67,10 @@ c     cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      *          OMG,GAMMA,gamma1,KPPA,MINMG, GAMMAK,KPPAK,ckappa1,
      *          KPPAI, GAMMAI, CKAPPA,CKAPPA2,kappa1_n, kappa2_n,ckmax
         DOUBLE PRECISION BOMEGA1,BOMEGA2, SIGMA, SIGMAK
-        DOUBLE PRECISION ALEFT,ARIGHT,XX,  CSUM,ZNORM,ALTSGN,TEMP
-        INTEGER ISIGN(*)
+        DOUBLE PRECISION ALEFT,ARIGHT,XX,  CSUM,ZNORM
+
         INTEGER N,NRWTOP,NOVRLP,NRWBLK,NCLBLK,NBLOKS,NRWBOT,IPVCD
-        INTEGER NCOMP,NMSH,idmx,idmn,idamax,idomg,job
+        INTEGER NCOMP,idmx,idmn
         DIMENSION TOPBLK(NRWTOP,*),ARRAY(NRWBLK,NCLBLK,*),OMG(*),
      *          BOTBLK(NRWBOT,*),WORK(*),C1(ncomp,*),XX(*),
      *          IPVCD(*)
@@ -80,7 +80,7 @@ c     cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         EXTERNAL DASUM
 
         INTRINSIC SIGN
-        DOUBLE PRECISION SIGN
+c        DOUBLE PRECISION SIGN
 
         FIRSTCOL=.true.
 
@@ -379,7 +379,7 @@ c test for convergence
 
 c ===================================================================================
 
-        SUBROUTINE ESTIMKAPPA(NMSH,NCOMP,N,XX,TOPBLK,
+        SUBROUTINE ESTIMKAPPA(NCOMP,N,XX,TOPBLK,
      *            NRWTOP,NOVRLP,ARRAY, NRWBLK,
      *          NCLBLK,NBLOKS,BOTBLK,NRWBOT,IPVCD,ISIGN,C1,WORK,ckappa)
 
@@ -394,7 +394,7 @@ c     cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         DOUBLE PRECISION XX
         INTEGER ISIGN(*)
         INTEGER N,NRWTOP,NOVRLP,NRWBLK,NCLBLK,NBLOKS,NRWBOT,IPVCD
-        INTEGER NCOMP,NMSH,job
+        INTEGER NCOMP,job
         DIMENSION TOPBLK(NRWTOP,*),ARRAY(NRWBLK,NCLBLK,*),
      *          BOTBLK(NRWBOT,*),WORK(*),XX(*),C1(NCOMP,*),
      *          IPVCD(*)
@@ -402,7 +402,7 @@ c     cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         double precision ckappa
         INTEGER KASE,ISOLVE
-        INTEGER k,i,j,l,jj
+        INTEGER i,j
 
 c
 c       DO THE CONDITION NUMBER ESTIMATION BY HIGHAM:
@@ -456,7 +456,7 @@ c ==============================================================================
      *             ratdc, rerr, ipivot, nmold, xxold,
      *             smooth, reaft6, onto6, strctr, trst6, ddouble ,
      *             fsub, maxmsh, succes, first4,
-     *             amg,stab_cond,ckappa,stiff_cond,r4,
+     *             amg,stab_cond,stiff_cond,r4,
      *             nfxpnt, fixpnt,irefin,rpar,ipar,
      *             nmguess,xguess,nygdim,yguess)
 
@@ -634,7 +634,7 @@ c      if (stiff_cond .and. stab_cond) onto6 = .true.
          if (ddouble ) then
            if ((use_c) ) then
              if (stiff_cond .and. .not. stab_cond) then
-               call selcondmsh(ncomp, nmsh,
+               call selcondmsh( nmsh,
      *            nfxpnt, fixpnt,  nmax, xx,  irefin,
      *            nmold, xxold, ddouble , maxmsh,r4,amg)
                   ddouble= .false.
@@ -662,11 +662,11 @@ c      if (stiff_cond .and. stab_cond) onto6 = .true.
              drat = dfexmx/
      *               (max(one, abs(u(incmp,inmsh)))*tol(intol))
 
-            numadd = drat**power
+            numadd = nint(drat**power)
 
          if ((use_c) .AND. (stiff_cond)) then
 
-            call smpselcondmsh(ncomp, nmsh,
+            call smpselcondmsh( nmsh,
      *        nfxpnt, fixpnt,  nmax, xx,  irefin,inmsh,numadd,
      *        nmold, xxold, ddouble , maxmsh,r4,amg)
          else
@@ -697,18 +697,18 @@ c ==============================================================================
      *             nmold, xxold, uold, tmwork,
      *             iorder, iflnwt, itnwt, ddouble, maxmsh,
      *             numbig, nummed,r4,amg,stab_cond,stiff_cond,
-     *             ill_cond_newt,nfail4,
-     *             nfxpnt, fixpnt, irefin,itcond,itcondmax,rpar,ipar,
+     *             nfail4,
+     *             nfxpnt, fixpnt, irefin,itcond,itcondmax,
      *             nmguess,xguess,nygdim,yguess)
 
 
       implicit double precision (a-h,o-z)
-      dimension rpar(*),ipar(*)
+
       dimension ltol(ntol)
       dimension xx(*), u(nudim, *), rhs(*),xguess(*), yguess(nygdim,*)
       dimension xxold(*), uold(ncomp, *), tmwork(*)
       logical linear, ddouble, maxmsh
-      logical stab_cond,stiff_cond, ill_cond_newt
+      logical stab_cond,stiff_cond
       dimension amg(*),r4(*), fixpnt(*), irefin(*)
       logical use_c, comp_c
       common/algprs/ nminit, iprint, idum,  use_c, comp_c
@@ -822,7 +822,7 @@ c ==============================================================================
      *              ihcomp, irefin, rerr, ermx, tmwork,
      *              reaft6, ddouble , succes, maxmsh,
      *              numbig, nummed,
-     *             r4,amg, stab_cond,ckappa1,gamma1,ckappa,stiff_cond,
+     *             r4,amg, stab_cond,stiff_cond,
      *            itcond, itcondmax)
       implicit double precision (a-h,o-z)
       dimension ltol(ntol)
@@ -1028,19 +1028,19 @@ c ==============================================================================
 
       subroutine conv8( ncomp, nmsh, ntol, ltol, tol,
      *              nfxpnt, fixpnt, linear, nmax,
-     *              xx, nudim, u, def, def6, def8, uold,
+     *              xx, nudim, u,  def6, def8, uold,
      *              ihcomp, irefin, ermx, err6,
      *              etest8, strctr,
      *              ddouble , nmold, xxold, maxmsh, succes, first8,
-     *              r4, amg,stab_cond,ckappa1,gamma1,ckappa,stiff_cond,
-     *    rpar,ipar,nmguess, xguess,nygdim, yguess)
+     *              r4, amg,stab_cond,stiff_cond,
+     *    nmguess, xguess,nygdim, yguess)
 
       implicit double precision (a-h,o-z)
-      dimension rpar(*), ipar(*)
+
       dimension ltol(ntol), tol(ntol)
       dimension fixpnt(*)
       dimension etest8(ntol)
-      dimension xx(*),u(nudim,*),def(ncomp,*),xguess(*),yguess(nygdim,*)
+      dimension xx(*),u(nudim,*),xguess(*),yguess(nygdim,*)
       dimension def6(ncomp,*), def8(ncomp,*), uold(ncomp,*)
       dimension ihcomp(*), irefin(*)
       dimension ermx(*), xxold(*), amg(*), r4(*)
@@ -1876,16 +1876,17 @@ c ==============================================================================
          call dscal(ncomp*ncomp, (-half*hmsh), bhold(1,1,im), 1)
    10 continue
 
-      do 20 im = 1, ninter
+      do 25 im = 1, ninter
       do 20 ic = 1, ncomp
          bhold(ic,ic,im) = bhold(ic,ic,im) + one
    20 continue
-
-      do 30 im = 1, ninter
+   25 continue
+      do 35 im = 1, ninter
       do 30 ic = 1, ncomp
          dfrat(ic,im) = ddot(ncomp, bhold(ic,1,im), ncomp,
      *                        defimp(1,im), 1)
    30 continue
+   35 continue
       return
       end
 
@@ -2056,11 +2057,12 @@ c ==============================================================================
 
       call dcopy(nlbc, rhs, 1, rhstri, 1)
       ind = nlbc
-      do 10 im = 1, ninter
+      do 15 im = 1, ninter
       do 10 ic = 1, ncomp
          ind = ind + 1
          rhstri(ind) = rhs(ind) + defnew(ic, im)
    10 continue
+   15 continue
       ind = ninter*nmsh + nlbc + 1
       call dcopy(ncomp-nlbc, rhs, 1, rhstri, 1)
 
@@ -2160,13 +2162,13 @@ c ==============================================================================
 
 *  Test for convergence using the ratio abs((change in u)/max(u,1)).
 
-      do 150 im = 1, nmsh
+      do 155 im = 1, nmsh
       do 150 it = 1, ntol
          itol = ltol(it)
          er = abs(delu(itol,im))/max(abs(u(itol,im)), one)
          if (er .gt. tolfct*tol(it) .and. er .gt. 1.0d2*epsmch)go to 100
   150 continue
-
+  155 continue
 *  To exit from the loop here, the convergence tests have
 *  been passed.
 
@@ -2559,10 +2561,10 @@ c  at the initial point of the line search.
 
 
   150 continue
-      iwr = 6
-      call getptq (gtpdeb, mfsrch, iwr, alfmax, alfsml, alfuzz,
+
+      call getptq ( mfsrch,  alfmax, alfsml, alfuzz,
      *      epsaf, epsag,
-     *      eta, fmtry, fmold, oldg, rmu, tolabs, tolrel, toltny,
+     *      fmtry, fmold, oldg, rmu, tolabs, tolrel, toltny,
      *      imprvd, inform, nfsrch, alfa, alfbst, fbest,
      *      braktd, crampd, extrap, vset, wset, nsamea, nsameb,
      *      alin, blin, fa, factor, fv, fw, xtry, xv, xw)
@@ -2658,13 +2660,13 @@ c  at the initial point of the line search.
 *  If the test fails for any element of u, branch back to the
 *  top of the Newton iteration.
 
-      do 160 im = 1, nmsh
+      do 165 im = 1, nmsh
       do 160 it = 1, ntol
          icmp = ltol(it)
          er = abs(delu(icmp,im))/max(abs(u(icmp,im)), one)
          if (er .gt. cnvfct*tol(it)) go to 100
   160 continue
-
+  165 continue
 
       if (iprint .ge. 0) THEN
        CALL Rprintid('Convergence, iter, rnsq =',iter+1, rnsq)
@@ -3183,7 +3185,7 @@ c ==============================================================================
             ii = 1
             decii = erdcid
          else
-            ilg = -dlog(errmax)/rlndec
+            ilg = -nint(dlog(errmax)/rlndec)
             ii = 2 + ilg
             decii = erdcid**ii
          endif
@@ -3191,12 +3193,13 @@ c ==============================================================================
 *  Multiply error measures by erdcid**ii.
 
          errmax = decii*errmax
-         do 140 im = 1, ninter
+         do 145 im = 1, ninter
             ermx(im) = decii*ermx(im)
             do 140 it = 1, ntol
                jcomp = ltol(it)
                ermeas(jcomp,im) = decii*ermeas(jcomp,im)
-  140    continue
+  140      continue
+  145    continue
       endif
 
   200 continue
@@ -3624,7 +3627,7 @@ c ==============================================================================
 *  fall in the mesh.
 
             xright = fixpnt(j)
-            nmin = ninter*(xright-aleft)/totint + 1.5d+0
+            nmin = NINT(ninter*(xright-aleft)/totint + 1.5d+0)
             if (nmin .gt. ndif+j) nmin = ndif + j
             iright = max(ileft+1, nmin)
          else
@@ -3806,7 +3809,7 @@ c     *   .and. (use_c))
 
 cf the mesh if not doubled if the problem is stiff and the order is 4
        if (nodouble .and. .not. forcedouble) then
-          call selcondmsh(ncomp, nmsh,
+          call selcondmsh(nmsh,
      *     nfxpnt, fixpnt,  nmax, xx,  irefin,
      *     nmold, xxold, ddouble , maxmsh,r4,amg)
            ddouble = .false.
@@ -3850,11 +3853,11 @@ c      call dblmsh(nmsh, nmax, xx, nmold, xxold, maxmsh)
 cf the mesh if not doubled if the problem is stiff
          if  (nodouble .and. .not. forcedouble)  then
              numadd = numpt
-c            call smpselcondmsh(ncomp, nmsh,
+c            call smpselcondmsh( nmsh,
 c     *       nfxpnt, fixpnt,  nmax, xx,  irefin,intref,numadd,
 c     *       nmold, xxold, ddouble , maxmsh,r4,amg)
 c               itcond = itcond + 1
-           call selcondmsh(ncomp, nmsh,
+           call selcondmsh( nmsh,
      *        nfxpnt, fixpnt,  nmax, xx,  irefin,
      *        nmold, xxold, ddouble , maxmsh,r4,amg)
            ddouble = .false.
@@ -3869,7 +3872,7 @@ cf and the conditioning
 cf
          if (nodouble .and. .not. forcedouble)  then
            numadd = numpt
-           call smpselcondmsh(ncomp, nmsh,
+           call smpselcondmsh( nmsh,
      *       nfxpnt, fixpnt,  nmax, xx,  irefin,intref,numadd,
      *       nmold, xxold, ddouble , maxmsh,r4,amg)
                itcond = itcond + 1
@@ -3926,7 +3929,7 @@ cf      errsum = zero
       errmax = zero
       errok = .true.
 
-      do 10 im = 1, nmsh
+      do 15 im = 1, nmsh
       do 10 it = 1, ntol
          icmp = ltol(it)
          er = u(icmp,im) - uold(icmp,im)
@@ -3936,23 +3939,23 @@ cf      errsum = zero
 cf         errsum = errsum + errel
          if (errel .gt. etest(it)) errok = .false.
    10 continue
-
+   15 continue
       return
       end
 
 c ===================================================================================
 
-      subroutine getptq( debug, mfsrch, nout, alfmax, alfsml, alfuzz,
-     *                   epsaf, epsag, eta, ftry, oldf, oldg,
+      subroutine getptq(  mfsrch,  alfmax, alfsml, alfuzz,
+     *                   epsaf, epsag,  ftry, oldf, oldg,
      *                   rmu, tolabs, tolrel, toltny, imprvd,
      *                   inform, nfsrch, alfa, alfbst, fbest,
      *                   braktd, crampd, extrap,vset,wset,nsamea,nsameb,
      *                   a, b, fa, factor, fv, fw, xtry, xv, xw )
 
       implicit double precision (a-h,o-z)
-      logical            debug, imprvd
+      logical            imprvd
       logical            braktd, crampd, extrap, vset, wset
-      integer            mfsrch, nout, inform, nfsrch, nsamea, nsameb
+      integer            mfsrch,  inform, nfsrch, nsamea, nsameb
 
 c
 c  *********************************************************************
@@ -3974,7 +3977,7 @@ c
 c
 c  input parameters (relevant to the calling program)
 c  --------------------------------------------------
-c
+cFrancesca eliminated
 c  debug         specifies whether detailed output is wanted.
 c
 c  inform        must be nonzero on the first entry (e.g., -1).
@@ -3983,7 +3986,7 @@ c
 c  mfsrch        is an upper limit on the number of times  getptq  is
 c                to be entered consecutively with  inform = 0
 c                (following an initial entry with  inform lt 0).
-c
+cFrancesca eliminated
 c  nout          is the file number to be used for printed output
 c                if debug is true.
 c
@@ -4002,7 +4005,7 @@ c                alfmax .le. alfsml).
 c
 c  epsaf         is an estimate of the absolute precision in the
 c                computed values of  f.
-c
+cFrancesca eliminated
 c  eta           controls the accuracy of the search.  it must lie
 c                in the range   0.0  le  eta  lt  1.0.  decreasing
 c                eta  tends to increase the accuracy of the search.
@@ -4701,12 +4704,13 @@ c ==============================================================================
 *  Adjust the rerr array if it may be used later in selective
 *  mesh refinement.
 
-         do 150 it = 1, ntol
+         do 155 it = 1, ntol
             icmp = ltol(it)
             do 150 im = 1, nmold - 1
                rerr(icmp,im) = max(rerr(icmp,im),
      *                              rerr(icmp, im+1))
   150    continue
+  155    continue
       endif
 
       return
@@ -4787,7 +4791,7 @@ c ==============================================================================
       parameter  ( erdcid = 5.0d+0 )
       parameter  ( phitst = 0.1d+0 )
 
-      logical first, add
+      logical first
       save    first, rlndec
       data    first / .true. /
 
@@ -4847,7 +4851,7 @@ c
 cf     *           .and. r1 .gt. 1.0d0 ) then
 cf  only the conditioning
 cf
-            call  selcondmsh(ncomp, nmsh,
+            call  selcondmsh( nmsh,
      *         nfxpnt, fixpnt,  nmax, xx,  irefin,
      *         nmold, xxold, ddouble , maxmsh,r4,amg)
       else
@@ -4862,7 +4866,7 @@ cf   the conditioning and the error
             ii = 1
             decii = erdcid
          else
-            ilg = -dlog(errmax)/rlndec
+            ilg = -nint(dlog(errmax)/rlndec)
             ii = 2 + ilg
             decii = erdcid**ii
          endif
@@ -4870,12 +4874,13 @@ cf   the conditioning and the error
 *  Multiply error measures by erdcid**ii.
 
          errmax = decii*errmax
-         do 140 im = 1, ninter
+         do 145 im = 1, ninter
             ermx(im) = decii*ermx(im)
             do 140 it = 1, ntol
                jcomp = ltol(it)
                ermeas(jcomp,im) = decii*ermeas(jcomp,im)
-  140    continue
+  140       continue
+  145    continue
       endif
 
   200 continue
@@ -5131,7 +5136,7 @@ c   endif use the conditioning and the error
 
 c ===================================================================================
 
-      subroutine selcondmsh(ncomp, nmsh,
+      subroutine selcondmsh( nmsh,
      *     nfxpnt, fixpnt,  nmax, xx,  irefin,
      *     nmold, xxold, ddouble , maxmsh, r4, amg)
 
@@ -5394,7 +5399,7 @@ c  220 continue
 
 c ===================================================================================
 
-      subroutine smpselcondmsh(ncomp, nmsh,
+      subroutine smpselcondmsh( nmsh,
      *     nfxpnt, fixpnt,  nmax, xx,  irefin, intref, numadd,
      *     nmold, xxold, ddouble , maxmsh, r4, amg)
 
@@ -5404,7 +5409,7 @@ c ==============================================================================
       dimension  xx(*)
       dimension  irefin(*)
       dimension  xxold(*),  amg(*), r4(*)
-      logical    ddouble , maxmsh, add
+      logical    ddouble , maxmsh
 
       intrinsic abs
       intrinsic max
@@ -5893,10 +5898,10 @@ C
 C        DOUBLE PRECISION FLOAT
 
         INTRINSIC ABS
-        DOUBLE PRECISION ABS
+c        DOUBLE PRECISION ABS
 
         INTRINSIC SIGN
-        DOUBLE PRECISION SIGN
+c        DOUBLE PRECISION SIGN
 
 
       DOUBLE PRECISION DASUM
@@ -5924,7 +5929,18 @@ C
          RETURN
       ENDIF
 C
-      GOTO (100, 200, 300, 400, 500) JUMP
+      IF (JUMP .EQ. 1) THEN
+        GOTO 100
+      ELSE IF (JUMP. EQ. 2) THEN
+        GOTO 200  
+      ELSE IF (JUMP. EQ. 3) THEN
+        GOTO 300  
+      ELSE IF (JUMP. EQ. 4) THEN
+        GOTO 400  
+      ELSE IF (JUMP. EQ. 5) THEN
+        GOTO 500  
+      ENDIF
+C      GOTO (100, 200, 300, 400, 500) JUMP
 C
 C     ................ ENTRY   (JUMP = 1)
 C     FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY A*X.
@@ -6190,7 +6206,7 @@ C*************************************************************************
         IMPLICIT NONE
         DOUBLE PRECISION TOPBLK,ARRAY,BOTBLK,B
         INTEGER N,NRWTOP,NOVRLP,NRWBLK,NCLBLK,NBLOKS,NRWBOT,PIVOT(*),
-     *          IFLAG,JOB, IDAMAX,i,IFAIL
+     *          IFLAG,JOB
         DIMENSION TOPBLK(NRWTOP,*),ARRAY(NRWBLK,NCLBLK,*),
      *          BOTBLK(NRWBOT,*),B(*)
 
@@ -6223,7 +6239,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         DIMENSION TOPBLK(NRWTOP,*),ARRAY(NRWBLK,NCLBLK,*),
      *          BOTBLK(NRWBOT,*),WORK(N),
      *          INMAT(N,N)
-        INTEGER K,L,J
+        INTEGER K,L
 
         do 300 k=1,N
            do 330 l=1,N
@@ -7748,10 +7764,11 @@ c ==============================================================================
 *  On output, (new ymat) is alpha*xmat+ (old ymat), by analogy
 *  with the vector blas routine saxpy.
 
-      do 100 j = 1, ncol
+      do 110 j = 1, ncol
       do 100 i = 1, nrow
          ymat(i,j) = ymat(i,j) + alpha*xmat(i,j)
   100 continue
+  110 continue
       return
       end
 
@@ -7769,10 +7786,11 @@ c ==============================================================================
 
 
       if (nrow .le. 0 .or. ncol .le. 0) return
-      do 100 j = 1, ncol
+      do 110 j = 1, ncol
       do 100 i = 1, nrow
            xmat2(i,j) = xmat1(i,j)
   100 continue
+  110 continue
       return
       end
 
@@ -7787,10 +7805,11 @@ c ==============================================================================
 *  scalar value const.
 
       if (nrow .le. 0 .or. ncol .le. 0)  return
-      do 100 j = 1, ncol
+      do 110 j = 1, ncol
       do 100 i = 1, nrow
          xmat(i,j) = const
   100 continue
+  110 continue
       return
       end
 
@@ -7813,7 +7832,7 @@ c ==============================================================================
       scale = zero
       sumsq = one
       if( nrow.ge.1 .and. ncol .ge. 1) then
-         do 10 i = 1, nrow
+         do 11 i = 1, nrow
          do 10 j = 1, ncol
             if( xmat(i,j) .ne. zero )then
                absxij = abs(xmat(i,j))
@@ -7825,6 +7844,7 @@ c ==============================================================================
                end if
             end if
    10    continue
+   11    continue
       end if
       return
       end

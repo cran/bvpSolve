@@ -33,7 +33,7 @@
   
   \itemize{
     \item All test problems from the website of J.R. Cash
-      \url{http://www.ma.ic.ac.uk/~jcash/BVP_software/PROBLEMS.PDF} are
+      (http://www.ma.ic.ac.uk/~jcash/BVP_software/PROBLEMS.PDF) are
       implemented in package vignette "bvpTests"
     \item Other test problems, in \R code are in the packages \url{doc/example}
       subdirectory.

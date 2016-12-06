@@ -93,8 +93,7 @@ c          added 'useC' for specification of conditioning
       Dimension Fixpnt(*), Ltol(*), Tol(*), icount(*)
       Dimension Xx(*), U(Nudim,*), Xguess(*), Uguess(Nugdim,*)
       Dimension Wrk(Lwrkfl), Iwrk(Lwrkin), precis(3)
-      Dimension Phi(3), E(3), Npr(2), Pmax(2), Hord(2), StiffSig(3)
-
+      Dimension Phi(3), E(3), Npr(2), Pmax(2), Hord(2)
       Logical Linear, Givmsh, Giveu, Giveps, eps_changed, Full, useC
       External acfsub
       External acdfsub
@@ -322,6 +321,7 @@ C.... Partition Floating Point Workspace.
 
       If (Linear) Then
          Ilast = Imsh + Lmsh
+         Isol  = Ilast
       Else
          Isol = Imsh + Lmsh
          Lsol = Ncomp*Nmax
@@ -409,6 +409,21 @@ C.... Nss Counts The Number Of Successful Continuation Steps Taken.
 
       Nc = 0
       Nss = 0
+CFrancesca added this initialization
+      C1h = 0.0d0
+      F1  = 0.0d0
+      F2  = 0.0d0
+      Ff2 = 0.0d0
+      Fmax = 0.0d0
+      G1 = 0.0d0
+      G2 = 0.0d0
+      Gg2 = 0.0d0
+      H1 = 0.0d0
+      Hmult = 0.0d0
+      Hmult1 = 0.0d0
+      Nnewold = 0
+      Phit = 0.0d0
+
 
 C.... Idc Counts The Number Of Consecutive Steps For Which The Maximum
 C.... Value Of The Monitor Function Is Decreasing.
@@ -499,6 +514,8 @@ C.... *****************************************************************
  50   Eps = Max(One/Ep,Epsmin)
       Ep = One/Eps
 
+CFrancesca added 9-2016
+      if (nmsh .ge. Nmax) goto 200
 
 C.... Solve For Epsmin Exactly
 
@@ -536,7 +553,7 @@ C.... Attempt To Solve The Latest Continuation Problem.
 
       CALL acBvpsol(Ncomp, Nmsh, Nlbc, Aleft, Aright,
      *   Nfxpnt, Fixpnt, Ntol, Ltol, Tol, Nmax, Linear,
-     *   Giveu, Givmsh, nmshguess, xguess,nugdim,
+     *    nmshguess, xguess,nugdim,
      *   uguess, Xx, Nudim, U,
      *   Wrk(Idef), Wrk(Idelu),
      *   Wrk(Irhs), Wrk(Ifval),
@@ -605,6 +622,8 @@ C.... First Two Meshes. The Best Approximation Is Stored In Phit.
                Phit = Pmax(1) - C1h*H1
             Else
                Phit = Pmax(2)
+cFrancesca.. added this initialization of C1h should not be used
+                C1h = (Pmax(2) - Pmax(1))/(H2-H1)
             Endif
          Endif
 
@@ -813,8 +832,7 @@ C.... Function To Take.
 
 
 C.... Quadratic And Linear Extrapolation To Find The Value Of Ep That
-c.... Corresponds To Phiaim
-
+c.... Corresponds  To Phiaim
          If (Nss .ne. 1) Then
             F1 = (Phi(2)-Phi(1))/(E(2)-E(1))
             F2 = (Phi(3)-Phi(2))/(E(3)-E(2))
@@ -864,7 +882,6 @@ c.... Corresponds To Phiaim
 C.... Linear Extrapolation
 
          Else
-
             F2 = (Phi(3)-Phi(2))/(E(3)-E(2))
             Ep = Min(Emin,E(2)+(Phiaim-Phi(2))/F2)
          Endif
@@ -1035,6 +1052,14 @@ C.... The Program Loops Back To Line 50 For Every Continuation Step.
 C.... *****************************************************************
 
       Goto 50
+C Francesca added that
+200   CONTINUE
+* Error exit---too many mesh points.
+
+      iflbvp = 1
+      if (iprint .ge. 0   ) then
+             CALL Rprint('Terminated, too many mesh points')
+      end if
 
 C KARLINE: ADDED THAT...
 100   CONTINUE
@@ -1092,8 +1117,8 @@ C.... This Subroutine Is Used For Saving And Re-Inserting Solutions.
 * File Bvps.f
 
       SUBROUTINE acBvpsol(Ncomp, Nmsh, Nlbc, Aleft, Aright,
-     *   Nfxpnt, Fixpnt, Ntol, Ltol, Tol, Nmax, Linear, Giveu,
-     *   Givmsh, nmshguess, xguess,nugdim,uguess,
+     *   Nfxpnt, Fixpnt, Ntol, Ltol, Tol, Nmax, Linear,
+     *    nmshguess, xguess,nugdim,uguess,
      *   Xx, Nudim, U, Def, Delu, Rhs, Fval,
      *   Topblk, Botblk, Ajac, Bhold, Chold, Ipvblk, Ipivlu,
      *   Uint, Ftmp, Tmprhs, Dftmp1, Dftmp2, Dgtm,
@@ -1123,7 +1148,7 @@ C.... This Subroutine Is Used For Saving And Re-Inserting Solutions.
       Dimension  Def6(Ncomp,*), Def8(Ncomp,*)
       Dimension  Dhold(3*Ncomp,3*Ncomp), Voldmsh(*)
       dimension  amg(*), c1(ncomp,*), wrkrhs(*), r4(*)
-      Logical Linear, Giveu, Givmsh, dDouble, Errok
+      Logical Linear,   dDouble, Errok
 
       External acfsub
       External acdfsub
@@ -1138,7 +1163,7 @@ C.... This Subroutine Is Used For Saving And Re-Inserting Solutions.
       Common/acAlgprs/Maxcon,Itsaim,Uval0
 
       logical stab_kappa, stab_gamma, stab_cond, stiff_cond, ill_cond
-      logical stab_kappa1, ill_cond_newt, stab_sigma, comparekappa
+      logical stab_kappa1, ill_cond_newt, stab_sigma
 
       Intrinsic Max
 
@@ -1312,7 +1337,7 @@ c       BY BRUGNANO & TRIGIANTE, AND HIGHAM
           ckappa1old = ckappa1
           ckappaold = ckappa
           sigmaold=sigma
-            CALL acCONDESTIM(aleft,aright,nmsh,ncomp,N,xx,topblk,nlbc,
+            CALL acCONDESTIM(aleft,aright,ncomp,N,xx,topblk,nlbc,
      *       ncomp, ajac, ncomp,2*ncomp,ninter,botblk,ncomp-nlbc,
      *       ipvblk,amg,c1,wrkrhs,ckappa1,gamma1,sigma,ckappa,ckappa2)
 
@@ -1525,12 +1550,12 @@ c     *              Double, Nmold, Xxold, Maxmsh, Succes)
            CALL acConv8( Ncomp, Nmsh, Ntol, Ltol, Tol,
      *              Nfxpnt, Fixpnt, Linear, Nmax,
      *              Xx, Nudim, U,nmshguess,xguess,nugdim,uguess,
-     *              Def6, Def8, Uold,
+     *              Def8, Uold,
      *              Ihcomp, Irefin, Ermx,
      *              Etest8, Strctr, Ratdc, Voldmsh,
      *              dDouble, Nmold, Xxold, Maxmsh, Succes,
-     *       r4, amg,stab_cond,ckappa1,gamma1,ckappa,stiff_cond,
-     *            ill_cond_newt,if_fixjac,rpar,ipar)
+     *       r4, amg,stiff_cond,
+     *            ill_cond_newt)
 
 
 
@@ -1605,26 +1630,26 @@ c     *              Double, Nmold, Xxold, Maxmsh, Succes)
       SUBROUTINE acConv8( Ncomp, Nmsh, Ntol, Ltol, Tol,
      *              Nfxpnt, Fixpnt, Linear, Nmax,
      *              Xx, Nudim, U,nmshguess,xguess,nugdim,uguess,
-     *              Def6, Def8, Uold,
+     *               Def8, Uold,
      *              Ihcomp, Irefin, Ermx,
      *              Etest8, Strctr, Ratdc, Voldmsh,
      *              dDouble, Nmold, Xxold, Maxmsh, Succes,
-     *       r4, amg,stab_cond,ckappa1,gamma1,ckappa,stiff_cond,
-     *               ill_cond_newt,if_fixjac, rpar,ipar)
+     *       r4, amg,stiff_cond,
+     *               ill_cond_newt)
 
       Implicit Double Precision (A-H,O-Z)
       Dimension Ltol(Ntol), Tol(Ntol)
-      dimension rpar(*), ipar(*)
+
       Dimension Fixpnt(*), Etest8(Ntol)
       Dimension Xx(*), U(Nudim,*), xguess(*), Uguess(Nugdim,*)
-      Dimension def6(ncomp,*),  Def8(Ncomp,*), Uold(Ncomp,*)
+      Dimension Def8(Ncomp,*), Uold(Ncomp,*)
       Dimension Ihcomp(*), Irefin(*), amg(*), r4(*)
       Dimension Ermx(*), Xxold(*), Ratdc(*), Voldmsh(*)
       Logical Linear, Strctr, dDouble, Maxmsh, Succes
 ***bugfix 2jul01
       Save Nvold
       LOGICAL use_c, comp_c
-      LOGICAL stiff_cond  ,stab_cond,  ill_cond_newt
+      LOGICAL stiff_cond, ill_cond_newt
 
       common/algprs/ nminit, iprint, idum, use_c, comp_c
       Common/acAlgprs/Maxcon,Itsaim,Uval0
@@ -1703,7 +1728,7 @@ c     *              Double, Nmold, Xxold, Maxmsh, Succes)
      *     Nfxpnt, Fixpnt, Ipow, Nmax, Nvold,
      *     Xx, Nudim, U, Def8, Irefin, Ihcomp,
      *     Nmold, Xxold, Ermx, dDouble, Maxmsh, Ratdc, Voldmsh,
-     *     r4,amg,stab_cond,stiff_cond,linear)
+     *     r4,amg,linear)
       else
 
           CALL acSelmsh(Ncomp, Nmsh, Ntol, Ltol, Tol,
@@ -1749,7 +1774,7 @@ c              Call Initu(Ncomp, Nmsh, Nudim, U)
       Dimension Def6(Ncomp,Nmsh-1), Tmp(Ncomp,*)
       Dimension Df(Ncomp,Ncomp), Ltol(Ntol), Tol(Ntol)
       Dimension Ip(2*Ncomp), Dhold(2*Ncomp,2*Ncomp)
-      Dimension St1(200), St2(200), St3(200)
+
       External acfsub
       External acdfsub
 
@@ -2251,11 +2276,12 @@ c      St4 --> Tmp(ncomp,16)
 
       call dcopy(nlbc, rhs, 1, rhstri, 1)
       ind = nlbc
-      do 10 im = 1, ninter
+      do 11 im = 1, ninter
       do 10 ic = 1, ncomp
          ind = ind + 1
          rhstri(ind) = rhs(ind) + defnew(ic, im)
  10       continue
+ 11   continue
       ind = ninter*nmsh + nlbc + 1
       call dcopy(ncomp-nlbc, rhs, 1, rhstri, 1)
 
@@ -2355,7 +2381,7 @@ c      St4 --> Tmp(ncomp,16)
 *  Test For Convergence Using The Ratio Abs((Change In U)/Max(U,1)).
 
 
-      do 150 im = 1, nmsh
+      do 160 im = 1, nmsh
       do 150 it = 1, ntol
          itol = ltol(it)
 c Francesca using rhs instead of delu
@@ -2364,7 +2390,7 @@ c         er = abs(rhs( itol+(im-1)*ncomp))/max(abs(u(itol,im)), one)
          if (er .gt. tolfct*tol(it).and. er .gt. epsmch
      +              ) go to 100
  150      continue
-
+ 160   continue
 *  To exit from the loop here, the convergence tests have
 *  been passed.
 
@@ -2540,8 +2566,8 @@ c      iflag = 0
 
       common/mchprs/ flmin, flmax, epsmch
 
-      logical gtpdeb, imprvd, braktd, crampd, extrap, vset, wset
-      save  gtpdeb, mfsrch, epsaf, epsag, eta, rmu, tolabs, alfmax
+      logical  imprvd, braktd, crampd, extrap, vset, wset
+      save   mfsrch, epsaf, epsag, eta, rmu, tolabs, alfmax
       save  tolrel, toltny
 
       intrinsic  abs
@@ -2558,7 +2584,7 @@ c
       data  alfsml/1.0d-4/,  alfmax/1.1d+0/
       data  imerit/1/, lmtnwt/39/
       data  shrfct/100.0d+0/, stpfct/2.0d+0/
-      data  gtpdeb/.false./, mfsrch/5/
+      data  mfsrch/5/
       data  eta/.999999d+0/, rmu/1.0d-6/
 
 
@@ -2751,11 +2777,11 @@ c  at the initial point of the line search.
 
 
  150   continue
-      iwr = 6
 
-      CALL acgetptq (gtpdeb, mfsrch, iwr, alfmax, alfsml, alfuzz,
+
+      CALL acgetptq ( mfsrch,  alfmax, alfsml, alfuzz,
      *      epsaf, epsag,
-     *      eta, fmtry, fmold, oldg, rmu, tolabs, tolrel, toltny,
+     *      fmtry, fmold, oldg, rmu, tolabs, tolrel, toltny,
      *      imprvd, inform, nfsrch, alfa, alfbst, fbest,
      *      braktd, crampd, extrap, vset, wset, nsamea, nsameb,
      *      alin, blin, fa, factor, fv, fw, xtry, xv, xw)
@@ -2853,13 +2879,13 @@ c  at the initial point of the line search.
 *  If the test fails for any element of u, branch back to the
 *  top of the Newton iteration.
 
-      do 160 im = 1, nmsh
+      do 170 im = 1, nmsh
       do 160 it = 1, ntol
          icmp = ltol(it)
          er = abs(delu(icmp,im))/max(abs(u(icmp,im)), one)
          if (er .gt. cnvfct*tol(it)) go to 100
  160      continue
-
+ 170   continue
 
       if (iprint .ge. 0) then
       CALL Rprintid('Convergence, iter = ,  rnsq =', iter+1, rnsq)
@@ -2990,7 +3016,7 @@ c  at the initial point of the line search.
       external  acdfsub
       external  acdgsub
 
-      logical pdebug, use_c, comp_c
+
 
 
 *  blas: dcopy, ddot
@@ -3155,7 +3181,7 @@ c  at the initial point of the line search.
       external   acfsub
       external   acgsub
 
-      logical pdebug, use_c, comp_c
+
 
       common/mchprs/flmin, flmax, epsmch
       intrinsic abs
@@ -3316,14 +3342,18 @@ c  at the initial point of the line search.
 
 *  The Routine Selmsh Performs Selective Mesh Refinement, Depending
 *  On The Error Measure Ermeas.
+CFrancesca .... added the following two lines
+      Hordlrg = 0.0d0
+      Imreg = 1
 
       Maxmsh = .false.
-
+      Phihat = 0.0d0
       Frcpow = One/Ipow
       dDouble = .false.
       Nmold = Nmsh
       Ninter = Nmsh - 1
       Iprec = Min(Iprec,1)
+      Imreg = 0
 
 *  Copy The Current Mesh Into The Xxold Array.
 
@@ -3729,7 +3759,7 @@ C
 
       Errok = .true.
 
-      Do 10 Im = 1, Nmsh
+      Do 20 Im = 1, Nmsh
       Do 10 It = 1, Ntol
          Icmp = Ltol(It)
          Er = U(Icmp,Im) - Uold(Icmp,Im)
@@ -3737,23 +3767,23 @@ C
          Errel = Abs(Er/(Tol(It)*Denom))
          If (Errel .gt. Etest(It)) Errok = .false.
    10 Continue
-
+   20 Continue
       Return
       End
 
 
 
-      SUBROUTINE acgetptq( debug, mfsrch, nout, alfmax, alfsml, alfuzz,
-     *                   epsaf, epsag, eta, ftry, oldf, oldg,
+      SUBROUTINE acgetptq(  mfsrch, alfmax, alfsml, alfuzz,
+     *                   epsaf, epsag, ftry, oldf, oldg,
      *                   rmu, tolabs, tolrel, toltny, imprvd,
      *                   inform, nfsrch, alfa, alfbst, fbest,
      *                   braktd, crampd, extrap,vset,wset,nsamea,nsameb,
      *                   a, b, fa, factor, fv, fw, xtry, xv, xw )
 
       implicit double precision (a-h,o-z)
-      logical            debug, imprvd
+      logical            imprvd
       logical            braktd, crampd, extrap, vset, wset
-      integer            mfsrch, nout, inform, nfsrch, nsamea, nsameb
+      integer            mfsrch, inform, nfsrch, nsamea, nsameb
 c
 c  *********************************************************************
 c  getptq  is a step-length algorithm for minimizing a function of one
@@ -3775,6 +3805,7 @@ c
 c  input parameters (relevant to the calling program)
 c  --------------------------------------------------
 c
+cFrancesca no more used
 c  debug         specifies whether detailed output is wanted.
 c
 c  inform        must be nonzero on the first entry (e.g., -1).
@@ -3784,6 +3815,7 @@ c  mfsrch        is an upper limit on the number of times  getptq  is
 c                to be entered consecutively with  inform = 0
 c                (following an initial entry with  inform lt 0).
 c
+cFrancesca this input parameter has been eliminated
 c  nout          is the file number to be used for printed output
 c                if debug is true.
 c
@@ -3803,6 +3835,7 @@ c
 c  epsaf         is an estimate of the absolute precision in the
 c                computed values of  f.
 c
+cFrancesca this input has been eliminated not used
 c  eta           controls the accuracy of the search.  it must lie
 c                in the range   0.0  le  eta  lt  1.0.  decreasing
 c                eta  tends to increase the accuracy of the search.
@@ -4029,8 +4062,14 @@ c  see if the new step is better.
 c
       deltaf = ftry   - oldf
       ctry   = deltaf - alfa*rmu*oldg
-      if (alfa .le. alfuzz) sigdec = deltaf .le. (- epsaf)
-      if (alfa .gt. alfuzz) sigdec = ctry   .le.    epsaf
+      sigdec = .true.
+      if (alfa .le. alfuzz) then
+         sigdec = deltaf .le. (- epsaf)
+      else
+         sigdec = ctry   .le.    epsaf
+      endif
+c     if (alfa .le. alfuzz) sigdec = deltaf .le. (- epsaf)
+c     if (alfa .gt. alfuzz) sigdec = ctry   .le.    epsaf
       imprvd = sigdec  .and.  ( ftry - fbest ) .le. (- epsaf)
 c
       if (.not. imprvd) go to 130
@@ -4248,8 +4287,11 @@ c  the points are configured for an interpolation.  the artificial
 c  interval will be just  (a,b).   set  endpnt  so that  xtry
 c  lies in the larger of the intervals  (a,0)  and  (0,b).
 c
- 640    if (xmidpt .lt. zero) endpnt = a
-      if (xmidpt .gt. zero) endpnt = b
+ 640  if (xmidpt .lt. zero) then
+          endpnt = a
+      else
+          endpnt = b
+      endif
 c
 c  if a bound has remained the same for three iterations, set  endpnt
 c  so that  xtry  is likely to replace the offending bound.
@@ -4260,12 +4302,15 @@ c
 c
 c  the points are configured for an extrapolation.
 c
- 660   if (xw .lt. zero) endpnt = b
-      if (xw .gt. zero) endpnt = a
+ 660  if (xw .lt. zero) then
+           endpnt = b
+      else
+           endpnt = a
+      endif
 c
 c  compute the default value of  xtry.
 c
- 680   dtry = abs( endpnt )
+ 680  dtry = abs( endpnt )
       daux = gap - dtry
       if (daux .ge. dtry)   xtry = five*dtry*(point1 + dtry/daux)/eleven
       if (daux .lt. dtry)   xtry = half*sqrt( daux )*sqrt( dtry )
@@ -4440,7 +4485,7 @@ c  end of getptq
 
 
 
-       SUBROUTINE acCONDESTIM(ALEFT,ARIGHT,NMSH,NCOMP,N,XX,TOPBLK,
+       SUBROUTINE acCONDESTIM(ALEFT,ARIGHT,NCOMP,N,XX,TOPBLK,
      *            NRWTOP,NOVRLP,ARRAY,
      *          NRWBLK,NCLBLK,NBLOKS,BOTBLK,NRWBOT,IPVCD,OMG,
      *          C1,WORK,KPPA,GAMMA,SIGMA,CKAPPA,CKAPPA2)
@@ -4455,10 +4500,10 @@ c     cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         DOUBLE PRECISION TOPBLK,ARRAY,BOTBLK,WORK,C1,
      *          OMG,GAMMA,gamma1,KPPA,MINMG, GAMMAK,KPPAK,CKAPPA1,
      *          KPPAI, GAMMAI, CKAPPA,CKAPPA2,kappa1_n, kappa2_n,ckmax
-        DOUBLE PRECISION BOMEGA1,BOMEGA2, SIGMA, SIGMAK,KPPAJ
+        DOUBLE PRECISION BOMEGA1,BOMEGA2, SIGMA, SIGMAK
         DOUBLE PRECISION ALEFT,ARIGHT,XX,  CSUM, ZNORM
         INTEGER N,NRWTOP,NOVRLP,NRWBLK,NCLBLK,NBLOKS,NRWBOT,IPVCD
-        INTEGER NCOMP,NMSH,idmx,idmn,idamax,idomg,job
+        INTEGER NCOMP,idmx,idmn
         DIMENSION TOPBLK(NRWTOP,*),ARRAY(NRWBLK,NCLBLK,*),OMG(*),
      *          BOTBLK(NRWBOT,*),WORK(*),C1(ncomp,*),XX(*),
      *          IPVCD(*)
@@ -4466,12 +4511,15 @@ c     cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         LOGICAL FIRSTCOL
 
         INTRINSIC SIGN
-        DOUBLE PRECISION SIGN
+c        DOUBLE PRECISION SIGN
 
         FIRSTCOL=.true.
 
         MINMG=0.0d+0
         KPPA=0.0d+0
+        idmx = 1
+        idmn = 1
+        indnm = 1
 
         IF (FIRSTCOL) THEN
 
@@ -4752,6 +4800,7 @@ c fine nuovo OMG
 
 
       ZNORM=0.0d0
+      indnm = 1
       DO I=1,N
          IF ( ABS(WORK(I)) .GT. ZNORM) THEN
             ZNORM = ABS(WORK(I))
@@ -4783,7 +4832,7 @@ c fine nuovo OMG
      *     Nfxpnt, Fixpnt, Ipow, Nmax, Nvold,
      *     Xx, Nudim, U, Ermeas, Irefin, Ihcomp,
      *     Nmold, Xxold, Ermx, dDouble, Maxmsh, Phiold, Voldmsh,
-     *     r4,amg,stab_cond, stiff_cond,linear)
+     *     r4,amg, linear)
 
       Implicit Double Precision (A-H,O-Z)
 
@@ -4793,7 +4842,7 @@ c fine nuovo OMG
       Dimension  Xxold(*), Ermx(*), Phiold(*), Voldmsh(*)
       Dimension  Npr(2), Pmax(2), Hord(2)
       Dimension  r4(*), amg(*)
-      Logical    dDouble, Maxmsh, stab_cond, stiff_cond, add,linear
+      Logical    dDouble, Maxmsh,  linear
 
       Intrinsic Abs
       Intrinsic Max
@@ -4813,6 +4862,10 @@ c fine nuovo OMG
 
 
       Maxmsh = .false.
+CFrancesca .... added the following three lines
+      Hordlrg = 0.0d0
+      Imreg = 1
+      Phihat = 0.0d0
 
       Frcpow = One/Ipow
       dDouble = .false.
@@ -5155,7 +5208,7 @@ C
 *  blas: dcopy
 *  double precision dlog
 
-      logical pdebug, use_c, comp_c, linear
+      logical  use_c, comp_c, linear
       common/algprs/ nminit, iprint, idum, use_c, comp_c
       Common/acAlgprs/Maxcon,Itsaim,Uval0
       parameter  ( zero = 0.0d+0, one = 1.0d+0 )

@@ -1,6 +1,7 @@
 #include <time.h>
 #include <string.h>
 #include "bvpSolve.h"
+#include "externalptr.h"
 
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    boundary value problem solvers.
@@ -573,24 +574,24 @@ SEXP call_colnew(SEXP Ncomp, SEXP Xout, SEXP Aleft, SEXP Aright,
   if (isDll) {   /* DLL addresses passed to fortran */
      if (type == 2) {
       deriv_func_DAE = (C_deriv_func_DAE_type *) wrap_bvp_deriv_func_DAE;
-      derfun_DAE     = (C_deriv_func_type *)     R_ExternalPtrAddr(derivfunc);
+      derfun_DAE     = (C_deriv_func_type *)     R_ExternalPtrAddrFn_(derivfunc);
      } else { 
-      deriv_func     = (C_deriv_func_type *)     R_ExternalPtrAddr(derivfunc);
+      deriv_func     = (C_deriv_func_type *)     R_ExternalPtrAddrFn_(derivfunc);
      }
      if (absent[0] == 0) { 
        if (type == 2) {
          jac_func_DAE = (C_jac_func_DAE_type *) wrap_bvp_jac_func_DAE;
-         jacfundae = (C_jac_func_type *)       R_ExternalPtrAddr(jacfunc);
+         jacfundae = (C_jac_func_type *)       R_ExternalPtrAddrFn_(jacfunc);
        } else {
-         jac_func      = (C_jac_func_type *)   R_ExternalPtrAddr(jacfunc);
+         jac_func      = (C_jac_func_type *)   R_ExternalPtrAddrFn_(jacfunc);
         }
      }
      
      if (absent[1] == 0)
-        bound_func    = (C_bound_func_type *)  R_ExternalPtrAddr(boundfunc);
+        bound_func    = (C_bound_func_type *)  R_ExternalPtrAddrFn_(boundfunc);
 
      if (absent[2] == 0)   /* not given*/
-        jacbound_func = (C_jacbound_func_type *) R_ExternalPtrAddr(jacboundfunc);
+        jacbound_func = (C_jacbound_func_type *) R_ExternalPtrAddrFn_(jacboundfunc);
 
 	  /* here overruling deriv_func if forcing */
      if (isForcing) {
@@ -599,7 +600,7 @@ SEXP call_colnew(SEXP Ncomp, SEXP Xout, SEXP Aleft, SEXP Aright,
         if (absent[0] == 0) 
           jac_func_DAE   = (C_jac_func_DAE_type *) dll_bvp_jac_func_DAE_forc;
         } else {
-          derfun =     (C_deriv_func_type *) R_ExternalPtrAddr(derivfunc);
+          derfun =     (C_deriv_func_type *) R_ExternalPtrAddrFn_(derivfunc);
           deriv_func = (C_deriv_func_type *) dll_bvp_deriv_func_forc;
         }
       }

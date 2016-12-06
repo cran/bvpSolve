@@ -473,7 +473,7 @@ C     may be replaced when solving problems on vector processors
 C     or when solving large scale sparse jacobian problems.
 C
 C----------------------------------------------------------------------
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION M(*), ZETA(*), ISET(*), LTOL(*), TOL(*), DUMMY(1),
      1  FIXPNT(*), ISPACE(*), FSPACE(*), ipar(*), rpar(*), icount(*)
 C
@@ -564,10 +564,12 @@ C
    30 CONTINUE
       IF ( K .EQ. 0 )   K = MAX0( MMAX + 1 , 5 - MMAX )
       DO 40 I = 1, MSTAR
-   40 TZETA(I) = ZETA(I)
+        TZETA(I) = ZETA(I)
+   40 CONTINUE
       DO 50 I = 1, NTOL
          LTTOL(I) = LTOL(I)
-   50 TOLIN(I) = TOL(I)
+         TOLIN(I) = TOL(I)
+   50 CONTINUE
       TLEFT = ALEFT
       TRIGHT = ARIGHT
       NC = NCOMP
@@ -673,17 +675,21 @@ C
       NP1 = N + 1
       IF ( IGUESS .EQ. 4 )  NP1 = NP1 + NOLD + 1
       DO 120 I=1,NZ
-  120 FSPACE( LZ+I-1 )  =  FSPACE( NP1+I )
+        FSPACE( LZ+I-1 )  =  FSPACE( NP1+I )
+  120 CONTINUE
       IDMZ = NP1 + NZ
       DO 125 I=1,NDMZ
-  125 FSPACE( LDMZ+I-1 )  =  FSPACE( IDMZ+I )
+        FSPACE( LDMZ+I-1 )  =  FSPACE( IDMZ+I )
+  125 CONTINUE
       NP1 = NOLD + 1
       IF ( IGUESS .EQ. 4 )                          GO TO 140
       DO 130 I=1,NP1
-  130 FSPACE( LXIOLD+I-1 )  =  FSPACE( LXI+I-1 )
+        FSPACE( LXIOLD+I-1 )  =  FSPACE( LXI+I-1 )
+  130 CONTINUE
       GO TO 160
   140 DO 150 I=1,NP1
-  150 FSPACE( LXIOLD+I-1 )  =  FSPACE( N+1+I )
+        FSPACE( LXIOLD+I-1 )  =  FSPACE( N+1+I )
+  150 CONTINUE
   160 CONTINUE
 C
 C...  initialize collocation points, constants, mesh.
@@ -697,7 +703,8 @@ C
       IF (IGUESS .GE. 2)                            GO TO 230
       NP1 = N + 1
       DO 210 I = 1, NP1
-  210 FSPACE( I + LXIOLD - 1 ) = FSPACE( I + LXI - 1 )
+        FSPACE( I + LXIOLD - 1 ) = FSPACE( I + LXI - 1 )
+  210 CONTINUE
       NOLD = N
       IF ( NONLIN .EQ. 0  .OR. IGUESS .EQ. 1 )      GO TO 230
 C
@@ -705,9 +712,11 @@ C...  system provides first approximation of the solution.
 C...  choose z(j) = 0  for j=1,...,mstar.
 C
       DO 220 I=1, NZ
-  220 FSPACE( LZ-1+I ) = 0.D0
+        FSPACE( LZ-1+I ) = 0.D0
+  220 CONTINUE
       DO 225 I=1, NDMZ
-  225 FSPACE( LDMZ-1+I ) = 0.D0
+        FSPACE( LDMZ-1+I ) = 0.D0
+  225 CONTINUE
   230 CONTINUE
       IF (IGUESS .GE. 2)  IGUESS = 0
       CALL CONTRL (FSPACE(LXI),FSPACE(LXIOLD),FSPACE(LZ),FSPACE(LDMZ),
@@ -728,18 +737,22 @@ C
       K2 = K * K
       ISPACE(7) = ISPACE(6) + K2 - 1
       DO 240 I = 1, NCOMP
-  240 ISPACE(7+I) = M(I)
+        ISPACE(7+I) = M(I)
+  240 CONTINUE
       DO 250 I = 1, NZ
-  250 FSPACE( N+1+I ) = FSPACE( LZ-1+I )
+        FSPACE( N+1+I ) = FSPACE( LZ-1+I )
+  250 CONTINUE
       IDMZ = N + 1 + NZ
       DO 255 I = 1, NDMZ
-  255 FSPACE( IDMZ+I ) = FSPACE( LDMZ-1+I )
+        FSPACE( IDMZ+I ) = FSPACE( LDMZ-1+I )
+  255 CONTINUE
       IC = IDMZ + NDMZ
       DO 258 I = 1, K2
-  258 FSPACE( IC+I ) = COEF(I)
+        FSPACE( IC+I ) = COEF(I)
+  258 CONTINUE
 
 
-  259 icount(1) = nfunc
+      icount(1) = nfunc
       icount(2) = njac
       icount(3) = nbound
       icount(4) = njacbound
@@ -801,7 +814,7 @@ C                 previous mesh
 C
 C**********************************************************************
 C
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION XI(*), XIOLD(*), Z(*), DMZ(*), RHS(*)
       DIMENSION G(*), W(*), V(*), VALSTR(*), SLOPE(*), ACCUM(*)
       DIMENSION DELZ(*), DELDMZ(*), DQZ(*), DQDMZ(*) , FIXPNT(*)
@@ -830,7 +843,8 @@ C...  compute the maximum tolerance
 C
       CHECK = 0.D0
       DO 10 I = 1, NTOL
-   10   CHECK = DMAX1 ( TOLIN(I), CHECK )
+        CHECK = DMAX1 ( TOLIN(I), CHECK )
+   10 CONTINUE
       IMESH = 1
       ICONV = 0
       IF ( NONLIN .EQ. 0 ) ICONV = 1
@@ -961,12 +975,13 @@ C
 C
 C...       check convergence (iconv = 1).
 C
-           DO 120 IT = 1, NTOL
+           DO 125 IT = 1, NTOL
              INZ = LTOL(IT)
              DO 120 IZ = INZ, NZ, MSTAR
                IF ( DABS(DELZ(IZ)) .GT.
      1           TOLIN(IT) * (DABS(Z(IZ)) + 1.D0))  GO TO 60
   120      CONTINUE
+  125      CONTINUE
 C
 C...       convergence obtained
 C
@@ -999,7 +1014,8 @@ C...       update old mesh
 C
            NP1 = N + 1
            DO 155 I = 1, NP1
-  155        XIOLD(I) = XI(I)
+             XIOLD(I) = XI(I)
+  155      CONTINUE
            NOLD = N
 C
            ITER = 0
@@ -1166,12 +1182,13 @@ C
 C...       check convergence (iconv = 0).
 C
   350      CONTINUE
-           DO 360 IT = 1, NTOL
+           DO 365 IT = 1, NTOL
              INZ = LTOL(IT)
              DO 360 IZ = INZ, NZ, MSTAR
                IF ( DABS(DQZ(IZ)) .GT.
      1         TOLIN(IT) * (DABS(Z(IZ)) + 1.D0) )   GO TO 170
   360      CONTINUE
+  365      CONTINUE
 C
 C...       convergence obtained
 C
@@ -1233,7 +1250,8 @@ C...       update old mesh
 C
   460      NP1 = N + 1
            DO 470 I = 1, NP1
-  470        XIOLD(I) = XI(I)
+             XIOLD(I) = XI(I)
+  470      CONTINUE
            NOLD = N
 C
 C...       pick a new mesh
@@ -1286,7 +1304,7 @@ C            dscale = scaling vector for dmz
 C
 C**********************************************************************
 C
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION Z(MSTAR,*), SCALE(MSTAR,*), DSCALE(KD,*)
       DIMENSION XI(*), BASM(5)
 C
@@ -1397,7 +1415,7 @@ C            valstr - is assigned values needed in  errchk  for the
 C                     error estimate.
 C**********************************************************************
 C
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION D1(40), D2(40), SLOPE(*), ACCUM(*), VALSTR(*)
       DIMENSION XI(*), XIOLD(*), Z(*), DMZ(*), FIXPNT(*), DUMMY(1)
 C
@@ -1412,7 +1430,18 @@ C
      1                ROOT(40), JTOL(40), LTOL(40), NTOL
 C
       NFXP1 = NFXPNT +1
-      GO TO (180, 100, 50, 20, 10), MODE
+      IF (MODE .EQ. 1) THEN
+        GOTO  180
+      ELSE IF (MODE .EQ. 2) THEN
+        GOTO  100
+      ELSE IF (MODE .EQ. 3) THEN
+        GOTO  50
+      ELSE IF (MODE .EQ. 4) THEN
+        GOTO  20
+      ELSE IF (MODE .EQ. 5) THEN
+        GOTO  10
+      ENDIF
+C      GO TO (180, 100, 50, 20, 10), MODE
 C
 C...  mode=5   set mshlmt=1 so that no mesh selection is performed
 C
@@ -1436,7 +1465,8 @@ C
       I = 0
       DO 30 J = 1, NOLD, 2
            I = I + 1
-   30 XI(I) = XIOLD(J)
+           XI(I) = XIOLD(J)
+   30 CONTINUE
    40 CONTINUE
       NP1 = N + 1
       XI(1) = ALEFT
@@ -1464,7 +1494,7 @@ C...       determine where the j-th fixed point should fall in the
 C...       new mesh - this is xi(iright) and the (j-1)st fixed
 C...       point is in xi(ileft)
 C
-           NMIN = (XRIGHT-ALEFT) / (ARIGHT-ALEFT) * DFLOAT(N) + 1.5D0
+           NMIN = int((XRIGHT-ALEFT)/(ARIGHT-ALEFT)*DFLOAT(N) + 1.5D0)
            IF (NMIN .GT. N-NFXPNT+J)  NMIN = N - NFXPNT + J
            IRIGHT = MAX0 (ILEFT+1, NMIN)
    60      XI(IRIGHT) = XRIGHT
@@ -1476,7 +1506,8 @@ C
            IF ( NREGN .EQ. 0 )                      GO TO 80
            DX = (XRIGHT - XLEFT) / DFLOAT(NREGN+1)
            DO 70 I = 1, NREGN
-   70      XI(ILEFT+I) = XLEFT  +  DFLOAT(I) * DX
+             XI(ILEFT+I) = XLEFT  +  DFLOAT(I) * DX
+   70      CONTINUE
    80      ILEFT = IRIGHT
            XLEFT = XRIGHT
    90 CONTINUE
@@ -1532,7 +1563,7 @@ C...  at the relative positions 1/6, 2/6, 4/6 and 5/6 in
 C...  each subinterval.
 C
   140 KSTORE = 1
-      DO 150 I = 1, N
+      DO 155 I = 1, N
          X = XI(I)
          HD6 = (XI(I+1) - XI(I)) / 6.D0
          DO 150 J = 1, 4
@@ -1542,6 +1573,7 @@ C
      1          NOLD, Z, DMZ, K, NCOMP, MMAX, M, MSTAR, 4, DUMMY, 0)
            KSTORE = KSTORE  +  MSTAR
   150 CONTINUE
+  155 CONTINUE
   160 MSHFLG = 0
       MSHNUM = 1
       MODE = 2
@@ -1552,7 +1584,8 @@ C
       DO 170 I = 1, N
            XI(J) = (XIOLD(I) + XIOLD(I+1)) / 2.D0
            XI(J+1) = XIOLD(I+1)
-  170 J = J + 2
+           J = J + 2
+  170  CONTINUE
       N = N2
       GO TO 320
 C
@@ -1577,8 +1610,9 @@ C
       DO 190 J = 1, NTOL
            JJ = JTOL(J)
            JZ = LTOL(J)
-  190 SLOPE(1) = DMAX1(SLOPE(1),(DABS(D2(JJ)-D1(JJ))*WGTMSH(J)*
+        SLOPE(1) = DMAX1(SLOPE(1),(DABS(D2(JJ)-D1(JJ))*WGTMSH(J)*
      1           ONEOVH / (1.D0 + DABS(Z(JZ)))) **ROOT(J))
+  190     CONTINUE
       SLPHMX = SLOPE(1) * (XIOLD(2) - XIOLD(1))
       ACCUM(2) = SLPHMX
       IFLIP = 1
@@ -1600,8 +1634,9 @@ C
            DO 200 J = 1, NTOL
              JJ = JTOL(J)
              JZ = LTOL(J)  +  (I-1) * MSTAR
-  200      SLOPE(I) = DMAX1(SLOPE(I),(DABS(D2(JJ)-D1(JJ))*WGTMSH(J)*
+            SLOPE(I) = DMAX1(SLOPE(I),(DABS(D2(JJ)-D1(JJ))*WGTMSH(J)*
      1                ONEOVH / (1.D0 + DABS(Z(JZ)))) **ROOT(J))
+  200      CONTINUE
 C
 C...       accumulate approximate integral of function to be
 C...       equidistributed
@@ -1609,13 +1644,14 @@ C
            TEMP = SLOPE(I) * (XIOLD(I+1)-XIOLD(I))
            SLPHMX = DMAX1(SLPHMX,TEMP)
            ACCUM(I+1) = ACCUM(I) + TEMP
-  210 IFLIP = - IFLIP
+         IFLIP = - IFLIP
+  210  CONTINUE
       AVRG = ACCUM(NOLD+1) / DFLOAT(NOLD)
       DEGEQU = AVRG / DMAX1(SLPHMX,PRECIS)
 C
 C...  naccum=expected n to achieve .1x user requested tolerances
 C
-      NACCUM = ACCUM(NOLD+1) + 1.D0
+      NACCUM = int(ACCUM(NOLD+1) + 1.D0)
       IF ( IPRINT .LT. 0 ) THEN
       CALL Rprintd1('Mesh info, degree of equidistribution =', Degequ)
       CALL Rprinti1('Prediction for required N =  ', Naccum)
@@ -1664,13 +1700,14 @@ C
       XI(N+1) = ARIGHT
       DO 310 I = 1, NFXP1
            IF ( I .EQ. NFXP1 )                      GO TO 250
+           LNEW = LOLD
            DO 230 J = LOLD, NOLDP1
              LNEW = J
              IF ( FIXPNT(I) .LE. XIOLD(J) )         GO TO 240
   230      CONTINUE
   240      CONTINUE
            ACCR = ACCUM(LNEW) + (FIXPNT(I)-XIOLD(LNEW))*SLOPE(LNEW-1)
-           NREGN = (ACCR-ACCL) / ACCUM(NOLDP1) * DFLOAT(N) - .5D0
+           NREGN = int((ACCR-ACCL) / ACCUM(NOLDP1) * DFLOAT(N) - .5D0)
            NREGN = MIN0(NREGN, N - IN - NFXP1 + I)
            XI(IN + NREGN + 1) = FIXPNT(I)
            GO TO 260
@@ -1683,14 +1720,16 @@ C
            DO 290 J = 1, NREGN
              IN = IN + 1
              TEMP = TEMP + TSUM
+             LCARRY = LOLD
              DO 270 L = LOLD, LNEW
                LCARRY = L
                IF ( TEMP .LE. ACCUM(L) )            GO TO 280
   270        CONTINUE
   280        CONTINUE
              LOLD = LCARRY
-  290      XI(IN) = XIOLD(LOLD-1) + (TEMP - ACCUM(LOLD-1)) /
+         XI(IN) = XIOLD(LOLD-1) + (TEMP - ACCUM(LOLD-1)) /
      1     SLOPE(LOLD-1)
+  290    CONTINUE
   300      IN = IN + 1
            ACCL = ACCR
            LOLD = LNEW
@@ -1738,7 +1777,7 @@ C              points
 C
 C**********************************************************************
 C
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION RHO(7), COEF(K,*), CNSTS1(28), CNSTS2(28), DUMMY(1)
 C
       COMMON /COLORD/ KDUM, NCOMP, MSTAR, KD, MMAX, M(20)
@@ -1763,12 +1802,13 @@ C...  assign weights for error estimate
 C
       KOFF = K * ( K + 1 ) / 2
       IZ = 1
-      DO 10 J = 1, NCOMP
+      DO 15 J = 1, NCOMP
            MJ = M(J)
            DO 10 L = 1, MJ
              WGTERR(IZ) = CNSTS1(KOFF - MJ + L)
              IZ = IZ + 1
    10 CONTINUE
+   15 CONTINUE
 C
 C...  assign array values for mesh selection: wgtmsh, jtol, and root
 C
@@ -1789,7 +1829,22 @@ C
 C
 C...  specify collocation points
 C
-      GO TO (50,60,70,80,90,100,110), K
+      IF (K .EQ. 1) THEN
+        GOTO  50
+      ELSE IF (K .EQ. 2) THEN
+        GOTO  60
+      ELSE IF (K .EQ. 3) THEN
+        GOTO  70
+      ELSE IF (K .EQ. 4) THEN
+        GOTO  80
+      ELSE IF (K .EQ. 5) THEN
+        GOTO  90
+      ELSE IF (K .EQ. 6) THEN
+        GOTO  100
+      ELSE IF (K .EQ. 7) THEN
+        GOTO  110
+      ENDIF      
+C      GO TO (50,60,70,80,90,100,110), K
    50 RHO(1) = 0.D0
       GO TO 120
    60 RHO(2) = .57735026918962576451D0
@@ -1837,7 +1892,8 @@ C...  the values of asave are to be used in  newmsh  and errchk .
 C
       DO 140 J = 1, K
          DO 135 I = 1, K
-  135      COEF(I,J) = 0.D0
+           COEF(I,J) = 0.D0
+  135    CONTINUE
          COEF(J,J) = 1.D0
          CALL VMONDE (RHO, COEF(1,J), K)
   140 CONTINUE
@@ -1877,7 +1933,7 @@ C                 the array valstr. (0 for no, 1 for yes)
 C
 C**********************************************************************
 C
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION ERR(40), ERREST(40), DUMMY(1)
       DIMENSION XI(*), Z(*), DMZ(*), VALSTR(*)
 C
@@ -1895,7 +1951,8 @@ C
       IFIN = 1
       MSHFLG = 1
       DO 10 J = 1, MSTAR
-   10   ERREST(J) = 0.D0
+        ERREST(J) = 0.D0
+   10 CONTINUE
       DO 60 IBACK = 1, N
            I = N + 1 - IBACK
 C
@@ -2007,7 +2064,7 @@ C      iguess = 1 when current soln is user specified via  guess
 C             = 0 otherwise
 C
 C*********************************************************************
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION  Z(*), DMZ(*), DELZ(*), DELDMZ(*), XI(*), XIOLD(*)
       DIMENSION  G(*), W(*), V(*),  RHS(*) , DMZO(*), DUMMY(1)
       DIMENSION  IPAR(*), RPAR(*)
@@ -2028,12 +2085,25 @@ C
 
 C
       M1 = MODE + 1
-      GO TO (10, 30, 30, 30, 310), M1
+      IF (M1 .EQ. 1) THEN
+        GOTO  10
+      ELSE IF (M1 .EQ. 2) THEN
+        GOTO  30
+      ELSE IF (M1 .EQ. 3) THEN
+        GOTO  30
+      ELSE IF (M1 .EQ. 4) THEN
+        GOTO  30
+      ELSE IF (M1 .EQ. 5) THEN
+        GOTO  310
+      ENDIF 
+      
+C      GO TO (10, 30, 30, 30, 310), M1
 C
 C...  linear problem initialization
 C
    10 DO 20 I=1,MSTAR
-   20 ZVAL(I) = 0.D0
+        ZVAL(I) = 0.D0
+   20 CONTINUE
 C
 C...  initialization
 C
@@ -2064,7 +2134,8 @@ C
            LSIDE = LSIDE + 1
            GO TO 50
    60      NROW = MSTAR + LSIDE
-   70 INTEGS(1,I) = NROW
+           INTEGS(1,I) = NROW
+   70   CONTINUE
    80 CONTINUE
       IF ( MODE .EQ. 2 )                            GO TO 90
 C
@@ -2072,7 +2143,8 @@ C...  zero the matrices to be computed
 C
       LW = KD * KD * N
       DO 84 L = 1, LW
-   84   W(L) = 0.D0
+        W(L) = 0.D0
+   84 CONTINUE
 C
 C...  the do loop 290 sets up the linear system of equations.
 C
@@ -2111,7 +2183,7 @@ C
            GO TO 110
   106      CALL APPROX (I, XII, ZVAL, AT, DUMMY, XI, N, Z, DMZ,
      1                  K, NCOMP, MMAX, M, MSTAR, 1, DUMMY, 0)
-  108      IF ( MODE .EQ. 3 )                       GO TO 120
+           IF ( MODE .EQ. 3 )                       GO TO 120
 C
 C...       find  rhs  boundary value.
 C
@@ -2225,7 +2297,7 @@ C
            GO TO 250
   246      CALL APPROX (N+1, ARIGHT, ZVAL, AT, COEF, XI, N,
      1          Z, DMZ, K, NCOMP, MMAX, M, MSTAR, 1, DUMMY, 0)
-  248      IF ( MODE .EQ. 3 )                       GO TO 260
+           IF ( MODE .EQ. 3 )                       GO TO 260
 C
 C...       find  rhs  boundary value.
 C
@@ -2368,7 +2440,7 @@ C      zval   - z(xi)
 C      dg     - the derivatives of the side condition.
 C
 C**********************************************************************
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION GI(NROW,*), ZVAL(*), DGZ(*), DG(40), RPAR(*), IPAR(*)
 C
       COMMON /COLORD/ KDUM, NDUM, MSTAR, KD, MMAX, M(20)
@@ -2381,7 +2453,8 @@ C
 C...  zero jacobian dg
 C
       DO 10 J=1,MSTAR
-   10   DG(J) = 0.D0
+        DG(J) = 0.D0
+   10 CONTINUE
 C
 C...  evaluate jacobian dg
 C
@@ -2393,7 +2466,8 @@ C
       IF (NONLIN .EQ. 0 .OR. ITER .GT. 0)           GO TO 30
       DOT = 0.D0
       DO 20 J = 1, MSTAR
-   20   DOT = DOT  +  DG(J) * ZVAL(J)
+        DOT = DOT  +  DG(J) * ZVAL(J)
+   20 CONTINUE
       DGZ(IZETA) = DOT
 C
 C...  branch according to  m o d e
@@ -2409,14 +2483,16 @@ C...  handle an initial condition
 C
       DO 40 J = 1, MSTAR
         GI(IROW,J) =  DG(J)
-   40 GI(IROW,MSTAR+J) = 0.D0
+        GI(IROW,MSTAR+J) = 0.D0
+   40 CONTINUE
       RETURN
 C
 C...  handle a final condition
 C
    50 DO 60 J= 1, MSTAR
         GI(IROW,J) = 0.D0
-   60 GI(IROW,MSTAR+J) = DG(J)
+        GI(IROW,MSTAR+J) = DG(J)
+   60 CONTINUE
       RETURN
       END
       SUBROUTINE VWBLOK (XCOL, HRHO, JJ, WI, VI, IPVTW, KD, ZVAL,
@@ -2443,7 +2519,7 @@ C      df     - the jacobian at xcol .
 C      jcomp  - counter for the component being dealt with.
 C
 C**********************************************************************
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION WI(KD,*), VI(KD,*), ZVAL(*), DMZO(*), DF(NCOMP,*)
       DIMENSION IPVTW(*),  HA(7,4), ACOL(7,4), BASM(5), ipar(*), rpar(*)
 C
@@ -2462,18 +2538,21 @@ C
 C...  calculate local basis
 C
    30        FACT = 1.D0
-             DO 150 L=1,MMAX
+             DO 151 L=1,MMAX
                 FACT = FACT * HRHO / DFLOAT(L)
                 BASM(L) = FACT
                 DO 150 J=1,K
                    HA(J,L) = FACT * ACOL(J,L)
   150        CONTINUE
+  151        CONTINUE
 C
 C... zero jacobian
 C
-      DO 40 JCOL = 1, MSTAR
+      DO 45 JCOL = 1, MSTAR
         DO 40 IR = 1, NCOMP
-   40 DF(IR,JCOL) = 0.D0
+          DF(IR,JCOL) = 0.D0
+   40   CONTINUE
+   45 CONTINUE
 C
 C...  build ncomp rows for interior collocation point x.
 C...  the linear expressions to be constructed are:
@@ -2491,19 +2570,21 @@ C
 C...  evaluate  dmzo = dmz - df * zval  once for a new mesh
 C
       IF (NONLIN .EQ. 0 .OR. ITER .GT. 0)          GO TO 60
-      DO 50 J = 1, MSTAR
+      DO 55 J = 1, MSTAR
         FACT = - ZVAL(J)
         DO 50 ID = 1, NCOMP
           DMZO(I0+ID) = DMZO(I0+ID)  +  FACT * DF(ID,J)
-  50  CONTINUE
+  50    CONTINUE
+  55  CONTINUE
 C
 C...  loop over the  ncomp  expressions to be set up for the
 C...  current collocation point.
 C
-   60 DO 70 J = 1, MSTAR
+   60 DO 75 J = 1, MSTAR
         DO 70 ID = 1, NCOMP
           VI(I0+ID,J) = DF(ID,J)
    70 CONTINUE
+   75 CONTINUE
       JN = 1
       DO 140 JCOMP = 1, NCOMP
          MJ = M(JCOMP)
@@ -2516,7 +2597,8 @@ C
               DO 80 IW = I1, I2
                  WI(IW,JW) = WI(IW,JW)  +  AJL * VI(IW,JV)
    80         CONTINUE
-   90       JW = JW + NCOMP
+              JW = JW + NCOMP
+   90       CONTINUE
             LP1 = L + 1
             IF ( L .EQ. MJ )                        GO TO 130
             DO 110 LL = LP1, MJ
@@ -2575,7 +2657,7 @@ C      nrow   - no. of rows in gi.
 C      irow   - the first row in gi to be used for equations.
 C
 C**********************************************************************
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION HB(7,4), BASM(5)
       DIMENSION GI(NROW,*), WI(*), VI(KD,*)
       DIMENSION RHSZ(*), RHSDMZ(*), IPVTW(*)
@@ -2591,12 +2673,18 @@ C
          FACT = FACT * H / DFLOAT(L)
          BASM(L+1) = FACT
          DO 20 J=1,K
-   20       HB(J,L) = FACT * B(J,L)
+           HB(J,L) = FACT * B(J,L)
+   20    CONTINUE
    30 CONTINUE
 C
 C...  branch according to  m o d e
 C
-      GO TO (40, 110), MODE
+      IF (Mode .EQ. 1) THEN
+        GOTO  40
+      ELSE IF (Mode .EQ. 2) THEN
+        GOTO  110
+      ENDIF 
+C      GO TO (40, 110), MODE
 C
 C...  set right gi-block to identity
 C
@@ -2604,8 +2692,10 @@ C
       DO 60 J = 1, MSTAR
         DO 50 IR = 1, MSTAR
           GI(IROW-1+IR,J) = 0.D0
-   50   GI(IROW-1+IR,MSTAR+J) = 0.D0
-   60 GI(IROW-1+J,MSTAR+J) = 1.D0
+          GI(IROW-1+IR,MSTAR+J) = 0.D0
+   50   CONTINUE
+        GI(IROW-1+J,MSTAR+J) = 1.D0
+   60 CONTINUE
 C
 C...  compute the block gi
 C
@@ -2620,7 +2710,8 @@ C
                RSUM = 0.D0
                DO 70 J = 1, K
                   RSUM = RSUM  -  HB(J,L) * VI(IND,JCOL)
-   70          IND = IND + NCOMP
+                  IND = IND + NCOMP
+   70          CONTINUE
                GI(ID,JCOL) = RSUM
    80       CONTINUE
             JD = ID - IROW
@@ -2644,7 +2735,8 @@ C
             RSUM = 0.D0
             DO 120 J = 1, K
                RSUM = RSUM  +  HB(J,L) * RHSDMZ(IND)
-  120       IND = IND + NCOMP
+               IND = IND + NCOMP
+  120       CONTINUE
             RHSZ(IR-L) = RSUM
   130    CONTINUE
   140 CONTINUE
@@ -2670,7 +2762,7 @@ C           from the work arrays  ispace  and  fspace .
 C
 C*****************************************************************
 C
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION Z(*), FSPACE(*), ISPACE(*), A(28), DUMMY(1)
       IS6 = ISPACE(6)
       IS5 = ISPACE(1) + 2
@@ -2707,13 +2799,23 @@ C            = 1  retrieve  z=z(u(x(i)))  directly
 C
 C**********************************************************************
 C
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION ZVAL(*), DMVAL(*), XI(*), M(*), A(7,*), DM(7)
       DIMENSION Z(*), DMZ(*), BM(4), COEF(*)
 C
       COMMON /COLOUT/ PRECIS, IOUT, IPRINT
 C
-      GO TO (10, 30, 80, 90), MODE
+
+      IF (Mode .EQ. 1) THEN
+        GOTO  10
+      ELSE IF (Mode .EQ. 2) THEN
+        GOTO  30
+      ELSE IF (Mode .EQ. 3) THEN
+        GOTO  80
+      ELSE IF (Mode .EQ. 4) THEN
+        GOTO  90
+      ENDIF
+C      GO TO (10, 30, 80, 90), MODE
 C
 C...  mode = 1 , retrieve  z( u(x) )  directly for x = xi(i).
 C
@@ -2767,7 +2869,7 @@ C
 C
 C...  evaluate  z( u(x) ).
 C
-  100 IR = 1
+      IR = 1
       IZ = (I-1) * MSTAR + 1
       IDMZ = (I-1) * K * NCOMP
       DO 140 JCOMP = 1, NCOMP
@@ -2779,18 +2881,22 @@ C
              ZSUM = 0.D0
              DO 110 J = 1, K
                ZSUM = ZSUM  +  A(J,L) * DMZ(IND)
-  110        IND = IND + NCOMP
+               IND = IND + NCOMP
+  110        CONTINUE
              DO 120 LL = 1, L
                LB = L + 1 - LL
-  120          ZSUM = ZSUM * BM(LB)  +  Z(IZ-LL)
-  130     ZVAL(IR-L) = ZSUM
+               ZSUM = ZSUM * BM(LB)  +  Z(IZ-LL)
+  120        CONTINUE
+             ZVAL(IR-L) = ZSUM
+  130    CONTINUE
   140 CONTINUE
       IF ( MODM .EQ. 0 )                            RETURN
 C
 C...  for modm = 1 evaluate  dmval(j) = mj-th derivative of uj.
 C
       DO 150 JCOMP = 1, NCOMP
-  150 DMVAL(JCOMP) = 0.D0
+        DMVAL(JCOMP) = 0.D0
+  150 CONTINUE
       IDMZ = IDMZ + 1
       DO 170 J = 1, K
          FACT = DM(J)
@@ -2820,13 +2926,14 @@ C     dm     - basis elements for m-th derivative
 C
 C**********************************************************************
 C
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION COEF(K,*), RKB(7,*), DM(*), T(10)
 C
       IF ( K .EQ. 1 )                            GO TO 70
       KPM1 = K + M - 1
       DO 10 I = 1, KPM1
-   10   T(I) = S / DFLOAT(I)
+        T(I) = S / DFLOAT(I)
+   10 Continue
       DO 40 L = 1, M
          LB = K + L + 1
          DO 30 I = 1, K
@@ -2841,7 +2948,8 @@ C
       DO 60 I = 1, K
          P = COEF(1,I)
          DO 50 J = 2, K
-   50       P = P * T(K+1-J) + COEF(J,I)
+           P = P * T(K+1-J) + COEF(J,I)
+   50    Continue
          DM(I) = P
    60 CONTINUE
       RETURN
@@ -2864,17 +2972,19 @@ C
 C
       IF ( K .EQ. 1 )                             RETURN
       KM1 = K - 1
-      DO 10 I = 1, KM1
+      DO 20 I = 1, KM1
          KMI = K - I
          DO 10 J = 1, KMI
            COEF(J) = (COEF(J+1) - COEF(J)) / (RHO(J+I) - RHO(J))
-  10  CONTINUE
+  10     CONTINUE
+  20  CONTINUE
 C
       IFAC = 1
       DO 40 I = 1, KM1
          KMI = K + 1 - I
          DO 30 J = 2, KMI
-  30        COEF(J) = COEF(J) - RHO(J+I-1) * COEF(J-1)
+           COEF(J) = COEF(J) - RHO(J+I-1) * COEF(J-1)
+  30     CONTINUE
          COEF(KMI) = DFLOAT(IFAC) * COEF(KMI)
          IFAC = IFAC * I
   40  CONTINUE
@@ -2901,7 +3011,7 @@ C                          j
 C
 C**********************************************************************
 C
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind=8) (A-H,O-Z)
       DIMENSION UHIGH(*), DMZ(*)
 C
       COMMON /COLLOC/ RHO(7), COEF(49)
@@ -2935,7 +3045,7 @@ C          dmz(i) = dmz(i)  +  v(i) * z(i), i = 1,...,n
 C
 C**********************************************************************
 C
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind =8) (A-H,O-Z)
       DIMENSION V(KD,*), DMZ(KD,*), Z(*)
 C
       JZ = 1
@@ -3063,10 +3173,11 @@ C
       DO 10 I = 1, NROW
         D(I) = 0.D0
    10 CONTINUE
-      DO 20 J = 1, NCOL
+      DO 25 J = 1, NCOL
         DO 20 I = 1, NROW
           D(I) = DMAX1( D(I) , DABS(W(I,J)))
    20 CONTINUE
+   25 CONTINUE
 C
 C...  gauss elimination with pivoting of scaled rows, loop over
 C...  k=1,.,last
@@ -3115,7 +3226,8 @@ C...       for high performance do this operations column oriented.
 C
            T = -1.0D0/T
            DO 60 I = KP1, NROW
-   60        W(I,K) = W(I,K) * T
+             W(I,K) = W(I,K) * T
+   60      Continue
            DO 70 J=KP1,NCOL
              T = W(L,J)
              IF ( L .EQ. K )                        GO TO 62
@@ -3123,7 +3235,8 @@ C
                W(K,J) = T
    62        IF ( T .EQ. 0.D0 )                     GO TO 70
              DO 64 I = KP1, NROW
-   64           W(I,J) = W(I,J) + W(I,K) * T
+               W(I,J) = W(I,J) + W(I,K) * T
+   64        Continue
    70      CONTINUE
            K = KP1
 C
@@ -3185,17 +3298,21 @@ C
 C
 C...  put the remainder of block i into ai1
 C
-      DO 10 J=1,JMAX
+      DO 15 J=1,JMAX
            DO 10 M=1,MMAX
-   10 AI1(M,J) = AI(LAST+M,LAST+J)
+             AI1(M,J) = AI(LAST+M,LAST+J)
+   10      CONTINUE
+   15 CONTINUE 
       IF (JMAX .EQ. NCOLI1)                         RETURN
 C
 C...  zero out the upper right corner of ai1
 C
       JMAXP1 = JMAX + 1
-      DO 20 J=JMAXP1,NCOLI1
+      DO 30 J=JMAXP1,NCOLI1
            DO 20 M=1,MMAX
-   20 AI1(M,J) = 0.D0
+             AI1(M,J) = 0.D0
+   20      CONTINUE
+   30 CONTINUE
       RETURN
       END
       SUBROUTINE SBBLOK ( BLOKS, INTEGS, NBLOKS, IPIVOT, X )
@@ -3230,7 +3347,8 @@ C
            CALL SUBFOR ( BLOKS(INDEX), IPIVOT(INDEXX), NROW, LAST,
      1                   X(INDEXX) )
            INDEX = NROW * INTEGS(2,I) + INDEX
-   10 INDEXX = INDEXX + LAST
+           INDEXX = INDEXX + LAST
+   10 CONTINUE
 C
 C...  back substitution pass
 C
@@ -3242,7 +3360,8 @@ C
            LAST = INTEGS(3,I)
            INDEX = INDEX - NROW * NCOL
            INDEXX = INDEXX - LAST
-   20 CALL SUBBAK ( BLOKS(INDEX), NROW, NCOL, LAST, X(INDEXX) )
+      CALL SUBBAK ( BLOKS(INDEX), NROW, NCOL, LAST, X(INDEXX))
+   20 CONTINUE
       RETURN
       END
       SUBROUTINE SUBFOR ( W, IPIVOT, NROW, LAST, X )
@@ -3276,9 +3395,10 @@ C
            X(K) = T
            IF ( T .EQ. 0.D0 )                       GO TO 20
            DO 10 I = KP1, NROW
-   10         X(I) = X(I) + W(I,K) * T
+             X(I) = X(I) + W(I,K) * T
+   10      Continue
    20 CONTINUE
-   30 RETURN
+      RETURN
       END
       SUBROUTINE SUBBAK ( W, NROW, NCOL, LAST, X )
 C
@@ -3309,7 +3429,8 @@ C
          T = - X(J)
          IF ( T .EQ. 0.D0 )                         GO TO 20
          DO 10 I = 1, LAST
-   10       X(I) = X(I) + W(I,J) * T
+            X(I) = X(I) + W(I,J) * T
+   10    CONTINUE
    20 CONTINUE
    30 IF ( LAST .EQ. 1 )                            GO TO 60
       LM1 = LAST - 1
@@ -3320,7 +3441,8 @@ C
         T = - X(K)
         IF ( T .EQ. 0.D0 )                          GO TO 50
         DO 40 I = 1, KM1
-   40     X(I) = X(I) + W(I,K) * T
+           X(I) = X(I) + W(I,K) * T
+   40   CONTINUE
    50 CONTINUE
    60 X(1) = X(1)/W(1,1)
       RETURN

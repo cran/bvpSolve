@@ -3,6 +3,7 @@
 #include <R.h>
 #include <Rdefines.h>
 #include "bvpSolve.h"
+#include "externalptr.h"
 
 /* some functions for keeping track of how many SEXPs 
  * 	are PROTECTed, and UNPROTECTing them in the case of a fortran stop.
@@ -55,7 +56,7 @@ void initParms(SEXP Initfunc, SEXP Parms) {
     init_func *initializer;
 
     PROTECT(bvp_gparms = Parms);     incr_N_Protect();
-    initializer = (init_func *) R_ExternalPtrAddr(Initfunc);
+    initializer = (init_func *) R_ExternalPtrAddrFn_(Initfunc);
     initializer(Initbvpparms);
   }
 }

@@ -632,10 +632,12 @@ C
    30 CONTINUE
       IF ( K .EQ. 0 )   K = MAX0( MMAX + 1 , 5 - MMAX )
       DO 40 I = 1, MSTAR
-   40 TZETA(I) = ZETA(I)
+        TZETA(I) = ZETA(I)
+   40 CONTINUE
       DO 50 I = 1, NTOL
        LTTOL(I) = LTOL(I) 
-   50 TOLIN(I) = TOL(I)
+       TOLIN(I) = TOL(I)
+   50 CONTINUE
       TLEFT = ALEFT
       TRIGHT = ARIGHT
       NC = NCOMP
@@ -744,17 +746,21 @@ C
       NP1 = N + 1
       IF ( IGUESS .EQ. 4 )  NP1 = NP1 + NOLD + 1
       DO 120 I=1,NZ
-  120 FSPACE( LZ+I-1 )  =  FSPACE( NP1+I )
+        FSPACE( LZ+I-1 )  =  FSPACE( NP1+I )
+  120 CONTINUE
       IDMZ = NP1 + NZ
       DO 125 I=1,NDMZ
-  125 FSPACE( LDMZ+I-1 )  =  FSPACE( IDMZ+I )
+        FSPACE( LDMZ+I-1 )  =  FSPACE( IDMZ+I )
+  125 CONTINUE
       NP1 = NOLD + 1
       IF ( IGUESS .EQ. 4 )                          GO TO 140
       DO 130 I=1,NP1
-  130 FSPACE( LXIOLD+I-1 )  =  FSPACE( LXI+I-1 )
+        FSPACE( LXIOLD+I-1 )  =  FSPACE( LXI+I-1 )
+  130 CONTINUE
       GO TO 160
   140 DO 150 I=1,NP1
-  150 FSPACE( LXIOLD+I-1 )  =  FSPACE( N+1+I )
+        FSPACE( LXIOLD+I-1 )  =  FSPACE( N+1+I )
+  150 CONTINUE
   160 CONTINUE
 C
 C...  initialize collocation points, constants, mesh.
@@ -774,7 +780,8 @@ C
       IF (IGUESS .GE. 2)                            GO TO 230
       NP1 = N + 1
       DO 210 I = 1, NP1
-  210 FSPACE( I + LXIOLD - 1 ) = FSPACE( I + LXI - 1 )
+        FSPACE( I + LXIOLD - 1 ) = FSPACE( I + LXI - 1 )
+  210 CONTINUE
       NOLD = N
       IF ( NONLIN .EQ. 0  .OR. IGUESS .EQ. 1 )      GO TO 230
 C
@@ -782,9 +789,11 @@ C...  system provides first approximation of the solution.
 C...  choose z(j) = 0  for j=1,...,mstar.
 C
       DO 220 I=1, NZ
-  220 FSPACE( LZ-1+I ) = 0.D0
+        FSPACE( LZ-1+I ) = 0.D0
+  220 CONTINUE
       DO 225 I=1, NDMZ
-  225 FSPACE( LDMZ-1+I ) = 0.D0
+        FSPACE( LDMZ-1+I ) = 0.D0
+  225 CONTINUE
   230 CONTINUE
       IF (IGUESS .GE. 2)  IGUESS = 0
       CALL CONTRL_DAE(FSPACE(LXI),FSPACE(LXIOLD),FSPACE(LZ),
@@ -807,16 +816,20 @@ C
       K2 = K * K
       ISPACE(8) = ISPACE(7) + K2 - 1
       DO 240 I = 1, NCOMP
-  240 ISPACE(8+I) = M(I)
+        ISPACE(8+I) = M(I)
+  240 CONTINUE
       DO 250 I = 1, NZ
-  250 FSPACE( N+1+I ) = FSPACE( LZ-1+I )
+        FSPACE( N+1+I ) = FSPACE( LZ-1+I )
+  250 CONTINUE
       IDMZ = N + 1 + NZ
       DO 255 I = 1, NDMZ
-  255 FSPACE( IDMZ+I ) = FSPACE( LDMZ-1+I )
+        FSPACE( IDMZ+I ) = FSPACE( LDMZ-1+I )
+  255 CONTINUE
       IC = IDMZ + NDMZ
       DO 258 I = 1, K2
-  258 FSPACE( IC+I ) = COEF(I)
-  259 icount(1) = nfunc
+        FSPACE( IC+I ) = COEF(I)
+  258 CONTINUE
+      icount(1) = nfunc
       icount(2) = njac
       icount(3) = nbound
       icount(4) = njacbound
@@ -907,7 +920,8 @@ C...  compute the maximum tolerance
 C
       CHECK = 0.D0
       DO 10 I = 1, NTOL
-   10   CHECK = DMAX1 ( TOLIN(I), CHECK )
+        CHECK = DMAX1 ( TOLIN(I), CHECK )
+   10 CONTINUE
       IMESH = 1
       ICONV = 0
       IF ( NONLIN .EQ. 0 ) ICONV = 1
@@ -1050,12 +1064,13 @@ C
 C
 C...       check convergence (iconv = 1).
 C
-       DO 120 IT = 1, NTOL
+       DO 125 IT = 1, NTOL
          INZ = LTOL(IT)
          DO 120 IZ = INZ, NZ, MSTAR
            IF ( DABS(DELZ(IZ)) .GT.
      1           TOLIN(IT) * (DABS(Z(IZ)) + 1.D0))  GO TO 60
   120      CONTINUE
+  125   CONTINUE
 C
 C...       convergence obtained
 C
@@ -1085,7 +1100,8 @@ C...       update old mesh
 C
        NP1 = N + 1
        DO 155 I = 1, NP1
-  155        XIOLD(I) = XI(I)
+        XIOLD(I) = XI(I)
+  155  CONTINUE
        NOLD = N
 C
        ITER = 0
@@ -1271,12 +1287,13 @@ C
 C...       check convergence (iconv = 0).
 C
   350      CONTINUE
-       DO 360 IT = 1, NTOL
+       DO 365 IT = 1, NTOL
          INZ = LTOL(IT)
          DO 360 IZ = INZ, NZ, MSTAR
            IF ( DABS(DQZ(IZ)) .GT.
      1         TOLIN(IT) * (DABS(Z(IZ)) + 1.D0) )   GO TO 170
   360      CONTINUE
+  365 CONTINUE
 C
 C...       convergence obtained
 C
@@ -1331,7 +1348,8 @@ C...       update old mesh
 C
   460      NP1 = N + 1
        DO 470 I = 1, NP1
-  470        XIOLD(I) = XI(I)
+           XIOLD(I) = XI(I)
+  470  CONTINUE
        NOLD = N
 C
 C...       pick a new mesh
@@ -1416,11 +1434,12 @@ C
         DSCALE(IDMZ,J) = SCAL
   30      CONTINUE
   40    CONTINUE
-      DO 45 ICOMP = 1+NCOMP,NCY
+      DO 47 ICOMP = 1+NCOMP,NCY
       SCAL = 1.D0 / (DABS(DMZ(ICOMP,J)) + 1.D0)
       DO 45 IDMZ = ICOMP, KDY, NCY
         DSCALE(IDMZ,J) = SCAL
   45    CONTINUE
+  47    CONTINUE
   50  CONTINUE
       NP1 = N + 1
       DO 60 IZ = 1, MSTAR
@@ -1532,7 +1551,18 @@ C
       common/CDAEdiag/nfunc, njac, nstep, nbound, njacbound
 C
       NFXP1 = NFXPNT +1
-      GO TO (180, 100, 50, 20, 10), MODE
+      IF (MODE .EQ. 1) THEN
+        GOTO 180
+      ELSE IF (MODE .EQ. 2) THEN
+        GOTO 100
+      ELSE IF (MODE .EQ. 3) THEN
+        GOTO 50
+      ELSE IF (MODE .EQ. 4) THEN
+        GOTO 20
+      ELSE IF (MODE .EQ. 5) THEN
+        GOTO 10
+      ENDIF          
+C      GO TO (180, 100, 50, 20, 10), MODE
 C
 C...  mode=5   set mshlmt=1 so that no mesh selection is performed
 C
@@ -1555,7 +1585,8 @@ C
       I = 0
       DO 30 J = 1, NOLD, 2
        I = I + 1
-   30 XI(I) = XIOLD(J)
+       XI(I) = XIOLD(J)
+   30 CONTINUE
    40 CONTINUE
       NP1 = N + 1
       XI(1) = ALEFT
@@ -1583,7 +1614,7 @@ C...       determine where the j-th fixed point should fall in the
 C...       new mesh - this is xi(iright) and the (j-1)st fixed
 C...       point is in xi(ileft)
 C
-       NMIN = (XRIGHT-ALEFT) / (ARIGHT-ALEFT) * FLOAT(N) + 1.5D0
+       NMIN = int((XRIGHT-ALEFT) / (ARIGHT-ALEFT) * FLOAT(N) + 1.5D0)
        IF (NMIN .GT. N-NFXPNT+J)  NMIN = N - NFXPNT + J
        IRIGHT = MAX0 (ILEFT+1, NMIN)
    60      XI(IRIGHT) = XRIGHT
@@ -1595,7 +1626,8 @@ C
        IF ( NREGN .EQ. 0 )                      GO TO 80
        DX = (XRIGHT - XLEFT) / FLOAT(NREGN+1)
        DO 70 I = 1, NREGN
-   70      XI(ILEFT+I) = XLEFT  +  FLOAT(I) * DX
+          XI(ILEFT+I) = XLEFT  +  FLOAT(I) * DX
+   70  CONTINUE
    80      ILEFT = IRIGHT
        XLEFT = XRIGHT
    90 CONTINUE
@@ -1652,7 +1684,7 @@ C...  at the relative positions 1/6, 2/6, 4/6 and 5/6 in
 C...  each subinterval.
 C
   140 KSTORE = 1
-      DO 150 I = 1, N
+      DO 155 I = 1, N
        X = XI(I)
        HD6 = (XI(I+1) - XI(I)) / 6.D0 
        DO 150 J = 1, 4
@@ -1663,6 +1695,7 @@ C
      1          K, NCOMP, NY, MMAX, M, MSTAR, 4, DUMMY, 0)
        KSTORE = KSTORE  +  MSTAR
   150 CONTINUE
+  155 CONTINUE
   160 MSHFLG = 0
       MSHNUM = 1
       MODE = 2
@@ -1673,7 +1706,8 @@ C
       DO 170 I = 1, N
        XI(J) = (XIOLD(I) + XIOLD(I+1)) / 2.D0
        XI(J+1) = XIOLD(I+1)
-  170 J = J + 2
+       J = J + 2
+  170 CONTINUE
       N = N2
       GO TO 320
 C
@@ -1715,7 +1749,7 @@ C...         otherwise use svd to define appropriate projection
 
 C...        form cb
 
-           DO 212 J = 1, NY
+          DO 1212 J = 1, NY
           DO 212 J1 = 1, NY
              FACT = 0.0D0
              ML = 0
@@ -1725,6 +1759,7 @@ C...        form cb
 211                  CONTINUE
              CB(J,J1) = FACT
 212            CONTINUE
+1212       CONTINUE
 
 C...           decompose cb
 
@@ -1734,7 +1769,7 @@ C...           decompose cb
 C...           form columns of fc
 
            ML = 0
-           DO 215 L = 1, NCOMP
+           DO 1215 L = 1, NCOMP
           ML = ML + M(L)
           DO 213 J1 = 1, NY
              BCOL(J1) = DF(J1+NCOMP,ML)
@@ -1750,6 +1785,7 @@ C...           form columns of fc
              FC(J1,L) = FACT
 C                 CONTINUE
 215            CONTINUE
+1215          CONTINUE
 
          ENDIF
 
@@ -1798,8 +1834,9 @@ C
       DO 190 J = 1, NTOL
        JJ = JTOL(J)
        JZ = LTOL(J)
-  190 SLOPE(1) = DMAX1(SLOPE(1),(DABS(D2(JJ)-D1(JJ))*WGTMSH(J)*
-     1           ONEOVH / (1.D0 + DABS(Z(JZ)))) **ROOT(J))
+       SLOPE(1) = DMAX1(SLOPE(1),(DABS(D2(JJ)-D1(JJ))*WGTMSH(J)*
+     1         ONEOVH / (1.D0 + DABS(Z(JZ)))) **ROOT(J))
+  190 CONTINUE
       SLPHMX = SLOPE(1) * (XIOLD(2) - XIOLD(1))
       ACCUM(2) = SLPHMX
       IFLIP = 1
@@ -1838,7 +1875,7 @@ C
 C
 C...  naccum=expected n to achieve .1x user requested tolerances
 C
-      NACCUM = ACCUM(NOLD+1) + 1.D0
+      NACCUM = int(ACCUM(NOLD+1) + 1.D0)
       IF ( IPRINT .LT. 0 ) THEN 
       CALL Rprintd1('Mesh degree of equidistribution =',DEGEQU)
       CALL Rprinti1('Prediction for required N = ', NACCUM)
@@ -1887,13 +1924,14 @@ C
       XI(N+1) = ARIGHT
       DO 310 I = 1, NFXP1
        IF ( I .EQ. NFXP1 )                      GO TO 250
+       LNEW=LOLD
        DO 230 J = LOLD, NOLDP1
          LNEW = J
          IF ( FIXPNT(I) .LE. XIOLD(J) )         GO TO 240
   230      CONTINUE
   240      CONTINUE
        ACCR = ACCUM(LNEW) + (FIXPNT(I)-XIOLD(LNEW))*SLOPE(LNEW-1)
-       NREGN = (ACCR-ACCL) / ACCUM(NOLDP1) * FLOAT(N) - .5D0
+       NREGN = int((ACCR-ACCL) / ACCUM(NOLDP1) * FLOAT(N) - .5D0)
        NREGN = MIN0(NREGN, N - IN - NFXP1 + I)
        XI(IN + NREGN + 1) = FIXPNT(I)
        GO TO 260
@@ -1906,14 +1944,16 @@ C
        DO 290 J = 1, NREGN
          IN = IN + 1
          TEMP = TEMP + TSUM
+         LCARRY=LOLD
          DO 270 L = LOLD, LNEW
            LCARRY = L
            IF ( TEMP .LE. ACCUM(L) )            GO TO 280
   270        CONTINUE
   280        CONTINUE
          LOLD = LCARRY
-  290      XI(IN) = XIOLD(LOLD-1) + (TEMP - ACCUM(LOLD-1)) /
+        XI(IN) = XIOLD(LOLD-1) + (TEMP - ACCUM(LOLD-1)) /
      1     SLOPE(LOLD-1)
+  290    CONTINUE
   300      IN = IN + 1
        ACCL = ACCR
        LOLD = LNEW
@@ -1987,12 +2027,13 @@ C...  assign weights for error estimate
 C
       KOFF = K * ( K + 1 ) / 2
       IZ = 1
-      DO 10 J = 1, NCOMP
+      DO 15 J = 1, NCOMP
        MJ = M(J)
        DO 10 L = 1, MJ
          WGTERR(IZ) = CNSTS1(KOFF - MJ + L)
          IZ = IZ + 1
    10 CONTINUE
+   15 CONTINUE
 C
 C...  assign array values for mesh selection: wgtmsh, jtol, and root
 C
@@ -2013,7 +2054,22 @@ C
 C
 C...  specify collocation points
 C
-      GO TO (50,60,70,80,90,100,110), K
+      IF (K .EQ. 1) THEN
+         GOTO 50
+      ELSE IF (K .EQ. 2) THEN
+         GOTO 60
+      ELSE IF (K .EQ. 3) THEN
+         GOTO 70
+      ELSE IF (K .EQ. 4) THEN
+         GOTO 80
+      ELSE IF (K .EQ. 5) THEN
+         GOTO 90
+      ELSE IF (K .EQ. 6) THEN
+         GOTO 100
+      ELSE IF (K .EQ. 7) THEN
+         GOTO 110
+      ENDIF         
+C      GO TO (50,60,70,80,90,100,110), K
    50 RHO(1) = 0.D0
       GO TO 120
    60 RHO(2) = .57735026918962576451D0
@@ -2061,7 +2117,8 @@ C...  the values of asave are to be used in  newmsh  and errchk .
 C
       DO 140 J = 1, K
        DO 135 I = 1, K
-  135      COEF(I,J) = 0.D0
+          COEF(I,J) = 0.D0
+  135  CONTINUE
        COEF(J,J) = 1.D0
        CALL VMONDE (RHO, COEF(1,J), K)
   140 CONTINUE
@@ -2120,7 +2177,8 @@ C
       IFIN = 1
       MSHFLG = 1
       DO 10 J = 1, MSTAR
-   10   ERREST(J) = 0.D0
+        ERREST(J) = 0.D0
+   10 CONTINUE
       DO 60 IBACK = 1, N
        I = N + 1 - IBACK
 C
@@ -2286,14 +2344,27 @@ C..Francesca Mazzia Added initialization
          YVAL(I) = 0.D0
       ENDDO
 
-      GO TO (10, 30, 30, 30, 310), M1
+      IF (M1 .EQ. 1) THEN
+        GOTO 10
+      ELSE IF (M1 .EQ. 2) THEN
+        GOTO 30
+      ELSE IF (M1 .EQ. 3) THEN
+        GOTO 30
+      ELSE IF (M1 .EQ. 4) THEN
+        GOTO 30
+      ELSE IF (M1 .EQ. 5) THEN
+        GOTO 310
+      ENDIF        
+C      GO TO (10, 30, 30, 30, 310), M1
 C
 C...  linear problem initialization
 C
    10 DO 20 I=1,MSTAR
-   20   ZVAL(I) = 0.D0
+        ZVAL(I) = 0.D0
+   20 CONTINUE
       DO 25 I=1,NY
-   25   YVAL(I) = 0.D0
+        YVAL(I) = 0.D0
+   25 CONTINUE
 C
 C...  initialization
 C
@@ -2325,7 +2396,8 @@ C
        LSIDE = LSIDE + 1
        GO TO 50
    60      NROW = MSTAR + LSIDE
-   70      INTEGS(1,I) = NROW
+           INTEGS(1,I) = NROW
+   70  CONTINUE
    80 CONTINUE
       IF ( MODE .EQ. 2 )                            GO TO 90
 C
@@ -2333,7 +2405,8 @@ C...  zero the matrices to be computed
 C
       LW = KDY * KDY * N
       DO 84 L = 1, LW
-   84   W(L) = 0.D0
+        W(L) = 0.D0
+   84 CONTINUE
 C
 C...  the do loop 290 sets up the linear system of equations.
 C
@@ -2374,7 +2447,7 @@ C.. Francesca Mazzia  y--> yval ?
 C.. Francesca Mazzia  y--> yval  ?
   106    CALL APPROX_DAE (I, XII, ZVAL, Y, AT, DUMMY, XI, N, Z, DMZ,
      1                  K, NCOMP, NY, MMAX, M, MSTAR, 1, DUMMY, 0)
-  108      IF ( MODE .EQ. 3 )                       GO TO 120
+         IF ( MODE .EQ. 3 )                       GO TO 120
 C
 C...       find  rhs  boundary value.
 C
@@ -2420,7 +2493,8 @@ c karline: added
              nfunc = nfunc  + 1
   
          DO 175 JJ = NCOMP+1,NCY
-  175          DMZO(IRHS+JJ-1) = 0.D0
+             DMZO(IRHS+JJ-1) = 0.D0
+  175    CONTINUE
          DO 180 JJ = 1, NCY
            VALUE = DMZO(IRHS) - F(JJ)
            RHS(IRHS) = - VALUE
@@ -2441,7 +2515,7 @@ C
          CALL FSUB (NCY,XCOL, ZVAL, DMZ(IRHS+NCOMP), F,RPAR,IPAR)
 c karline: added           
              nfunc = nfunc  + 1
-		 
+         
          DO 195 JJ = 1, NCY
            VALUE = F(JJ)
            IF (JJ .LE. NCOMP) VALUE = VALUE - DMZ(IRHS)
@@ -2502,7 +2576,7 @@ C
           CALL FSUB (NCY,XI1, ZVAL, YVAL, F,RPAR,IPAR)
 c karline: added           
              nfunc = nfunc  + 1
-		  
+          
         END IF
 C
         CALL GBLOCK_DAE(H, G(IG), NROW, IZETA, W(IW), V(IV), KDY,
@@ -2535,7 +2609,7 @@ C.. Francesca Mazzia  y--> yval  ?
 C.. Francesca Mazzia  y--> yval  ?
   246      CALL APPROX_DAE (N+1, ARIGHT, ZVAL, Y, AT, COEF, XI, N,
      1       Z, DMZ, K, NCOMP, NY, MMAX, M, MSTAR, 1, DUMMY, 0)
-  248      IF ( MODE .EQ. 3 )                       GO TO 260
+           IF ( MODE .EQ. 3 )                       GO TO 260
 C
 C...       find  rhs  boundary value.
 C
@@ -2696,12 +2770,13 @@ C
       COMMON /DAENLN/ NONLIN, ITER, LIMIT, ICARE, IGUESS, INDEX
       integer nfunc, njac, nstep, nbound, njacbound
       common/CDAEdiag/nfunc, njac, nstep, nbound, njacbound
-	  
+      
 C
 C...  zero jacobian dg
 C
       DO 10 J=1,MSTAR
-   10   DG(J) = 0.D0
+       DG(J) = 0.D0
+   10 CONTINUE
 C
 C...  evaluate jacobian dg
 C
@@ -2713,7 +2788,8 @@ C
       IF (NONLIN .EQ. 0 .OR. ITER .GT. 0)           GO TO 30
       DOT = 0.D0
       DO 20 J = 1, MSTAR
-   20   DOT = DOT  +  DG(J) * ZVAL(J)
+        DOT = DOT  +  DG(J) * ZVAL(J)
+   20 CONTINUE 
       DGZ(IZETA) = DOT
 C
 C...  branch according to  m o d e
@@ -2729,14 +2805,16 @@ C...  handle an initial condition
 C
       DO 40 J = 1, MSTAR
       GI(IROW,J) =  DG(J)
-   40 GI(IROW,MSTAR+J) = 0.D0
+      GI(IROW,MSTAR+J) = 0.D0
+   40   CONTINUE
       RETURN
 C
 C...  handle a final condition
 C
    50 DO 60 J= 1, MSTAR
       GI(IROW,J) = 0.D0
-   60 GI(IROW,MSTAR+J) = DG(J)
+      GI(IROW,MSTAR+J) = DG(J)
+   60   CONTINUE
       RETURN
       END
       SUBROUTINE VWBLOK_dae(XCOL, HRHO, JJ, WI, VI, IPVTW, KDY, ZVAL,
@@ -2773,7 +2851,7 @@ C**********************************************************************
       integer nfunc, njac, nstep, nbound, njacbound
       common/CDAEdiag/nfunc, njac, nstep, nbound, njacbound
 
-	  
+      
 C
 C...  initialize  wi
 C
@@ -2784,19 +2862,22 @@ C
 C
 C...  calculate local basis
 C
-   30        FACT = 1.D0
-         DO 35 L=1,MMAX
+        FACT = 1.D0
+        DO 37 L=1,MMAX
         FACT = FACT * HRHO / FLOAT(L)
         BASM(L) = FACT
         DO 35 J=1,K
            HA(J,L) = FACT * ACOL(J,L)
   35         CONTINUE
+  37    CONTINUE
 C
 C... zero jacobian
 C
-      DO 40 JCOL = 1, MSTAR+NY
+      DO 45 JCOL = 1, MSTAR+NY
       DO 40 IR = 1, NCY
-   40   DF(IR,JCOL) = 0.D0
+        DF(IR,JCOL) = 0.D0
+   40 CONTINUE
+   45 CONTINUE
 C
 C...  build ncy rows for interior collocation point x.
 C...  the linear expressions to be constructed are:
@@ -2807,7 +2888,7 @@ C...        -  df(id,mstar+1)*u(1) - ... - df(id,mstar+ny)*y(ny)
 C...  for id = 1 to ncy  (m(id)=0 for id &gt; ncomp).
 C
       CALL DFSUB (NCY, XCOL, ZVAL, YVAL, DF,RPAR,IPAR)
-      njac = njac +1	  
+      njac = njac +1      
       I0 = (JJ-1) * NCY
       I1 = I0 + 1
       I2 = I0 + NCY
@@ -2815,7 +2896,7 @@ C
 C...  evaluate  dmzo = dmzo - df * (zval,yval)  once for a new mesh
 C
       IF (NONLIN .EQ. 0 .OR. ITER .GT. 0)          GO TO 60
-      DO 50 J = 1, MSTAR+NY
+      DO 55 J = 1, MSTAR+NY
       IF (J .LE. MSTAR) THEN
       FACT = - ZVAL(J)
       ELSE
@@ -2824,14 +2905,16 @@ C
       DO 50 ID = 1, NCY
       DMZO(I0+ID) = DMZO(I0+ID)  +  FACT * DF(ID,J)
   50  CONTINUE
+  55  CONTINUE
 C
 C...  loop over the  ncomp  expressions to be set up for the
 C...  current collocation point.
 C
-   60 DO 70 J = 1, MSTAR
+   60 DO 75 J = 1, MSTAR
       DO 70 ID = 1, NCY
       VI(I0+ID,J) = DF(ID,J)
    70 CONTINUE
+   75 CONTINUE
       JN = 1
       DO 140 JCOMP = 1, NCOMP
        MJ = M(JCOMP)
@@ -2844,7 +2927,8 @@ C
           DO 80 IW = I1, I2
          WI(IW,JW) = WI(IW,JW)  +  AJL * VI(IW,JV)
    80         CONTINUE
-   90       JW = JW + NCY
+            JW = JW + NCY
+   90   CONTINUE
         LP1 = L + 1
         IF ( L .EQ. MJ )                        GO TO 130
         DO 110 LL = LP1, MJ
@@ -2859,11 +2943,12 @@ C
 C
 C...  loop for the algebraic solution components
 C
-      DO 150 JCOMP = 1,NY
+      DO 160 JCOMP = 1,NY
       JD = NCOMP+JCOMP
       DO 150 ID = 1,NCY
       WI(I0+ID,I0+JD) = -DF(ID,MSTAR+JCOMP)
   150 CONTINUE
+  160 CONTINUE
       IF ( JJ .LT. K )                          RETURN
 C
 C   ...decompose the wi block and solve for the mstar columns of vi
@@ -2939,12 +3024,18 @@ C
        FACT = FACT * H / FLOAT(L)
        BASM(L+1) = FACT
        DO 20 J=1,K
-   20       HB(J,L) = FACT * B(J,L)
+         HB(J,L) = FACT * B(J,L)
+   20  CONTINUE
    30 CONTINUE
 C
 C...  branch according to  m o d e
 C
-      GO TO (40, 120 ), MODE
+      IF (MODE .EQ. 1) THEN
+        GOTO 40
+      ELSE IF (MODE .EQ. 2) THEN
+        GOTO 120
+      ENDIF    
+C      GO TO (40, 120 ), MODE
 C
 C...  set right gi-block to identity
 C
@@ -2952,9 +3043,11 @@ C
       IF (MODL .EQ. 2)                          GO TO 110
       DO 60 J = 1, MSTAR
       DO 50 IR = 1, MSTAR
-      GI(IROW-1+IR,J) = 0.D0
-   50     GI(IROW-1+IR,MSTAR+J) = 0.D0
-   60   GI(IROW-1+J,MSTAR+J) = 1.D0
+       GI(IROW-1+IR,J) = 0.D0
+       GI(IROW-1+IR,MSTAR+J) = 0.D0
+   50 CONTINUE
+      GI(IROW-1+J,MSTAR+J) = 1.D0
+   60 CONTINUE
 C
 C...  compute the block gi
 C
@@ -2968,8 +3061,9 @@ C
            IND = ICOMP
            RSUM = 0.D0
            DO 70 J = 1, K
-          RSUM = RSUM  -  HB(J,L) * VI(IND,JCOL)
-   70             IND = IND + NCY
+             RSUM = RSUM  -  HB(J,L) * VI(IND,JCOL)
+             IND = IND + NCY
+   70      CONTINUE
            GI(ID,JCOL) = RSUM
    80       CONTINUE
         JD = ID - IROW
@@ -2997,7 +3091,7 @@ C
 C
 C...  form  cb
 C
-      DO 102 I=1,NY
+      DO 202 I=1,NY
       DO 102 J=1,NY
       FACT = 0
       ML = 0
@@ -3007,6 +3101,7 @@ C
   101     CONTINUE
       CB(I,J) = FACT
   102 CONTINUE
+  202 CONTINUE
 C
 C...  decompose cb
 C
@@ -3015,14 +3110,16 @@ C
 C
 C...  form columns of fc
 C
-      DO 105 J=1,MSTAR+NY
+      DO 205 J=1,MSTAR+NY
 
       IF (J .LE. MSTAR) THEN
       DO 103 I=1,NY
-  103      BCOL(I) = DF(I+NCOMP,J)
+         BCOL(I) = DF(I+NCOMP,J)
+  103 CONTINUE
       ELSE
        DO 203 I=1,NY
-  203      BCOL(I) = 0.0D0
+         BCOL(I) = 0.0D0
+  203  CONTINUE
        BCOL(J-MSTAR) = 1.D0
       END IF
 
@@ -3035,12 +3132,13 @@ C
   104     CONTINUE
       FC(I,J) = FACT
   105 CONTINUE
+  205 CONTINUE
 C
       END IF
 C
 C...  update gi
 C
-      DO 108 J = 1,MSTAR
+      DO 109 J = 1,MSTAR
       DO 107 I=1,NCOMP
       FACT = 0
       DO 106 L=1,MSTAR
@@ -3053,11 +3151,12 @@ C
       ML = ML + M(I)
       GI(IROW-1+ML,J) = GI(IROW-1+ML,J) - BCOL(I)
   108 CONTINUE
+  109 CONTINUE
 C
 C...  prepare extra rhs piece; two if new mesh
 C
   110 IF (INDEX .EQ. 1 .OR. NY .EQ. 0 )           RETURN
-      DO 115 JCOL=1,2
+      DO 118 JCOL=1,2
       DO 112 I=1,NCOMP
       FACT = 0
       DO 111  L=1,NY
@@ -3068,13 +3167,15 @@ C
 C
       IF (MODL .NE. 1 .OR. JCOL .EQ. 2)         RETURN
       DO 113 I = 1+NCOMP,NY+NCOMP
-  113     F(I) = 0
-      DO 114 J=1,MSTAR
+         F(I) = 0
+  113 CONTINUE
+      DO 116 J=1,MSTAR
       FACT = -ZVAL(J)
       DO 114 I = 1+NCOMP,NY+NCOMP
         F(I) = F(I) + DF(I,J) * FACT
   114   CONTINUE
-  115 CONTINUE
+  116   CONTINUE
+  118 CONTINUE
       RETURN
 C
 C...  compute the appropriate piece of  rhsz
@@ -3090,7 +3191,8 @@ C
         RSUM = 0.D0
         DO 125 J = 1, K
            RSUM = RSUM  +  HB(J,L) * RHSDMZ(IND)
-  125       IND = IND + NCY
+           IND = IND + NCY
+  125  CONTINUE
         RHSZ(IR-L) = RSUM
   130    CONTINUE
   140 CONTINUE
@@ -3144,14 +3246,16 @@ C...  compute the maximum tolerance
 C
       CHECK = 0.D0
       DO 5 I = 1, NTOL
-    5   CHECK = DMAX1 ( TOLIN(I), CHECK )
+        CHECK = DMAX1 ( TOLIN(I), CHECK )
+    5 CONTINUE
 C
 C...  construct d and find its svd
 C
-      DO 10 I=1,NY
+      DO 15 I=1,NY
       DO 10 J=1,NY
       D(I,J) = DF(I+NCOMP,J+MSTAR)
    10 CONTINUE
+   15 CONTINUE
       JOB = 11
       CALL DSVDC (D,NY,NY,NY,S,E,U,NY,V,NY,WORK,JOB,INFO)
 C
@@ -3166,16 +3270,18 @@ C
 C...  if d has full rank then no projection is needed
 C
    30 IF (IRANK .EQ. NY) THEN
-      DO 35 I=1,NCOMP
+      DO 37 I=1,NCOMP
       DO 35 J=1,MSTAR+NY
-   35       FC(I,J) = 0.D0
+         FC(I,J) = 0.D0
+   35 CONTINUE
+   37 CONTINUE
       RETURN
       ELSE
 C
 C...  form projected cb
 C
       IR = NY-IRANK
-      DO 50 I=1,NY
+      DO 55 I=1,NY
       DO 50 J=1,NY
       FACT = 0
       ML = 0
@@ -3185,24 +3291,29 @@ C
    40     CONTINUE
       D(I,J) = FACT
    50 CONTINUE
-      DO 70 I=1,NY
-      DO 60 J=1,IR
+   55 CONTINUE
+      DO 75 I=1,NY
+      DO 65 J=1,IR
       WORK(J) = 0
       DO 60 L=1,NY
         WORK(J) = WORK(J) + D(I,L)*V(L,J+IRANK)
    60   CONTINUE
+   65 CONTINUE
       DO 70 J=1,IR
       D(I,J) = WORK(J)
    70 CONTINUE
-      DO 90 I=1,IR
-      DO 80 J=1,IR
+   75 CONTINUE
+      DO 95 I=1,IR
+      DO 85 J=1,IR
       WORK(J) = 0
       DO 80 L=1,NY
         WORK(J) = WORK(J) + U(L,I+IRANK)*D(L,J)
    80   CONTINUE
+   85 CONTINUE
       DO 90 J=1,IR
        D(I,J) = WORK(J)
    90 CONTINUE
+   95 CONTINUE
 C
 C...  decompose projected cb
 C
@@ -3211,15 +3322,17 @@ C
 C
 C...  form columns of fc
 C
-      DO 130 J=MSTAR+1,MSTAR+NY
+      DO 135 J=MSTAR+1,MSTAR+NY
       DO 100 I=1,IR
-  100     WORK(I) = U(J-MSTAR,I+IRANK)
+         WORK(I) = U(J-MSTAR,I+IRANK)
+  100 CONTINUE   
       CALL DGESL  (D, NY, IR, IPVTCB, WORK, 0)
-      DO 110 I=1,NY
+      DO 115 I=1,NY
       U(J-MSTAR,I) = 0
       DO 110 L=1,IR
         U(J-MSTAR,I) = U(J-MSTAR,I) + V(I,L+IRANK)*WORK(L)
   110   CONTINUE
+  115 CONTINUE
       DO 130 I=1,NCOMP
       FACT = 0
       DO 120 L=1,NY
@@ -3227,10 +3340,11 @@ C
   120     CONTINUE
       FC(I,J) = FACT
   130 CONTINUE
+  135 CONTINUE
 C
       IF (MODE .EQ. 1) THEN
 C
-      DO 150 I=1,NCOMP
+      DO 152 I=1,NCOMP
       DO 150 J=1,MSTAR
       FACT = 0
       DO 140 L=1,NY
@@ -3238,10 +3352,11 @@ C
   140     CONTINUE
       FC(I,J) = FACT
   150 CONTINUE
+  152 CONTINUE
 C
       ELSE
 C
-      DO 160 I=1,NCOMP
+      DO 165 I=1,NCOMP
       MJ = 0
       DO 160 J=1,NCOMP
       MJ = MJ + M(J)
@@ -3251,6 +3366,7 @@ C
   155     CONTINUE
       FC(I,J) = FACT
   160 CONTINUE
+  165 CONTINUE
       END IF
 C
       END IF
@@ -3336,7 +3452,16 @@ C
 C
       COMMON /DAEOUT/ PRECIS, IOUT, IPRINT
 C
-      GO TO (10, 30, 80, 90), MODE
+      IF (MODE .EQ. 1) THEN
+        GOTO 10
+      ELSE IF (MODE .EQ. 2) THEN
+        GOTO 30
+      ELSE IF (MODE .EQ. 3) THEN
+        GOTO 80
+      ELSE IF (MODE .EQ. 4) THEN
+        GOTO 90
+      ENDIF    
+C      GO TO (10, 30, 80, 90), MODE
 C
 C...  mode = 1 , retrieve  z( u(x) )  directly for x = xi(i).
 C
@@ -3390,7 +3515,7 @@ C
 C
 C...  evaluate  z( u(x) ).
 C
-  100 IR = 1
+      IR = 1
       NCY = NCOMP + NY
       IZ = (I-1) * MSTAR + 1
       IDMZ = (I-1) * K * NCY
@@ -3403,18 +3528,22 @@ C
          ZSUM = 0.D0
          DO 110 J = 1, K
            ZSUM = ZSUM  +  A(J,L) * DMZ(IND)
-  110          IND = IND + NCY
+           IND = IND + NCY
+  110    CONTINUE
          DO 120 LL = 1, L
            LB = L + 1 - LL
-  120          ZSUM = ZSUM * BM(LB)  +  Z(IZ-LL)
-  130     ZVAL(IR-L) = ZSUM
+           ZSUM = ZSUM * BM(LB)  +  Z(IZ-LL)
+  120    CONTINUE
+         ZVAL(IR-L) = ZSUM
+  130  CONTINUE
   140 CONTINUE
       IF ( MODM .EQ. 0 )                            RETURN
 C
 C...  for modm = 1 evaluate  y(j) = j-th component of y.
 C
       DO 150 JCOMP = 1, NY
-  150    YVAL(JCOMP) = 0.D0
+        YVAL(JCOMP) = 0.D0
+  150 CONTINUE
       DO 170 J = 1, K
        IND = IDMZ + (J-1)*NCY + NCOMP + 1
        FACT = DM(J)
@@ -3428,7 +3557,8 @@ C
 C...  for modm = 2 evaluate  dmval(j) = mj-th derivative of uj.
 C
       DO 180 JCOMP = 1, NCOMP
-  180    DMVAL(JCOMP) = 0.D0
+        DMVAL(JCOMP) = 0.D0
+  180 CONTINUE 
       DO 200 J = 1, K
        IND = IDMZ + (J-1)*NCY + 1
        FACT = DM(J)
