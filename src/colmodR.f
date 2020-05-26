@@ -1130,7 +1130,7 @@ C.... The User Is Warned Of This Possibility.
          If (Iprec .eq. 0 .and. Phit .gt. Phimax) Then
             If (Iprint .lt. 1) Then
       CALL Rprint(' ** Machine precision (possibly) not sufficient ')
-      CALL Rprint(' for epsilon less than ',Eps)
+      CALL Rprint(' for epsilon less than Eps')  ! KARLINE- CHANGED 12-11-2019
             Endif
             Epsp = Eps
             Iprec = 1

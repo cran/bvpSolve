@@ -6,7 +6,7 @@
 #include <math.h>
 
 //  The differential system:
-  void fsub(int *n, double *x, double *z, double *f,
+  void fsub_el(int *n, double *x, double *z, double *f,
         double * RPAR, int * IPAR)  {
         
       f[0]=cos(z[2]);
@@ -17,7 +17,7 @@
   }
 
 // The analytic Jacobian for the F-function:
-  void dfsub(int * n, double *x, double *z, double * df,
+  void dfsub_el(int * n, double *x, double *z, double * df,
       double *RPAR, int *IPAR)  {
 
       int j;
@@ -32,7 +32,7 @@
   }
 
 // The boundary conditions:
-  void gsub(int *i, int *n, double *z, double *g,
+  void gsub_el(int *i, int *n, double *z, double *g,
       double *RPAR, int *IPAR)  {
       
 /*   I == the boundary condition "number".
@@ -58,7 +58,7 @@
   }
 
 // The analytic Jacobian for the G-function:
-  void dgsub(int *i, int *n, double *z, double *dg,
+  void dgsub_el(int *i, int *n, double *z, double *dg,
       double *RPAR, int *IPAR)  {
 
       int j;

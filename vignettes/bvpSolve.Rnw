@@ -1479,8 +1479,8 @@ dyn.unload("elastica.dll")
 %% the elastica problem implemented in C has been made a part of the package
 <<include=FALSE, echo = FALSE>>=
 outF <- bvpcol(ncomp = 5,
-               x = seq(0, 0.5, len = 16), leftbc = 3, func = "fsub", 
-               jacfunc = "dfsub", bound = "gsub", jacbound = "dgsub",
+               x = seq(0, 0.5, len = 16), leftbc = 3, func = "fsub_el", 
+               jacfunc = "dfsub_el", bound = "gsub_el", jacbound = "dgsub_el",
                dllname = "bvpSolve")
 @
 

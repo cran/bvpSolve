@@ -5,9 +5,9 @@ c or with system("R CMD SHLIB elastica.f")
 
 c  The differential system coded up in a suitable form is as follows:
 
-      SUBROUTINE fsub(NCOMP,X,Z,F,RPAR,IPAR)
+      SUBROUTINE fsubf(NCOMP,X,Z,F,RPAR,IPAR)
       IMPLICIT NONE
-      INTEGER NCOMP, IPAR  , I
+      INTEGER NCOMP, IPAR
       DOUBLE PRECISION F, Z, RPAR, X
       DIMENSION Z(*),F(*)
       DIMENSION RPAR(*), IPAR(*)
@@ -23,13 +23,12 @@ c  The differential system coded up in a suitable form is as follows:
 
 c The analytic Jacobian for the F-function:
 
-      SUBROUTINE dfsub(NCOMP,X,Z,DF,RPAR,IPAR)
+      SUBROUTINE dfsubf(NCOMP,X,Z,DF,RPAR,IPAR)
       IMPLICIT NONE
       INTEGER NCOMP, IPAR, I, J
       DOUBLE PRECISION X, Z, DF, RPAR
       DIMENSION Z(*),DF(NCOMP,*)
       DIMENSION RPAR(*), IPAR(*)
-      CHARACTER (len=50) str
 
       DO I=1,5
          DO J=1,5
@@ -55,7 +54,7 @@ C     dF4/dZ5
 
 c The boundary conditions can be coded up in Fortran 77:
 
-      SUBROUTINE gsub(I,NCOMP,Z,G,RPAR,IPAR)
+      SUBROUTINE gsubf(I,NCOMP,Z,G,RPAR,IPAR)
       IMPLICIT NONE
       INTEGER I, NCOMP, IPAR
       DOUBLE PRECISION Z, RPAR, G
@@ -90,7 +89,7 @@ C     BC(5) = phi(0.5) = -pi/2
 
 c The analytic Jacobian for the G-function:
 
-      SUBROUTINE dgsub(I,NCOMP,Z,DG,RPAR,IPAR)
+      SUBROUTINE dgsubf(I,NCOMP,Z,DG,RPAR,IPAR)
       IMPLICIT NONE
       INTEGER I, NCOMP, IPAR
       DOUBLE PRECISION Z, DG, RPAR

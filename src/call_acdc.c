@@ -151,13 +151,13 @@ static void C_acdc_deriv_func (int *n, double *x, double *y,
                                REAL(EPS)[0] = *eps;
   for (i = 0; i < n_eq ; i++)  REAL(Y)[i]   = y[i];
 
-  PROTECT(X = ScalarReal(*x));                         incr_N_Protect();
-  PROTECT(R_fcall = lang4(R_cont_deriv_func,X,Y,EPS)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));               incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                         
+  PROTECT(R_fcall = lang4(R_cont_deriv_func,X,Y,EPS)); 
+  PROTECT(ans = eval(R_fcall, R_envir));               
 
   for (i = 0; i < n_eq ; i++) ydot[i] = REAL(VECTOR_ELT(ans,0))[i];
 
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /* interface between fortran call to jacobian and R function                  */
@@ -169,12 +169,12 @@ static void C_acdc_jac_func (int *n, double *x, double *y, double *pd,
                              REAL(EPS)[0] = *eps;
   for (i = 0; i < n_eq; i++) REAL(Y)[i]   = y[i];
 
-  PROTECT(X = ScalarReal(*x));                         incr_N_Protect();
-  PROTECT(R_fcall = lang4(R_cont_jac_func,X,Y,EPS));   incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));               incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                         
+  PROTECT(R_fcall = lang4(R_cont_jac_func,X,Y,EPS));   
+  PROTECT(ans = eval(R_fcall, R_envir));               
 
   for (i = 0; i < n_eq * n_eq; i++)  pd[i] = REAL(ans)[i];
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /* interface between fortran call to boundary condition and R function        */
@@ -187,12 +187,12 @@ static void C_acdc_bound_func (int *ii, int *n, double *y, double *gout,
                              REAL(EPS)[0]  = *eps;
   for (i = 0; i < n_eq ; i++)  REAL(Y)[i] = y[i];
 
-  PROTECT(J = ScalarInteger(*ii));                     incr_N_Protect();
-  PROTECT(R_fcall = lang4(R_cont_bound_func,J,Y,EPS)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));               incr_N_Protect();
+  PROTECT(J = ScalarInteger(*ii));                     
+  PROTECT(R_fcall = lang4(R_cont_bound_func,J,Y,EPS)); 
+  PROTECT(ans = eval(R_fcall, R_envir));               
   /* only one element returned... */
   gout[0] = REAL(ans)[0];
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 /*interface between fortran call to jacobian of boundary and R function      */
 
@@ -205,12 +205,12 @@ static void C_acdc_jacbound_func (int *ii, int *n, double *y, double *dg,
 
   for (i = 0; i < n_eq; i++) REAL(Y)[i] = y[i];
 
-  PROTECT(J = ScalarInteger(*ii));                        incr_N_Protect();
-  PROTECT(R_fcall = lang4(R_cont_jacbound_func,J,Y,EPS)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));                  incr_N_Protect();
+  PROTECT(J = ScalarInteger(*ii));                        
+  PROTECT(R_fcall = lang4(R_cont_jacbound_func,J,Y,EPS)); 
+  PROTECT(ans = eval(R_fcall, R_envir));                  
 
   for (i = 0; i < n_eq ; i++)  dg[i] = REAL(ans)[i];
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /* -----------------------------------------------------------------------------
@@ -255,7 +255,7 @@ SEXP call_acdc(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
 /******************************************************************************/
 
 /*                      #### initialisation ####                              */
-  init_N_Protect();
+  int nprot = 0;
 
   aleft  =REAL(Aleft)[0];
   aright =REAL(Aright)[0];
@@ -352,14 +352,23 @@ SEXP call_acdc(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
 
   /* initialise global R-variables... */
   if (isDll == 0) {
-    PROTECT(EPS = NEW_NUMERIC(1));              incr_N_Protect();
-    PROTECT(Y = allocVector(REALSXP,ncomp));    incr_N_Protect();
+    PROTECT(EPS = NEW_NUMERIC(1));              nprot++;
+    PROTECT(Y = allocVector(REALSXP,ncomp));    nprot++;
   }
 
   /* Initialization of Parameters and Forcings (DLL functions)   */
   epsval = (double *) R_alloc(1, sizeof(double)); epsval[0] = 0.;
   isForcing = initForcings(flist);
-  initParms(Initfunc, Parms);
+  // initParms(Initfunc, Parms);
+  if (Initfunc != NA_STRING) {
+    if (inherits(Initfunc, "NativeSymbol"))  {
+      init_func *initializer;
+      
+      PROTECT(bvp_gparms = Parms);     nprot++;
+      initializer = (init_func *) R_ExternalPtrAddrFn_(Initfunc);
+      initializer(Initbvpparms);
+    }
+  }
 
   R_envir = rho;
 
@@ -445,27 +454,27 @@ SEXP call_acdc(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
 
 /* error("Till here.\n"); iflag - The Mode Of Return From acdc                                      */
 	if (iflag == 4)      {
-	   unprotect_all();
+	   UNPROTECT(nprot);
      error("One of the input parameters is invalid.\n");
   } else if (iflag == 1) 	{
-	  unprotect_all();
-	  error("Terminated: final problem not solved.\n");
+    UNPROTECT(nprot);
+    error("Terminated: final problem not solved.\n");
 	} else if (iflag == 2) 	{
-	  unprotect_all();
+	  UNPROTECT(nprot);
 	  error("Terminated: too many continuation steps\n");
 	} else if (iflag == 3)  	{
-	  unprotect_all();
+	  UNPROTECT(nprot);
 	  error("Terminated: ill conditioned problem.\n");
 	} else	{
 /*                   ####   returning output   ####                           */
     nx = nmesh;
 
-    PROTECT(yout = allocVector(REALSXP,(ncomp+1)*(nx))); incr_N_Protect();
+    PROTECT(yout = allocVector(REALSXP,(ncomp+1)*(nx))); nprot++;
 	  for (j = 0; j < nx; j++)       REAL(yout)[j]    = xx[j];
     for (j = 0; j < ncomp*nx; j++) REAL(yout)[nx+j] =  u[j];
   }
 
-  PROTECT(ISTATE = allocVector(INTSXP, 13)); incr_N_Protect();
+  PROTECT(ISTATE = allocVector(INTSXP, 13));             nprot++;
   for (j = 0; j < 13; j++)
     INTEGER(ISTATE)[j] = 0;
   INTEGER(ISTATE)[0] = iflag;
@@ -478,13 +487,13 @@ SEXP call_acdc(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
 
   setAttrib(yout, install("istate"), ISTATE);
 
-  PROTECT(EPSS = allocVector(REALSXP, 2)); incr_N_Protect();
+  PROTECT(EPSS = allocVector(REALSXP, 2));             nprot++;
   REAL(EPSS)[0] = epsini;
   REAL(EPSS)[1] = epsmin;
 
   setAttrib(yout, install("eps"), EPSS);
 
-  PROTECT(RSTATE = allocVector(REALSXP, 5)); incr_N_Protect();
+  PROTECT(RSTATE = allocVector(REALSXP, 5));          nprot++;
   REAL(RSTATE)[0] = ckappa1;
   REAL(RSTATE)[1] = gamma1;
   REAL(RSTATE)[2] = sigma;
@@ -493,6 +502,6 @@ SEXP call_acdc(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
   setAttrib(yout, install("rstate"), RSTATE);
 
 /*               ####   termination   ####                                    */
-  unprotect_all();
+  UNPROTECT(nprot);
   return(yout);
 }

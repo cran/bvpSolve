@@ -6,13 +6,13 @@ c ==============================================================================
 
       subroutine twpbvpc(ncomp, nlbc, aleft, aright,
      *       nfxpnt, fixpnt, ntol, ltol, tol,
-     *       linear, givmsh, giveu, nmsh,
+     *       linearInt, givmshInt, giveuInt, nmsh,
      *       nxxdim, xx, nudim, u, nmax,
      *       lwrkfl, wrk, lwrkin, iwrk, precis,
      *       fsub, dfsub, gsub, dgsub,
      *       ckappa1,gamma1,sigma,ckappa,
      *       ckappa2,rpar,ipar,iflbvp,liseries,iseries,indnms,
-     *       full, useC, nmguess, xguess,  nygdim, yguess, iset)
+     *       fullInt, useCInt, nmguess, xguess,  nygdim, yguess, iset)
 C
 *     OUTPUT
 *
@@ -109,6 +109,7 @@ c ==============================================================================
       dimension xx(*), u(nudim,*), xguess(*), yguess(nygdim,*)
       dimension wrk(lwrkfl), iwrk(lwrkin)
       dimension iseries(*)
+      integer linearInt, givmshInt, giveuInt, fullInt, useCInt
       logical linear, givmsh, giveu, full, useC
       external fsub
       external dfsub
@@ -129,6 +130,17 @@ c Karline: diagnostic properties
       intrinsic min
 
       parameter ( zero = 0.0d+0 )
+
+      linear = .FALSE.
+      if (linearInt > 0) linear = .TRUE.
+      givmsh = .FALSE.
+      if (givmshInt > 0) givmsh = .TRUE.
+      giveu = .FALSE.
+      if (giveuInt > 0) giveu = .TRUE.
+      full = .FALSE.
+      if (fullInt > 0) full = .TRUE.
+      useC = .FALSE.
+      if (useCInt > 0) useC = .TRUE.
 
       use_c = useC
 
@@ -441,7 +453,10 @@ c ksks: add precis as argument: machine precision...
       dimension  iseries(*)
 
       logical linear, giveu, givmsh, ddouble
-
+      
+      double precision dummy  ! ks: to avoid a warning...
+      integer idummy
+      
       external fsub
       external dfsub
       external gsub
@@ -479,6 +494,10 @@ c karline: added ill_cond_newt
       data maxmsh/.false./
 
       frscal = .true.
+      
+      dummy = delta0(1,1)   ! karline: to avoid a warning of delta0 not being used...
+      idummy = isign(1)
+      
       if (mchset) then
 c Karline: use precis instead of d1mach
 
@@ -757,7 +776,7 @@ c endif if (comp_c)
 
          if (ill_cond .and. use_c) goto 2000
          if (iprint .eq. 1) then
-             CALL Rprintl1('stab_sigma = ',stab_sigma)
+*  KS        CALL Rprintl1('stab_sigma = ',stab_sigma) * KARLINE:REMOVED-stab_sigma undefined
              CALL Rprintl1('stab_kappa = ', stab_kappa)
              CALL Rprintl1('stab_kappa1 = ', stab_kappa1)
              CALL Rprintl1('stab_gamma = ', stab_gamma)

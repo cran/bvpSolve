@@ -121,13 +121,13 @@ static void C_bvp_deriv_func (int *n,  double *x, double *y, double *ydot,
 
   for (i = 0; i < *n ; i++)  REAL(Y)[i]   = y[i];
 
-  PROTECT(X = ScalarReal(*x));                    incr_N_Protect();
-  PROTECT(R_fcall = lang3(R_bvp_deriv_func,X,Y)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));          incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                    
+  PROTECT(R_fcall = lang3(R_bvp_deriv_func,X,Y)); 
+  PROTECT(ans = eval(R_fcall, R_envir));          
 
   for (i = 0; i < *n ; i++) ydot[i] = REAL(VECTOR_ELT(ans,0))[i];
   
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /* interface between fortran call to jacobian and R function */
@@ -139,13 +139,13 @@ static void C_bvp_jac_func (int *n,  double *x, double *y, double *pd,
 
   for (i = 0; i < *n; i++) REAL(Y)[i]   = y[i];
 
-  PROTECT(X = ScalarReal(*x));                  incr_N_Protect();
-  PROTECT(R_fcall = lang3(R_bvp_jac_func,X,Y)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));        incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                 
+  PROTECT(R_fcall = lang3(R_bvp_jac_func,X,Y));
+  PROTECT(ans = eval(R_fcall, R_envir));       
 
   for (i = 0; i < *n * *n; i++)  pd[i] = REAL(ans)[i];
   
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 
@@ -159,13 +159,13 @@ static void C_bvp_bound_func (int *ii, int *n, double *y, double *gout,
 
   for (i = 0; i < *n ; i++)  REAL(Y)[i] = y[i];
 
-  PROTECT(J = ScalarInteger(*ii));                incr_N_Protect();
-  PROTECT(R_fcall = lang3(R_bvp_bound_func,J,Y)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));          incr_N_Protect();
+  PROTECT(J = ScalarInteger(*ii));                
+  PROTECT(R_fcall = lang3(R_bvp_bound_func,J,Y)); 
+  PROTECT(ans = eval(R_fcall, R_envir));          
   
   gout[0] = REAL(ans)[0];       /* only one element returned... */
   
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /*interface between fortran call to jacobian of boundary and corresponding R function */
@@ -178,12 +178,12 @@ static void C_bvp_jacbound_func (int *ii, int *n, double *y, double *dg,
 
   for (i = 0; i < *n; i++) REAL(Y)[i] = y[i];
 
-  PROTECT(J = ScalarInteger(*ii));                   incr_N_Protect();
-  PROTECT(R_fcall = lang3(R_bvp_jacbound_func,J,Y)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));             incr_N_Protect();
+  PROTECT(J = ScalarInteger(*ii));                   
+  PROTECT(R_fcall = lang3(R_bvp_jacbound_func,J,Y)); 
+  PROTECT(ans = eval(R_fcall, R_envir));             
 
   for (i = 0; i < *n ; i++)  dg[i] = REAL(ans)[i];
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 
@@ -227,8 +227,8 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
 /******************************************************************************/
 
 /*                      #### initialisation ####                              */    
-  init_N_Protect();
- 
+  int nprot = 0;
+
   aleft  =REAL(Aleft)[0];
   aright =REAL(Aright)[0];
 
@@ -332,13 +332,22 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
 
   /* initialise global R-variables... */
   if (isDll == 0) {
-    PROTECT(Y = allocVector(REALSXP,ncomp));    incr_N_Protect();
+    PROTECT(Y = allocVector(REALSXP,ncomp));    nprot++;
   }
 
   /* Initialization of Parameters and Forcings (DLL functions)  */
   isForcing = initForcings(flist);
-  initParms(Initfunc, Parms);
-
+  //initParms(Initfunc, Parms);
+  if (Initfunc != NA_STRING) {
+    if (inherits(Initfunc, "NativeSymbol"))  {
+      init_func *initializer;
+      
+      PROTECT(bvp_gparms = Parms);     nprot++;
+      initializer = (init_func *) R_ExternalPtrAddrFn_(Initfunc);
+      initializer(Initbvpparms);
+    }
+  }
+  
   R_envir = rho;
 
   /* pointers to functions passed to FORTRAN */
@@ -441,27 +450,27 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
 
 /*  iflag - The Mode Of Return From twpbvp  */
 	if (iflag == 4)      {
-	   unprotect_all();
-     error("One of the input parameters is invalid.\n");
+	  UNPROTECT(nprot);
+	  error("One of the input parameters is invalid.\n");
   }  else if (iflag == 1) 	{
-	  unprotect_all();
-	  error("The Expected No. Of mesh points Exceeds Storage Specifications.\n");
+    UNPROTECT(nprot);
+    error("The Expected No. Of mesh points Exceeds Storage Specifications.\n");
 	}     else if (iflag == 2) 	{
-	  unprotect_all();
+	  UNPROTECT(nprot);
 	  error("The Expected No. Of meshes Exceeds Storage Specifications. Increase liseries\n");
 	}     else if (iflag == 3)  	{
-	  unprotect_all();
+	  UNPROTECT(nprot);
 	  error("Terminated: ill conditioned problem.\n");
 	}   else	{
   /*                   ####   returning output   ####                           */    
     nx = nmesh;
 
-    PROTECT(yout = allocVector(REALSXP,(ncomp+1)*(nx)));incr_N_Protect();
+    PROTECT(yout = allocVector(REALSXP,(ncomp+1)*(nx)));   nprot++;
 	  for (j = 0; j < nx; j++)       REAL(yout)[j]    = xx[j];
     for (j = 0; j < ncomp*nx; j++) REAL(yout)[nx+j] =  u[j];
   }
  
-  PROTECT(ISTATE = allocVector(INTSXP, 13));incr_N_Protect();
+  PROTECT(ISTATE = allocVector(INTSXP, 13));   nprot++;
   INTEGER(ISTATE)[0] = iflag;
   for (j = 0; j < 6; j++)
     INTEGER(ISTATE)[1+j] = iset[j];
@@ -474,7 +483,7 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
     
   setAttrib(yout, install("istate"), ISTATE);
 
-  PROTECT(RSTATE = allocVector(REALSXP, 5));incr_N_Protect();
+  PROTECT(RSTATE = allocVector(REALSXP, 5));   nprot++;
   REAL(RSTATE)[0] = ckappa1;
   REAL(RSTATE)[1] = gamma1; 
   REAL(RSTATE)[2] = sigma; 
@@ -483,7 +492,7 @@ SEXP call_bvptwp(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
   setAttrib(yout, install("rstate"), RSTATE);
   
 /*               ####   termination   ####                            */
-  unprotect_all();
+  UNPROTECT(nprot);
   return(yout);
 }
 

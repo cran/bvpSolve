@@ -13,7 +13,7 @@ checkforcings <- function (forcings,times,dllname,
    stop(paste("initforc should be loaded if there are forcing functions ",initforc))
 
  if (is.compiled(initforc)) { 
-      if (class(initforc) == "CFunc")
+      if (inherits(initforc, "CFunc"))
         ModelForc <- body(initforc)[[2]]
  else if (is.loaded(initforc, PACKAGE = dllname, type = "") ||
      is.loaded(initforc, PACKAGE = dllname, type = "Fortran")) 

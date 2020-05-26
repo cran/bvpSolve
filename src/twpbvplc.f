@@ -5,13 +5,13 @@ c ==============================================================================
 
        subroutine twpbvplc(ncomp, nlbc, aleft, aright,
      *       nfxpnt, fixpnt, ntol, ltol, tol,
-     *       linear, givmsh, giveu, nmsh,
+     *       linearInt, givmshInt, giveuInt, nmsh,
      *       nxxdim, xx, nudim, u, nmax,
      *       lwrkfl, wrk, lwrkin, iwrk, precis,
      *       fsub, dfsub, gsub, dgsub,
      *       ckappa1,gamma1,sigma,ckappa,
      *       ckappa2,rpar,ipar,iflbvp,liseries,iseries,indnms,
-     *       full, useC,  nmguess, xguess, nygdim,yguess, iset)
+     *       fullInt, useCInt,  nmguess, xguess, nygdim,yguess, iset)
 
 *     OUTPUT
 *
@@ -97,6 +97,7 @@ c ==============================================================================
       dimension xx(*), u(nudim,*), xguess(*), yguess(nygdim,*)
       dimension wrk(lwrkfl), iwrk(lwrkin)
       dimension iseries(*)
+      integer linearInt, givmshInt, giveuInt, fullInt, useCInt
       logical linear, givmsh, giveu, full, useC
       external fsub
       external dfsub
@@ -115,6 +116,16 @@ C Karline: added
       intrinsic  min
       parameter ( zero = 0.0d+0 )
 
+      linear = .FALSE.
+      if (linearInt > 0) linear = .TRUE.
+      givmsh = .FALSE.
+      if (givmshInt > 0) givmsh = .TRUE.
+      giveu = .FALSE.
+      if (giveuInt > 0) giveu = .TRUE.
+      full = .FALSE.
+      if (fullInt > 0) full = .TRUE.
+      useC = .FALSE.
+      if (useCInt > 0) useC = .TRUE.
 
       use_c = useC
 
@@ -404,7 +415,7 @@ c ==============================================================================
 
       implicit double precision (a-h,o-z)
 
-      dimension rpar(*), ipar(*), precis(3)
+      dimension  rpar(*), ipar(*), precis(3)
       dimension  fixpnt(*), ltol(ntol), tol(ntol)
       dimension  xx(*), u(nudim, *), xguess(*), yguess(nygdim,*)
       dimension  defexp(ncomp,*), defimp(ncomp,*), def(ncomp,*)
@@ -455,7 +466,10 @@ c ==============================================================================
       save mchset
       logical frscal
 c      save frscal
-
+      
+      ! karline: to avoid warnings during compilation - unused dummy
+      double precision dummy
+      integer idummy
 
       logical stab_kappa, stab_gamma, stab_cond, stiff_cond, ill_cond
       logical stab_kappa1, ill_cond_newt, stab_sigma
@@ -475,7 +489,16 @@ c      save frscal
       data maxmsh/.false./
       data itcond/0/
       data frscal/.true./
+
 c      frscal = .true.
+
+c karline: to avoid warnings of unused dummies
+      dummy = defexp(1,1)
+      dummy = defimp(1,1)
+      dummy = dexr(1)
+      dummy = dsq(1,1)
+      idummy = isign(1)
+      
       if (mchset) then
 c Karline: use precis instead of d1mach
 
@@ -1094,7 +1117,7 @@ c      call dcopy(nmold, xx, 1, xxold, 1)
       forcedouble = .false.
 
        if (iprint .eq. 1) then
-         CALL Rprinti2('Forcedouble, itcond', nodouble, itcond)
+         CALL Rprintli('Forcedouble, itcond', nodouble, itcond)
        end if
 
        if (use_c .and.  itcond .eq. itcondmax) then
@@ -1324,7 +1347,7 @@ C Karline: moved this statement upward
       Common /Cons1/ A21,A22,A23,A24,A31,A32,A33,A34,C1,C2,
      +       C16,C26,C123,C223,C14,C24
       Common /Algprs/nminit,Iprint,idum,use_c,comp_c
-      Common /Flags/ Ifinal,Iback,Iprec
+      Common /Flags/ Ifinal,Iatt,Iback,Iprec   ! karline: not really needed
       integer nfunc, njac, nstep, nbound, njacbound
       common/diagnost/nfunc, njac, nstep, nbound, njacbound
 

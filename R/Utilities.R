@@ -7,7 +7,7 @@
 approx <- function (x, ...) UseMethod("approx")
 
 approx.default <- function (x, ...) {
-if ("bvpSolve" %in% class (x))
+if (inherits (x, "bvpSolve" ))
   approx.bvpSolve(x,...)
 else  
   stats::approx(x,...)
@@ -82,7 +82,7 @@ convert2wide <- function(Data) {
 
 mergeObs <- function(obs, Newobs) {
 
-  if (! class(Newobs) %in% c("data.frame","matrix"))
+  if (! inherits(Newobs, c("data.frame","matrix")))
     stop ("the elements in 'obs' should be either a 'data.frame' or a 'matrix'")
 
   if (is.character(Newobs[,1]) | is.factor(Newobs[,1]))
@@ -231,7 +231,7 @@ plot.bvpSolve <- function (x, ..., which = NULL, ask = NULL, obs = NULL,
        Obs <- obs
        obs <- Obs[[1]]  
        obs.pos <- matrix(nrow = 1, c(1, nrow(obs)))
-       if (! class(obs) %in% c("data.frame", "matrix"))
+       if (! inherits(obs, c("data.frame", "matrix")))
          stop ("'obs' should be either a 'data.frame' or a 'matrix'")
        if (length(Obs) > 1)
          for ( i in 2 : length(Obs)) {
@@ -243,7 +243,7 @@ plot.bvpSolve <- function (x, ..., which = NULL, ask = NULL, obs = NULL,
        if (is.character(obs[,1]) | is.factor(obs[,1]))   # long format - convert
           obs <- convert2wide(obs)
        obsname <- colnames(obs) 
-       if (! class(obs) %in% c("data.frame", "matrix"))
+       if (! inherits(obs, c("data.frame", "matrix")))
          stop ("'obs' should be either a 'data.frame' or a 'matrix'")
        obs.pos <- matrix(nrow = 1, c(1, nrow(obs)))
       }                       
@@ -290,7 +290,7 @@ plot.bvpSolve <- function (x, ..., which = NULL, ask = NULL, obs = NULL,
 
     if (length(ldots) > 0) 
      for ( i in 1:length(ldots))
-      if ("bvpSolve" %in% class(ldots[[i]])) {
+      if (inherits(ldots[[i]], "bvpSolve")) {
         x2[[nother <- nother + 1]] <- ldots[[i]]  
         names(x2)[nother] <- ndots[i]
       } else if (! is.null(ldots[[i]])) {
@@ -409,7 +409,7 @@ plot.bvpSolve <- function (x, ..., which = NULL, ask = NULL, obs = NULL,
 ### ============================================================================
 
 diagnostics.bvpSolve<- function(obj, ...) {
-  if (!"bvpSolve" %in% class(obj)) return(NULL)
+  if (!inherits(obj, "bvpSolve" )) return(NULL)
   Attr <- attributes(obj)
   istate <- Attr$istate
   rstate <- Attr$rstate

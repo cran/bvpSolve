@@ -148,20 +148,20 @@ static void C_colmod_guess (double *x, double *y,
   double p;
   SEXP R_fcall, X, ans, R_fcall2, ans2;
 
-  PROTECT(X = ScalarReal(*x));                     incr_N_Protect();
-  PROTECT(R_fcall = lang2(R_cont_guess_func, X));  incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));           incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                     
+  PROTECT(R_fcall = lang2(R_cont_guess_func, X));  
+  PROTECT(ans = eval(R_fcall, R_envir));           
 
   p = fmax(1e-7, *x*1e-7 );
   REAL(X)[0]   = *x+p;
-  PROTECT(R_fcall2 = lang2(R_cont_guess_func, X)); incr_N_Protect();
-  PROTECT(ans2 = eval(R_fcall2, R_envir));         incr_N_Protect();
+  PROTECT(R_fcall2 = lang2(R_cont_guess_func, X)); 
+  PROTECT(ans2 = eval(R_fcall2, R_envir));         
   
   /* both have the same dimensions... */
   for (i = 0; i < n_eq; i++) y[i] = REAL(ans)[i];
   for (i = 0; i < n_eq; i++) ydot[i] = (REAL(ans2)[i]-y[i])/p;
 
-  my_unprotect(5);
+  UNPROTECT(5);
 }
 
 /* derivative function                                                        */
@@ -174,13 +174,13 @@ static void C_colmod_derivs (double *x, double *y,
                                 REAL(EPS)[0] = *eps;
   for (i = 0; i < mstar ; i++)  REAL(Y)[i]   = y[i];
 
-  PROTECT(X = ScalarReal(*x));                         incr_N_Protect();
-  PROTECT(R_fcall = lang4(R_cont_deriv_func,X,Y,EPS)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));               incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                         
+  PROTECT(R_fcall = lang4(R_cont_deriv_func,X,Y,EPS)); 
+  PROTECT(ans = eval(R_fcall, R_envir));               
 
   for (i = 0; i < n_eq ; i++) ydot[i] = REAL(VECTOR_ELT(ans,0))[i];
 
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 
@@ -194,12 +194,12 @@ static void C_colmod_jac (double *x, double *y, double *pd, int *neq,
                               REAL(EPS)[0] = *eps;
   for (i = 0; i < mstar; i++) REAL(Y)[i]   = y[i];
 
-  PROTECT(X = ScalarReal(*x));                       incr_N_Protect();
-  PROTECT(R_fcall = lang4(R_cont_jac_func,X,Y,EPS)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));             incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                       
+  PROTECT(R_fcall = lang4(R_cont_jac_func,X,Y,EPS)); 
+  PROTECT(ans = eval(R_fcall, R_envir));             
 
   for (i = 0; i < *neq * mstar; i++)  pd[i] = REAL(ans)[i];
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /*  boundary condition                                                        */
@@ -213,12 +213,12 @@ static void C_colmod_bound (int *ii, double *y, double *gout, double *eps,
 
   for (i = 0; i < mstar ; i++)  REAL(Y)[i] = y[i];
 
-  PROTECT(J = ScalarInteger(*ii));                     incr_N_Protect();
-  PROTECT(R_fcall = lang4(R_cont_bound_func,J,Y,EPS)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));               incr_N_Protect();
+  PROTECT(J = ScalarInteger(*ii));                     
+  PROTECT(R_fcall = lang4(R_cont_bound_func,J,Y,EPS)); 
+  PROTECT(ans = eval(R_fcall, R_envir));               
   /* only on e element returned... */
   gout[0] = REAL(ans)[0];
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /* jacobian of boundary condition                                             */
@@ -232,12 +232,12 @@ static void C_colmod_jacbound (int *ii, double *y, double *dg, double *eps,
 
   for (i = 0; i < mstar; i++) REAL(Y)[i] = y[i];
 
-  PROTECT(J = ScalarInteger(*ii));                        incr_N_Protect();
-  PROTECT(R_fcall = lang4(R_cont_jacbound_func,J,Y,EPS)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));                  incr_N_Protect();
+  PROTECT(J = ScalarInteger(*ii));                       
+  PROTECT(R_fcall = lang4(R_cont_jacbound_func,J,Y,EPS));
+  PROTECT(ans = eval(R_fcall, R_envir));                 
 
   for (i = 0; i < mstar ; i++)  dg[i] = REAL(ans)[i];
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /* -----------------------------------------------------------------------------
@@ -282,7 +282,7 @@ SEXP call_colmodsys(SEXP Ncomp, SEXP Mstar, SEXP M, SEXP Xout, SEXP Aleft,
 /******************************************************************************/
 
 /*                      #### initialisation ####                              */    
-  init_N_Protect();
+  int nprot = 0;
 
   ncomp = INTEGER(Ncomp)[0];   /* number of equations -global variable */
   n_eq  = INTEGER(Ncomp)[0];   /* number of equations -global variable */
@@ -362,15 +362,24 @@ SEXP call_colmodsys(SEXP Ncomp, SEXP Mstar, SEXP M, SEXP Xout, SEXP Aleft,
   }
 
   if (isDll == 0) {
-    PROTECT(EPS = NEW_NUMERIC(1));              incr_N_Protect();
-    PROTECT(Y = allocVector(REALSXP,mstar));    incr_N_Protect();
+    PROTECT(EPS = NEW_NUMERIC(1));              nprot++;
+    PROTECT(Y = allocVector(REALSXP,mstar));    nprot++;
   }
   /* Initialization of Parameters and Forcings (DLL functions)  */
   isForcing = initForcings(flist);
   epsval = (double *) R_alloc(1, sizeof(double)); epsval[0] = 0.;
 
-  initParms(Initfunc, Parms);
-
+  //initParms(Initfunc, Parms);
+  if (Initfunc != NA_STRING) {
+    if (inherits(Initfunc, "NativeSymbol"))  {
+      init_func *initializer;
+      
+      PROTECT(bvp_gparms = Parms);     nprot++;
+      initializer = (init_func *) R_ExternalPtrAddrFn_(Initfunc);
+      initializer(Initbvpparms);
+    }
+  }
+  
   R_envir = rho;
 
   /* is function a dll ?*/
@@ -473,23 +482,23 @@ C....         = -3  If There Is An Input Data Error.
 
   if (iflag == 0)
 	{
-	  unprotect_all();
+    UNPROTECT(nprot);
 	  error("The collocation matrix is singular for the final continuation problem\n");
 	}
   else if (iflag == -1)
 	{
-	  unprotect_all();
-	  error("The Expected No. Of Subintervals Exceeds Storage Specifications.\n");
+    UNPROTECT(nprot);
+    error("The Expected No. Of Subintervals Exceeds Storage Specifications.\n");
 	}
   else if (iflag == -2)
 	{
-	  unprotect_all();
-	  error("The Nonlinear Iteration Has Not Converged For The Final Continuation Problem.\n");
+    UNPROTECT(nprot);
+    error("The Nonlinear Iteration Has Not Converged For The Final Continuation Problem.\n");
 	}
   else  if (iflag == -3)
 	{
-	  unprotect_all();
-	  error("Illegal input to colmod\n");
+    UNPROTECT(nprot);
+    error("Illegal input to colmod\n");
 	}
   else
 	{
@@ -503,7 +512,7 @@ C....         = -3  If There Is An Input Data Error.
     nx = LENGTH(Xout);
     z  =(double *) R_alloc(mstar, sizeof(double));
 
-    PROTECT(yout = allocMatrix(REALSXP,mstar+1,nx));incr_N_Protect();
+    PROTECT(yout = allocMatrix(REALSXP,mstar+1,nx));nprot++;
 	  for (k = 0; k < nx; k++)
       {          xout = REAL(Xout)[k];
                  REAL(yout)[k*(mstar+1)] = xout;
@@ -511,8 +520,8 @@ C....         = -3  If There Is An Input Data Error.
                  for (j=0;j<mstar;j++) REAL(yout)[k*(mstar+1) + j+1] = z[ j];
       }  /* end main x loop */
   ii = ncomp+7;
-  PROTECT(ICOUNT = allocVector(INTSXP, 7)); incr_N_Protect();
-  PROTECT(ISTATE = allocVector(INTSXP, ii+6)); incr_N_Protect();
+  PROTECT(ICOUNT = allocVector(INTSXP, 7)); nprot++;
+  PROTECT(ISTATE = allocVector(INTSXP, ii+6)); nprot++;
   INTEGER(ISTATE)[0] = iflag;
   for (k = 0; k < 7; k++) INTEGER(ICOUNT)[k] = icount[k];
   for (k = 0; k < 5; k++)  INTEGER(ISTATE)[k+1] = icount[k];
@@ -521,18 +530,18 @@ C....         = -3  If There Is An Input Data Error.
     ii = ispace[6];
   else 
     ii = 1;
-  PROTECT(EPSS = allocVector(REALSXP, 2)); incr_N_Protect();
+  PROTECT(EPSS = allocVector(REALSXP, 2)); nprot++;
   REAL(EPSS)[0] = epsini;
   REAL(EPSS)[1] = epsmin;
   
   setAttrib(yout, install("eps"), EPSS);
-  PROTECT(RWORK = allocVector(REALSXP, ii));incr_N_Protect();
+  PROTECT(RWORK = allocVector(REALSXP, ii));nprot++;
   for (k = 0; k < ii; k++) REAL(RWORK)[k] = fspace[k];
   setAttrib(yout, install("istate"), ISTATE);
   setAttrib(yout, install("icount"), ICOUNT);
   setAttrib(yout, install("rstate"), RWORK);
   }
 /*                       ####   termination   ####                            */    
-  unprotect_all();
+  UNPROTECT(nprot);
   return(yout);
 }

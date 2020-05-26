@@ -1,6 +1,6 @@
 #
   is.compiled <- function (FF)
-   (is.character(FF) || class(FF) == "CFunc")
+   (is.character(FF) || inherits(FF, "CFunc"))
 
 
 ##==============================================================================
@@ -105,7 +105,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
   aright <- x[length(x)]
 
   CheckFunc <- function (FF)
-   (is.function(FF) || is.character(FF) || class(FF) == "CFunc")
+   (is.function(FF) || is.character(FF) || inherits(FF, "CFunc"))
 
 
 ##------------------------------------------------------------------------------
@@ -164,7 +164,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
   neq   <- ncomp # ncomp means number of equations here...
   y     <- NULL
   guess <- NULL
-  Restart <- "bvpSolve" %in% class(yguess) & type >= 2 # only for bvpcol/colmod
+  Restart <- inherits(yguess, "bvpSolve") & type >= 2 # only for bvpcol/colmod
   nalg <- 0    # number of algebraic equations, in case a DAE
   if (!is.null(dae)) nalg <- dae$nalg
 
@@ -302,7 +302,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
       stop("func, initfunc, or jacfunc cannot be the same")
 
     if (is.compiled(initfunc)) { # KS: to allow absence of initfunc
-      if (class(initfunc) == "CFunc")
+      if (inherits(initfunc, "CFunc"))
         ModelInit <- body(initfunc)[[2]]
       else if (is.loaded(initfunc, PACKAGE = dllname, type = "") ||
         is.loaded(initfunc, PACKAGE = dllname, type = "Fortran"))  {
@@ -316,7 +316,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
     funcname <- func
     
     ## get the pointer and put it in func
-    if (class(func) == "CFunc")
+    if (inherits(func, "CFunc"))
       Func <- body(func)[[2]]
     else if (is.loaded(funcname, PACKAGE = dllname)) {
       Func <- getNativeSymbolInfo(funcname, PACKAGE = dllname)$address
@@ -325,7 +325,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
     ## the Jacobian
     JacFunc <- NULL
     if (is.compiled(jacfunc)){
-      if (class(jacfunc) == "CFunc")
+      if (inherits(jacfunc, "CFunc"))
         JacFunc <- body(jacfunc)[[2]]
       else if (is.loaded(jacfunc, PACKAGE = dllname))  {
         JacFunc <- getNativeSymbolInfo(jacfunc, PACKAGE = dllname)$address
@@ -337,7 +337,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
     ## the boundary
     Bound <- NULL
     if (is.compiled(bound)){
-     if (class(bound) == "CFunc")
+     if (inherits(bound, "CFunc"))
       Bound <- body(bound)[[2]]
     else if (is.loaded(bound, PACKAGE = dllname))  {
       Bound <- getNativeSymbolInfo(bound, PACKAGE = dllname)$address
@@ -350,7 +350,7 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
     ## the boundary Jacobian
     JacBound <- NULL
     if (is.compiled(jacbound)){
-    if (class(jacbound) == "CFunc")
+    if (inherits(jacbound, "CFunc"))
       JacBound <- body(jacbound)[[2]]
     else if (is.loaded(jacbound, PACKAGE = dllname))  {
       JacBound <- getNativeSymbolInfo(jacbound, PACKAGE = dllname)$address
@@ -869,7 +869,7 @@ dimnames(out) <- list(NULL,nm)
     vout <- matrix(nrow = nrow(out), ncol = nout, data = NA)
     if (! is.null(outnames)) 
       colnames(vout) <- outnames
-    if (class(func) == "CFunc") {
+    if (inherits(func, "CFunc")) {
       for (j in 1:nrow(out)) 
       vout[j,] <- DLLfunc(func, parms = parms, y = out[j,-1], 
          times = out[j,1], dllname = NA, nout = nout, 
@@ -1042,6 +1042,7 @@ dimnames(out) <- list(NULL,nm)
   }
   
  absent <- c(0, 0, 0) # do not use compiled code for jac, bnd, jacbnd
+ if (is.null(rho)) rho <- environment()  # KARLINE: ADDED 19-11-2019
  rrwork <- 0
  if (is.null(jacfunc)) absent[1] <- 1
  if (is.null(jacbound)) absent[3] <- 1
@@ -1108,7 +1109,7 @@ dimnames(out) <- list(NULL,nm)
     vout <- matrix(nrow = ncol(out), ncol = nout, data = NA)
     if (! is.null(outnames)) 
       colnames(vout) <- outnames
-    if (class(func) == "CFunc") {
+    if (inherits(func, "CFunc")) {
       for (j in 1:ncol(out)) 
       vout[j,] <- DLLfunc(func, parms = parms, y = out[-1,j], 
          times = out[1,j], dllname = NA, nout = nout, 

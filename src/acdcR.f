@@ -81,12 +81,12 @@ c
 c karline: added 'Full' to set output level
 c          added 'useC' for specification of conditioning
       Subroutine acdc(Ncomp, Nlbc, Nucol, Aleft, Aright, Nfxpnt, Fixpnt,
-     +            Ntol, Ltol, Tol, Linear, Givmsh, Giveu,
-     +            Full,nmshguess, xguess, nugdim, uguess,Nmsh, Xx,
-     +            Nudim, U, Nmax, Lwrkfl, Wrk, Lwrkin, Iwrk, Giveps,
+     +            Ntol, Ltol, Tol, LinearInt, GivmshInt, GiveuInt,
+     +            FullInt,nmshguess, xguess, nugdim, uguess,Nmsh, Xx,
+     +            Nudim, U, Nmax, Lwrkfl, Wrk, Lwrkin, Iwrk, GivepsInt,
      +            Eps, Epsmin, acfsub, acdfsub, acgsub, acdgsub,
      +            ckappa1,gamma1,sigma,ckappa,ckappa2,rpar,ipar,icount,
-     +            precis, useC, Iflbvp)
+     +            precis, useCInt, Iflbvp)
 
       Implicit Double Precision (A-H,O-Z)
       DIMENSION RPAR(*), IPAR(*)
@@ -94,6 +94,8 @@ c          added 'useC' for specification of conditioning
       Dimension Xx(*), U(Nudim,*), Xguess(*), Uguess(Nugdim,*)
       Dimension Wrk(Lwrkfl), Iwrk(Lwrkin), precis(3)
       Dimension Phi(3), E(3), Npr(2), Pmax(2), Hord(2)
+      integer linearInt, givmshInt, giveuInt, fullInt, useCInt
+      integer givepsInt
       Logical Linear, Givmsh, Giveu, Giveps, eps_changed, Full, useC
       External acfsub
       External acdfsub
@@ -108,7 +110,7 @@ c Francesca: added use_c and comp_c
       Common /acMshvar/ Hsml,Npr,Pmax,Hord
 c Francesca: added counters
       integer nfunc, njac, nstep, nbound, njacbound
-      common /Mcoldiag/nfunc, njac, nstep, nbound, njacbound, maxmesh
+      common /Mcoldiagac/nfunc, njac, nstep, nbound, njacbound, maxmesh
 
       Parameter ( Zero = 0.0d+0, One = 1.0d+0, Two = 2.0d+0 )
       Parameter ( Three = 3.0d+0, Third = 1.0d+0/3.0d+0, Huge = 1.d+30 )
@@ -123,7 +125,6 @@ c KS:   initialise block data
        Itsaim = 7
        Maxcon = 100
        Uval0 = 0.0d+0
-       use_C = useC
        comp_C = .TRUE.
 
 C     intialise counters
@@ -133,7 +134,23 @@ C     intialise counters
       nbound = 0
       njacbound = 0
 
+      full = .FALSE.
+      if (fullInt > 0) full = .TRUE.
+      linear = .FALSE.
+      if (linearInt > 0) linear = .TRUE.
+      givmsh = .FALSE.
+      if (givmshInt > 0) givmsh = .TRUE.
+      giveu = .FALSE.
+      if (giveuInt > 0) giveu = .TRUE.
+      useC = .FALSE.
+      if (useCInt > 0) useC = .TRUE.
+      giveps = .FALSE.
+      if (givepsInt > 0) giveps = .TRUE.
+
+      use_C = useC
+
 C.... Output Details Of The Problem
+
       IF (Full) THEN
         iprint = 1
       ELSE
@@ -385,6 +402,7 @@ C.... Is Being Attempted Which May Be Beyond The Bounds Imposed By
 C.... The Precision Of The Machine.
 C.... Epsp Is The Value Of Eps Beyond Which The Machine Precision Is
 C.... (Possibly) Not Sufficient To Solve The Given Problem.
+
 
       Ifinal = 0
       Iback = 0
@@ -1154,7 +1172,7 @@ C.... This Subroutine Is Used For Saving And Re-Inserting Solutions.
       External acdfsub
       External acgsub
       External acdgsub
-      common/Mcoldiag/nfunc, njac, nstep, nbound, njacbound, maxmesh
+      common/Mcoldiagac/nfunc, njac, nstep, nbound, njacbound, maxmesh
       Common/Mchprs/ flmin, Flmax, Epsmch
       Common /acFlags/ Ifinal,Iatt,Iback,Iprec,Iucond
       Common /acConvg/ Nits
@@ -1790,7 +1808,7 @@ c              Call Initu(Ncomp, Nmsh, Nudim, U)
       common/algprs/ nminit, iprint, idum, use_c, comp_c
       Common/acAlgprs/Maxcon,Itsaim,Uval0
       Common /acFlags/ Ifinal,Iatt,Iback,Iprec,Iucond
-      common/Mcoldiag/nfunc, njac, nstep, nbound, njacbound, maxmesh
+      common/Mcoldiagac/nfunc, njac, nstep, nbound, njacbound, maxmesh
 c       St1 --> Tmp(ncomp,10)
 c       St2 --> Tmp(ncomp,11)
 c       St3 --> Tmp(ncomp,12)
@@ -1964,7 +1982,7 @@ c      end do
       common/algprs/ nminit, iprint, idum, use_c, comp_c
       Common/acAlgprs/Maxcon,Itsaim,Uval0
       Common /acFlags/ Ifinal,Iatt,Iback,Iprec,Iucond
-      common/Mcoldiag/nfunc, njac, nstep, nbound, njacbound, maxmesh
+      common/Mcoldiagac/nfunc, njac, nstep, nbound, njacbound, maxmesh
       Logical Linear
 
 c      St1 --> Tmp(ncomp,13)
@@ -2442,6 +2460,9 @@ c         er = abs(rhs( itol+(im-1)*ncomp))/max(abs(u(itol,im)), one)
 
 *  blas: dcopy, dload
 
+* KARLINE: WROTE DCOPY FOR 2D IN FULL - 12-11-2019
+      INTEGER :: IDC
+
       parameter  ( one = 1.0d+0, zero = 0.0d+0 )
 
 *  The routine lineq calculates the Newton step for a linear
@@ -2496,7 +2517,13 @@ c         er = abs(rhs( itol+(im-1)*ncomp))/max(abs(u(itol,im)), one)
          call dload(nlbc, zero, tmprhs(1), 1)
          do 100 im = 1, ninter
             loc = (im-1)*ncomp + nlbc + 1
-            call dcopy(ncomp, defcor(1,im), 1, tmprhs(loc), 1)
+*KS        call dcopy(ncomp, defcor(1,im), 1, tmprhs(loc), 1)  KARLINE
+      
+      DO IDC = 1, Ncomp
+        tmprhs (loc-1+IDC) = defcor(IDC, im) 
+      ENDDO
+
+            
  100            continue
          nrhs = ninter*ncomp + nlbc + 1
          call dload(ncomp-nlbc, zero, tmprhs(nrhs), 1)
@@ -2979,7 +3006,7 @@ c  at the initial point of the line search.
       Implicit Double Precision (A-H,O-Z)
       Dimension rpar(*),ipar(*)
       Dimension Xx(Nmsh), U(Nudim,Nmsh), Fval(Ncomp,Nmsh)
-      common/Mcoldiag/nfunc, njac, nstep, nbound, njacbound, maxmesh
+      common/Mcoldiagac/nfunc, njac, nstep, nbound, njacbound, maxmesh
       External acfsub
 
 *  Fneval Evaluates The Function Values (From acfsub) For
@@ -3012,11 +3039,12 @@ c  at the initial point of the line search.
       dimension topblk(nlbc, ncomp), botblk(ncomp-nlbc,ncomp)
       dimension bhold(ncomp, ncomp, nmsh-1),
      *             chold(ncomp, ncomp, nmsh-1)
-      common/Mcoldiag/nfunc, njac, nstep, nbound, njacbound, maxmesh
+      common/Mcoldiagac/nfunc, njac, nstep, nbound, njacbound, maxmesh
       external  acdfsub
       external  acdgsub
 
-
+* KARLINE: WROTE DCOPY IN FULL FOR 2D MATRICES
+      INTEGER :: IDC
 
 
 *  blas: dcopy, ddot
@@ -3031,7 +3059,12 @@ c  at the initial point of the line search.
       do 110 i = 1, nlbc
          call acdgsub (i, ncomp, u(1,1), dgtm,eps,rpar,ipar)
          njacbound=njacbound+1
-         call dcopy(ncomp, dgtm(1), 1, topblk(i,1), nlbc)
+*KS         call dcopy(ncomp, dgtm(1), 1, topblk(i,1), nlbc)  KARLINE - NOTE nlbc INCREMENT!
+      DO IDC = 1, Ncomp
+        topblk (i, IDC) = dgtm(IDC) 
+      ENDDO
+         
+         
  110      continue
 
       call acdfsub (ncomp, xx(1), u(1,1), dftm1(1,1),eps,rpar,ipar)
@@ -3071,10 +3104,20 @@ c  at the initial point of the line search.
                ajac(ic,jc+ncomp,im) = -hmsh*(dftm1(ic,jc)/six
      *               + dftm2(ic,jc)/three - hmsh*dsq/twelve)
  160                  continue
-            call dcopy(ncomp, ajac(ic,ncomp+1,im), ncomp,
-     *                   chold(ic,1,im), ncomp)
-            call dcopy(ncomp, dftm1(ic,1), ncomp,
-     *                   bhold(ic,1,im), ncomp)
+*KS            call dcopy(ncomp, ajac(ic,ncomp+1,im), ncomp, NOTE OFFSETS!!!
+*KS     *                   chold(ic,1,im), ncomp)
+     
+        DO IDC = 1, Ncomp
+          chold (ic, IDC, im) = ajac(ic,ncomp+IDC,im)
+        ENDDO
+     
+*KS            call dcopy(ncomp, dftm1(ic,1), ncomp,  KARLINE - NOTE OFFSET
+*KS     *                   bhold(ic,1,im), ncomp)
+        DO IDC = 1, Ncomp
+          bhold (ic, IDC, im) = dftm1(ic,IDC)
+        ENDDO
+     
+     
             ajac(ic,ic+ncomp,im) = ajac(ic,ic+ncomp,im) + one
             chold(ic,ic,im) = ajac(ic,ic+ncomp,im)
  170            continue
@@ -3084,7 +3127,11 @@ c  at the initial point of the line search.
       do 220 i = nlbc+1, ncomp
          call acdgsub (i, ncomp, u(1, nmsh), dgtm,eps,rpar,ipar)
          njacbound=njacbound+1
-         call dcopy(ncomp, dgtm(1), 1, botblk(i-nlbc,1), ncomp-nlbc)
+*KS         call dcopy(ncomp, dgtm(1), 1, botblk(i-nlbc,1), ncomp-nlbc) KARLINE-NOTE OFFSET
+        DO IDC = 1, Ncomp
+          botblk (i-nlbc, IDC) = dgtm(IDC)
+        ENDDO
+         
  220      continue
 
       return
@@ -3110,7 +3157,7 @@ c  at the initial point of the line search.
 
       parameter ( zero = 0.0d+0, half = 0.5d+0, eighth = 0.125d+0 )
       parameter ( one = 1.0d+0, four = 4.0d+0, six = 6.0d+0 )
-      common/Mcoldiag/nfunc, njac, nstep, nbound, njacbound, maxmesh
+      common/Mcoldiagac/nfunc, njac, nstep, nbound, njacbound, maxmesh
       common/mchprs/ flmin, flmax, epsmch
       intrinsic abs
 
@@ -3177,7 +3224,7 @@ c  at the initial point of the line search.
       dimension  xx(nmsh), u(nudim,nmsh), defcor(ncomp,nmsh-1)
       dimension  rhs(ncomp*nmsh), fval(ncomp,nmsh)
       dimension  ftmp(ncomp), uint(ncomp)
-      common/Mcoldiag/nfunc, njac, nstep, nbound, njacbound, maxmesh
+      common/Mcoldiagac/nfunc, njac, nstep, nbound, njacbound, maxmesh
       external   acfsub
       external   acgsub
 
@@ -4425,6 +4472,8 @@ c  end of getptq
       Implicit Double Precision (A-H, O-Z)
       Dimension Xx(*), U(Nudim,*), Xxold(*), Uold(Nuold_dim,*)
 
+*  KARLINE: WROTE Dcopy IN FULL for 2D arrays - 12-11-2019!
+      INTEGER:: IDC
 * Blas: Dcopy
 
       Parameter (Zero = 0.0d+0)
@@ -4441,7 +4490,10 @@ c  end of getptq
 *  Components Of Uold Into Those Of U.
 
 
-      Call Dcopy(Ncomp, Uold(1,1), 1, U(1,1), 1)
+*KS      Call Dcopy(Ncomp, Uold(1,1), 1, U(1,1), 1)  ! KARLINE - 
+      DO IDC = 1, Ncomp
+        U (IDC, 1) = Uold(IDC, 1) 
+      ENDDO
 
       I = 2
       Do 100 Im = 2, Nmsh-1
@@ -4463,7 +4515,11 @@ c  end of getptq
 
 *  Xx(Im) And Xxold(I) Are Identical.
 
-               Call Dcopy(Ncomp, Uold(1,I), 1, U(1,Im), 1)
+*KS            Call Dcopy(Ncomp, Uold(1,I), 1, U(1,Im), 1)    ! KARLINE
+               DO IDC = 1, Ncomp
+                  U (IDC, Im) = Uold(IDC, I) 
+               ENDDO
+
                I = I + 1
             Else
                Xint = Xxold(I) - Xxold(I-1)
@@ -4475,7 +4531,11 @@ c  end of getptq
          Endif
 
   100 Continue
-      Call Dcopy(Ncomp, Uold(1,Nmold), 1, U(1,Nmsh), 1)
+*KS      Call Dcopy(Ncomp, Uold(1,Nmold), 1, U(1,Nmsh), 1)   ! KARLINE
+               DO IDC = 1, Ncomp
+                  U (IDC, Nmsh) = Uold(IDC, Nmold) 
+               ENDDO
+      
       Return
       End
 

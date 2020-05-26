@@ -54,7 +54,7 @@ void F77_NAME(coldae)(int*, int*, int *, double *, double *, double *,
          double *, int *, int*) ;
 
 void F77_NAME(appsln)(double *, double *, double *, int *);
-void F77_NAME(sysappsln)(double *, double *, double *, int *);
+void F77_NAME(sysappsln)(double *, double *, double *, int *);   /*also defined in init..?*/  
 void F77_NAME(appsln_dae)(double *, double *, double *, double *, int *);
 
 typedef void C_deriv_func_DAE_type    (int *, double *, double *, double *, double *, double *, int *);
@@ -249,20 +249,20 @@ static void C_bvp_guess_func (double *x, double *y,  double *ydot,
   double p;
   SEXP R_fcall, X, ans, R_fcall2, ans2;
 
-  PROTECT(X = ScalarReal(*x));                      incr_N_Protect();
-  PROTECT(R_fcall = lang2(R_bvp_guess_func, X));    incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));            incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                      
+  PROTECT(R_fcall = lang2(R_bvp_guess_func, X));    
+  PROTECT(ans = eval(R_fcall, R_envir));            
 
   p = fmax(1e-7, *x*1e-7 );
   REAL(X)[0]   = *x+p;
-  PROTECT(R_fcall2 = lang2(R_bvp_guess_func, X));   incr_N_Protect();
-  PROTECT(ans2 = eval(R_fcall2, R_envir));          incr_N_Protect();
+  PROTECT(R_fcall2 = lang2(R_bvp_guess_func, X));   
+  PROTECT(ans2 = eval(R_fcall2, R_envir));          
 
   /* both have the same dimensions... */
   for (i = 0; i < n_eq; i++) y[i] = REAL(ans)[i];
   for (i = 0; i < n_eq; i++) ydot[i] = (REAL(ans2)[i]-y[i])/p;
 
-  my_unprotect(5);
+  UNPROTECT(5);
 
 }
 
@@ -274,13 +274,13 @@ static void C_bvp_deriv_func (int * n, double *x, double *y,
   SEXP R_fcall, X, ans;
   for (i = 0; i < mstar ; i++)  REAL(Y)[i]   = y[i];
 
-  PROTECT(X = ScalarReal(*x));                    incr_N_Protect();
-  PROTECT(R_fcall = lang3(R_bvp_deriv_func,X,Y)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));          incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                    
+  PROTECT(R_fcall = lang3(R_bvp_deriv_func,X,Y)); 
+  PROTECT(ans = eval(R_fcall, R_envir));          
 
   for (i = 0; i < n_eq ; i++) ydot[i] = REAL(VECTOR_ELT(ans,0))[i];
 
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /* jacobian                                                                   */
@@ -292,12 +292,12 @@ static void C_bvp_jac_func (int *n, double *x, double *y, double *pd,
   
   for (i = 0; i < mstar; i++) REAL(Y)[i]   = y[i];
 
-  PROTECT(X = ScalarReal(*x));                  incr_N_Protect();
-  PROTECT(R_fcall = lang3(R_bvp_jac_func,X,Y)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));        incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                  
+  PROTECT(R_fcall = lang3(R_bvp_jac_func,X,Y)); 
+  PROTECT(ans = eval(R_fcall, R_envir));        
 
   for (i = 0; i < n_eq * mstar; i++)  pd[i] = REAL(ans)[i];
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 
@@ -311,13 +311,13 @@ static void C_bvp_deriv_func_DAE (int * n, double *x, double *y, double *y2,
   for (i = 0; i < mstar-nalg ; i++)  REAL(Y)[i]    = y[i];
   for (i = 0; i < nalg; i++) REAL(Y)[i+mstar-nalg] = y2[i];
 
-  PROTECT(X = ScalarReal(*x));                    incr_N_Protect();
-  PROTECT(R_fcall = lang3(R_bvp_deriv_func,X,Y)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));          incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                    
+  PROTECT(R_fcall = lang3(R_bvp_deriv_func,X,Y)); 
+  PROTECT(ans = eval(R_fcall, R_envir));          
 
   for (i = 0; i < n_eq ; i++) ydot[i] = REAL(VECTOR_ELT(ans,0))[i];
 
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /* jacobian                                                                   */
@@ -330,13 +330,13 @@ static void C_bvp_jac_func_DAE (int *n, double *x, double *y, double *y2, double
   for (i = 0; i < mstar-nalg; i++) REAL(Y)[i]      = y[i];
   for (i = 0; i < nalg; i++) REAL(Y)[i+mstar-nalg] = y2[i];
 
-  PROTECT(X = ScalarReal(*x));                    incr_N_Protect();
-  PROTECT(R_fcall = lang3(R_bvp_jac_func,X,Y));   incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));          incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                    
+  PROTECT(R_fcall = lang3(R_bvp_jac_func,X,Y));   
+  PROTECT(ans = eval(R_fcall, R_envir));          
   
   for (i = 0; i < n_eq * mstar; i++)  pd[i] = REAL(ans)[i];
 
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /* initialisation function                                                    */
@@ -347,14 +347,14 @@ static void C_bvp_guess_func_DAE (double *x, double *y, double *y2, double *ydot
   double p;
   SEXP R_fcall, X, ans, R_fcall2, ans2;
 
-  PROTECT(X = ScalarReal(*x));                      incr_N_Protect();
-  PROTECT(R_fcall = lang2(R_bvp_guess_func, X));    incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));            incr_N_Protect();
+  PROTECT(X = ScalarReal(*x));                      
+  PROTECT(R_fcall = lang2(R_bvp_guess_func, X));    
+  PROTECT(ans = eval(R_fcall, R_envir));            
 
   p = fmax(1e-7, *x*1e-7 );
   REAL(X)[0]   = *x+p;
-  PROTECT(R_fcall2 = lang2(R_bvp_guess_func, X));   incr_N_Protect();
-  PROTECT(ans2 = eval(R_fcall2, R_envir));          incr_N_Protect();
+  PROTECT(R_fcall2 = lang2(R_bvp_guess_func, X));   
+  PROTECT(ans2 = eval(R_fcall2, R_envir));          
 
   /* both have the same dimensions... */
   for (i = 0; i <  mstar-nalg; i++) y[i] = REAL(ans)[i];
@@ -363,7 +363,7 @@ static void C_bvp_guess_func_DAE (double *x, double *y, double *y2, double *ydot
   for (i = 0; i <  mstar-nalg; i++) ydot[i]           = (REAL(ans2)[i]-y[i])/p;
   for (i = 0; i < nalg; i++)       ydot[i+mstar-nalg] = (REAL(ans2)[i+mstar-nalg]-y2[i])/p;
 
-  my_unprotect(5);
+  UNPROTECT(5);
 
 }
 
@@ -375,13 +375,13 @@ static void C_bvp_bound_func (int *ii, int * n, double *y, double *gout,
   SEXP R_fcall, J, ans;
   for (i = 0; i < mstar ; i++)  REAL(Y)[i] = y[i];
 
-  PROTECT(J = ScalarInteger(*ii));                  incr_N_Protect();
-  PROTECT(R_fcall = lang3(R_bvp_bound_func,J,Y));   incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));            incr_N_Protect();
+  PROTECT(J = ScalarInteger(*ii));                  
+  PROTECT(R_fcall = lang3(R_bvp_bound_func,J,Y));   
+  PROTECT(ans = eval(R_fcall, R_envir));            
   /* only one element returned... */
   gout[0] = REAL(ans)[0];
 
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /* jacobian of boundary condition                                             */
@@ -392,12 +392,12 @@ static void C_bvp_jacbound_func (int *ii, int *n, double *y, double *dg,
   SEXP R_fcall, J, ans;
   for (i = 0; i < mstar; i++) REAL(Y)[i] = y[i];
 
-  PROTECT(J = ScalarInteger(*ii));                   incr_N_Protect();
-  PROTECT(R_fcall = lang3(R_bvp_jacbound_func,J,Y)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));             incr_N_Protect();
+  PROTECT(J = ScalarInteger(*ii));                   
+  PROTECT(R_fcall = lang3(R_bvp_jacbound_func,J,Y)); 
+  PROTECT(ans = eval(R_fcall, R_envir));             
 
   for (i = 0; i < mstar ; i++)  dg[i] = REAL(ans)[i];
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /*  boundary condition                                                        */
@@ -409,13 +409,13 @@ static void C_bvp_bound_func_DAE (int *ii, int * n, double *y, double *gout,
 
   for (i = 0; i < mstar -nalg; i++)  REAL(Y)[i] = y[i];
 
-  PROTECT(J = ScalarInteger(*ii));                  incr_N_Protect();
-  PROTECT(R_fcall = lang3(R_bvp_bound_func,J,Y));   incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));            incr_N_Protect();
+  PROTECT(J = ScalarInteger(*ii));                  
+  PROTECT(R_fcall = lang3(R_bvp_bound_func,J,Y));   
+  PROTECT(ans = eval(R_fcall, R_envir));            
   /* only one element returned... */
   gout[0] = REAL(ans)[0];
 
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 /* jacobian of boundary condition                                             */
@@ -427,12 +427,12 @@ static void C_bvp_jacbound_func_DAE (int *ii, int *n, double *y, double *dg,
 
   for (i = 0; i < mstar-nalg; i++) REAL(Y)[i] = y[i];
 
-  PROTECT(J = ScalarInteger(*ii));                   incr_N_Protect();
-  PROTECT(R_fcall = lang3(R_bvp_jacbound_func,J,Y)); incr_N_Protect();
-  PROTECT(ans = eval(R_fcall, R_envir));             incr_N_Protect();
+  PROTECT(J = ScalarInteger(*ii));                   
+  PROTECT(R_fcall = lang3(R_bvp_jacbound_func,J,Y)); 
+  PROTECT(ans = eval(R_fcall, R_envir));             
 
   for (i = 0; i < mstar-nalg ; i++)  dg[i] = REAL(ans)[i];
-  my_unprotect(3);
+  UNPROTECT(3);
 }
 
 
@@ -476,7 +476,7 @@ SEXP call_colnew(SEXP Ncomp, SEXP Xout, SEXP Aleft, SEXP Aright,
 /******************************************************************************/
 
 /*                      #### initialisation ####                              */    
-  init_N_Protect();
+  int nprot = 0;
 
   aleft  =REAL(Aleft)[0];
   aright =REAL(Aright)[0];
@@ -561,12 +561,21 @@ SEXP call_colnew(SEXP Ncomp, SEXP Xout, SEXP Aleft, SEXP Aright,
 /* initialise global R-variables... */
 
   if (isDll == 0) {
-    PROTECT(Y = allocVector(REALSXP,mstar));    incr_N_Protect();
+    PROTECT(Y = allocVector(REALSXP,mstar));    nprot++;
   }
   /* Initialization of Parameters and Forcings (DLL functions)  */
   isForcing = initForcings(flist);
-  initParms(Initfunc, Parms);
-
+  //initParms(Initfunc, Parms);
+  if (Initfunc != NA_STRING) {
+    if (inherits(Initfunc, "NativeSymbol"))  {
+      init_func *initializer;
+      
+      PROTECT(bvp_gparms = Parms);     nprot++;
+      initializer = (init_func *) R_ExternalPtrAddrFn_(Initfunc);
+      initializer(Initbvpparms);
+    }
+  }
+  
   R_envir = rho;
   ycopy  = (double *) R_alloc(mstar, sizeof(double)); 
 
@@ -719,30 +728,30 @@ C....         = -3  If There Is An Input Data Error.
 
   if (iflag == 0)
 	{
-	  unprotect_all();
-	  error("The collocation matrix is singular for the final continuation problem\n");
+    UNPROTECT(nprot);
+    error("The collocation matrix is singular for the final continuation problem\n");
 	}
   else if (iflag == -1)
 	{
-	  unprotect_all();
-	  error("The Expected No. Of Subintervals Exceeds Storage Specifications.\n");
+    UNPROTECT(nprot);
+    error("The Expected No. Of Subintervals Exceeds Storage Specifications.\n");
 	}
   else if (iflag == -2)
 	{
-	  unprotect_all();
-	  error("The Nonlinear Iteration Has Not Converged For The Final Continuation Problem.\n");
+    UNPROTECT(nprot);
+    error("The Nonlinear Iteration Has Not Converged For The Final Continuation Problem.\n");
 	}
   else  if (iflag == -3)
 	{
-	  unprotect_all();
-	  error("Illegal input to bvpcol\n");
+    UNPROTECT(nprot);
+    error("Illegal input to bvpcol\n");
 	}
   else
 	{
     nx = LENGTH(Xout);
     z  =(double *) R_alloc(mstar - nalg, sizeof(double));
 
-    PROTECT(yout = allocMatrix(REALSXP,mstar+1,nx));incr_N_Protect();
+    PROTECT(yout = allocMatrix(REALSXP,mstar+1,nx)); nprot++;
    if (type == 0) 
 	  for (k = 0; k < nx; k++)
       {          xout = REAL(Xout)[k];
@@ -771,8 +780,8 @@ C....         = -3  If There Is An Input Data Error.
      ii = ncomp+7;
   else
 	 ii = ncomp+8;
-  PROTECT(ICOUNT = allocVector(INTSXP, 6));incr_N_Protect();
-  PROTECT(ISTATE = allocVector(INTSXP, ii+6));incr_N_Protect();
+  PROTECT(ICOUNT = allocVector(INTSXP, 6));    nprot++;
+  PROTECT(ISTATE = allocVector(INTSXP, ii+6)); nprot++;
   INTEGER(ISTATE)[0] = iflag;
   for (k = 0; k < 6; k++)  INTEGER(ICOUNT)[k] = icount[k];
   for (k = 0; k < 5; k++)  INTEGER(ISTATE)[k+1] = icount[k];
@@ -785,13 +794,13 @@ C....         = -3  If There Is An Input Data Error.
   else 
     ii = 1;
 
-  PROTECT(RWORK = allocVector(REALSXP, ii));incr_N_Protect();
+  PROTECT(RWORK = allocVector(REALSXP, ii));   nprot++;
   for (k = 0; k<ii; k++) REAL(RWORK)[k] = fspace[k];
   setAttrib(yout, install("icount"), ICOUNT);
   setAttrib(yout, install("istate"), ISTATE);
   setAttrib(yout, install("rstate"), RWORK); 
   }
 /*                       ####   termination   ####                            */    
-  unprotect_all();
+  UNPROTECT(nprot);
   return(yout);
 }

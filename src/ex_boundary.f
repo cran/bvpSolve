@@ -12,7 +12,7 @@ c Initialiser for parameter common block
 c derivative function
       SUBROUTINE funbnd(NCOMP,X,Y,F,RPAR,IPAR)
       IMPLICIT NONE
-      INTEGER NCOMP, IPAR(*), I
+      INTEGER NCOMP, IPAR(*)
       DOUBLE PRECISION F(2), Y(2), RPAR(*), X
 
       DOUBLE PRECISION a, p
@@ -26,7 +26,7 @@ c derivative function
 c The analytic Jacobian for the derivative-function:
       SUBROUTINE dfbnd(NCOMP,X,Y,DF,RPAR,IPAR)
       IMPLICIT NONE
-      INTEGER NCOMP, IPAR(*), I, J
+      INTEGER NCOMP, IPAR(*)
       DOUBLE PRECISION X, Y(2), DF(2,2), RPAR(*)
 
       DOUBLE PRECISION a, p

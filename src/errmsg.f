@@ -1,23 +1,39 @@
-
-      subroutine dblepr_k(label, nchar, data, ndata)
-      integer nchar, ndata
-      character*(*) label
-      double precision data(ndata)
-      integer nc
-      nc = nchar
-      if(nc .lt. 0) nc = len(label)
-      call dblepr(label, nc, data, ndata)
-      end
+c ===================================================================================
+c print R-messages
+c ===================================================================================
 
       subroutine intpr_k(label, nchar, data, ndata)
       integer nchar, ndata
       character*(*) label
       integer data(ndata)
-      integer nc
-      nc = nchar
-      if(nc .lt. 0) nc = len(label)
-      call intpr(label, nc, data, ndata)
-      end
+
+       if (ndata .eq. 1) then
+         call rprintfi1(label//char(0), data(1))
+       else if (ndata .eq. 2) then
+         call rprintfi2(label//char(0), data(1), data(2))
+       else if (ndata .eq. 3) then
+         call rprintfi3(label//char(0), data(1), data(2), data(3))
+       else if (ndata .ge. 4) then
+         call rprintfi4(label//char(0),data(1),data(2),data(3),data(4))
+       endif 
+      end subroutine
+
+
+      subroutine dblepr_k(label, nchar, data, ndata)
+      integer nchar, ndata
+      character*(*) label
+      double precision data(ndata)
+
+       if (ndata .eq. 1) then
+         call rprintfd1(label//char(0), data(1))
+       else if (ndata .eq. 2) then
+         call rprintfd2(label//char(0), data(1), data(2))
+       else if (ndata .eq. 3) then
+         call rprintfd3(label//char(0), data(1), data(2), data(3))
+       else if (ndata .ge. 4) then
+         call rprintfd4(label//char(0),data(1),data(2),data(3),data(4))
+       endif 
+      end subroutine
 
       subroutine logpr(msg,len,ldum)
       integer len
@@ -31,98 +47,130 @@
          logi ='  FALSE'
       endif
 
-
-
-      call dblepr(MSG//logi,-1,0,0)
-
+      call rprint(MSG//logi//char(0))
 
       end subroutine
+
 c ===================================================================================
 c print R-messages
 c ===================================================================================
 C just a string
       subroutine rprint(msg)
       character (len=*) msg
-           call dblepr(msg, -1, 0, 0)
+
+      call rprintf(msg//char(0))
+
       end subroutine 
 
-C printing with one logical
-      subroutine rprintl1(msg, d1)
-      character (len=*) msg
-      logical d1
 
-      call logpr(msg, -1, d1)
+C printing with one logical
+      subroutine rprintl1(msg, l1)
+      character (len=*) msg
+      logical l1
+      character (len=8) logi
+
+       if (l1) then
+         logi ='  TRUE '
+       else
+         logi ='  FALSE'
+       endif
+       call rprint(MSG//logi//char(0))
 
       end subroutine
+
+C  two logicals
+      subroutine rprintl2(msg, l1, l2)
+      character (len=*) msg
+      character (len=8) logi, logi2
+      logical l1, l2
+
+       if (l1) then
+         logi ='  TRUE '
+       else
+         logi ='  FALSE'
+       endif
+      
+       if (l2) then
+         logi2 ='  TRUE '
+       else
+         logi2 ='  FALSE'
+       endif
+       call rprint(msg//logi//logi2//char(0))
+
+      end subroutine 
+
 C printing with one integer and a double
       subroutine rprintid(msg, i1, d1)
       character (len=*) msg
       double precision d1
       integer i1
-        call dblepr(msg, -1, d1, 1)
-        call intpr(" ", -1, i1, 1)
+         call rprintfd1(msg//char(0), d1)
+         call rprintfi1(' '//char(0), i1)
       end subroutine 
+
 
       subroutine rprintid3(msg, i1, d1, d2, d3)
       character (len=*) msg
-      double precision dbl(3), d1, d2, d3
+      double precision d1, d2, d3
       integer i1
-        DBL(1) = d1
-        DBL(2) = d2
-        DBL(3) = d3
 
-        call dblepr(msg, -1, dbl, 3)
-        call intpr(" ", -1, i1, 1)
+        call rprintd3(msg//char(0), d1, d2, d3)
+        call rprinti1(" "//char(0), i1)
       end subroutine 
 
-      subroutine rprintd3(msg, d1, d2, d3)
-      character (len=*) msg
-      double precision dbl(3), d1, d2, d3
-        DBL(1) = d1
-        DBL(2) = d2
-        DBL(3) = d3
-
-        call dblepr(msg, -1, dbl, 3)
-      end subroutine 
-
-C printing with one double
+C
       subroutine rprintd1(msg, d1)
       character (len=*) msg
-      double precision d1, DBL(1)
-        DBL(1) = d1
-        call dblepr(msg, -1, DBL, 1)
+      double precision d1
+        call rprintfd1(msg//char(0), d1)
       end subroutine 
-
-C printing with two doubles
+C
       subroutine rprintd2(msg, d1, d2)
       character (len=*) msg
-      double precision DBL(2), d1, d2
-        DBL(1) = d1
-        DBL(2) = d2
-        call dblepr_k(msg, -1, DBL, 2)
+      double precision d1, d2
+        call rprintfd2(msg//char(0), d1, d2)
+      end subroutine 
+C
+      subroutine rprintd3(msg, d1, d2, d3)
+      character (len=*) msg
+      double precision d1, d2, d3
+        call rprintfd3(msg//char(0), d1, d2, d3)
       end subroutine 
 
 C printing with one integer
+C printing with integers
       subroutine rprinti1(msg, i1)
       character (len=*) msg
-      integer i1, IN(1)
-        IN(1) = i1
-        call intpr_k(msg, -1, IN, 1)
+      integer i1
+        call rprintfi1(msg//char(0), i1)
       end subroutine 
-
+C
       subroutine rprinti2(msg, i1, i2)
       character (len=*) msg
-      INTEGER IN(2), i1, i2
-        IN(1) = i1
-        IN(2) = i2
-        call intpr_k(msg, -1, IN, 2)
+      INTEGER i1, i2
+        call rprintfi2(msg//char(0), i1, i2)
       end subroutine 
-
+C
       subroutine rprinti3(msg, i1, i2, i3)
       character (len=*) msg
-      INTEGER IN(3), i1, i2, i3
-        IN(1) = i1
-        IN(2) = i2
-        IN(3) = i3
-        call intpr_k(msg, -1, IN, 3)
+      INTEGER i1, i2, i3
+        call rprintfi3(msg//char(0), i1, i2, i3)
+      end subroutine
+
+C  one logical, one integer
+      subroutine rprintli(msg, l1, i1)
+      character (len=*) msg
+      character (len=8) logi
+      logical l1
+      integer i1
+
+       if (l1) then
+         logi ='  TRUE '
+       else
+         logi ='  FALSE'
+       endif
+      
+       call rprint(msg//logi//char(0))
+       call rprintfi1(msg//char(0), i1)
+
       end subroutine 

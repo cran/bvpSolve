@@ -1307,7 +1307,7 @@ c
       common /appr/ n,nold,nmax,nalpha,mshflg,mshnum,mshlmt,mshalt
       common /errors/ tol(40),wgtmsh(40),tolin(40),root(40),
      1       jtol(40),ltol(40),ntol
-      common /colloc/ rho(7),wgterr(40)
+      common /collocs/ rho(7),wgterr(40)
       common /side/  zeta(40), aleft, aright, izeta
       common /nonln/ precis,nonlin,iter,limit,icare,iprint,iguess,ifreez
       common /bsplin/ vncol(66,7), vnsave(66,5), vn(66)
@@ -1674,7 +1674,7 @@ c
 c***********************************************************************
 c
       implicit real(kind=8) (a-h,o-z)
-      common /colloc/ rho(7),wgterr(40)
+      common /collocs/ rho(7),wgterr(40)
       common /order/ k,ncomp,mstar,kd,kdm,mnsum,m(20)
       common /bsplin/ vncol(66,7), vnsave(66,5), vn(66)
       common /errors/ tol(40),wgtmsh(40),tolin(40),root(40),
@@ -1838,7 +1838,7 @@ c
       common /side/  zeta(40), aleft, aright, izeta
       common /errors/ tol(40),wgtmsh(40),tolin(40),root(40),
      1       jtol(40),ltol(40),ntol
-      common /colloc/ rho(7),wgterr(40)
+      common /collocs/ rho(7),wgterr(40)
       common /nonln/ precis,nonlin,iter,limit,icare,iprint,iguess,ifreez
       common /bsplin/ vncol(66,7), vnsave(66,5), vn(66)
 C Karline: added dumm(1)      
