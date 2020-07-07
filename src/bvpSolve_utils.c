@@ -1,5 +1,5 @@
 /* Define some global variables and functions that operate on some of them */
-/* Patterned on code odesolve_utils.c from package odesolve */
+/* Patterned on code desolve_utils.c from package desolve */
 #include <R.h>
 #include <Rdefines.h>
 #ifndef  R_INTERNALS_H_

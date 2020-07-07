@@ -1,8 +1,9 @@
 Package: bvpSolve
-Version: 1.4
+Version: 1.4.1
 Title: Solvers for Boundary Value Problems of Differential Equations
 Authors@R: c(person("Karline","Soetaert", role = c("aut","cre"), 
-                     email = "karline.soetaert@nioz.nl"),
+                     email = "karline.soetaert@nioz.nl", 
+					 comment = c(ORCID = "0000-0003-4603-7100")),
              person("Jeff","Cash", role = "aut", 
                      email = "j.cash@imperial.ac.uk"),
              person("Francesca","Mazzia", role = "aut", 
@@ -15,13 +16,6 @@ Authors@R: c(person("Karline","Soetaert", role = c("aut","cre"),
                      comment = "file colsysR.f"),
              person("Robert R.","Russell", role = "ctb", 
                      comment = "file colsysR.f"))
-Author: Karline Soetaert [aut, cre],
-  Jeff Cash [aut],
-  Francesca Mazzia [aut],
-  Uri M. Ascher [ctb] (files colsysR.f, colnewR.f, coldaeR.f),
-  G. Bader [ctb] (file colnewR.f),
-  J. Christiansen [ctb] (file colsysR.f),
-  Robert R. Russell [ctb] (file colsysR.f)
 Maintainer: Karline Soetaert <karline.soetaert@nioz.nl>
 Depends: R (>= 2.01), deSolve
 Imports: rootSolve, stats, graphics, grDevices
@@ -33,6 +27,13 @@ Description: Functions that solve boundary value problems ('BVP') of systems of 
 License: GPL (>= 2)
 LazyData: yes
 NeedsCompilation: yes
-Packaged: 2020-05-26 06:37:30 UTC; karlines
+Packaged: 2020-07-07 07:42:21 UTC; karlines
+Author: Karline Soetaert [aut, cre] (<https://orcid.org/0000-0003-4603-7100>),
+  Jeff Cash [aut],
+  Francesca Mazzia [aut],
+  Uri M. Ascher [ctb] (files colsysR.f, colnewR.f, coldaeR.f),
+  G. Bader [ctb] (file colnewR.f),
+  J. Christiansen [ctb] (file colsysR.f),
+  Robert R. Russell [ctb] (file colsysR.f)
 Repository: CRAN
-Date/Publication: 2020-05-26 22:10:18 UTC
+Date/Publication: 2020-07-07 08:20:03 UTC
