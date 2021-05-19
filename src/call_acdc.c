@@ -408,7 +408,7 @@ SEXP call_acdc(SEXP Ncomp, SEXP Fixpnt, SEXP Aleft, SEXP Aright,
         R_cont_bound_func = boundfunc;
       }
       
-      if (absent[0] == 0) {
+      if (absent[2] == 0) {
         jacbound_func = C_acdc_jacbound_func;
         R_cont_jacbound_func = jacboundfunc;
       } 

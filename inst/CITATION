@@ -10,9 +10,8 @@ citEntry(entry="Article",
   number =	"2",
   pages =	"387--403",
   year = 	"2014",
-  URL =  	"http://dx.doi.org/10.7494/OpMath.2014.34.2.387",
+  URL =  	"https://www.opuscula.agh.edu.pl/vol34/2/art/opuscula_math_3424.pdf",
   textVersion =  paste("Francesca Mazzia, Jeff R. Cash, Karline Soetaert (2014).
   Solving boundary value problems in the open source software R: Package bvpSolve.
-  Opuscula mathematica, 34(2), 387--403.
-  URL http://dx.doi.org/10.7494/OpMath.2014.34.2.387")
+  Opuscula mathematica, 34(2), 387--403.")
 )

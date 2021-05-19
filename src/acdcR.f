@@ -1,3 +1,11 @@
+c  Francesca Mazzia (6/2/2021): modified the acinitu
+c   to allow in input a given mesh and initial solution
+c   added  missed common/acgu/
+c   
+c  Francesca Mazzia (5/2/2021): modified the flag iprec
+c   if no convergence of correction,
+c   now is 2 in dfexcl and df8cal
+c
 C Francesca: September 2011, changed again the exit strategy
 c francesca: add precis as argument: machine precision...
 c changed acinitu, added in input more information about xguess,uguess
@@ -80,6 +88,9 @@ c     ckappa1, gamma1,sigma,ckappa,ckappa2 = conditioning parameters
 c
 c karline: added 'Full' to set output level
 c          added 'useC' for specification of conditioning
+
+
+
       Subroutine acdc(Ncomp, Nlbc, Nucol, Aleft, Aright, Nfxpnt, Fixpnt,
      +            Ntol, Ltol, Tol, LinearInt, GivmshInt, GiveuInt,
      +            FullInt,nmshguess, xguess, nugdim, uguess,Nmsh, Xx,
@@ -96,6 +107,7 @@ c          added 'useC' for specification of conditioning
       Dimension Phi(3), E(3), Npr(2), Pmax(2), Hord(2)
       integer linearInt, givmshInt, giveuInt, fullInt, useCInt
       integer givepsInt
+      integer ureset
       Logical Linear, Givmsh, Giveu, Giveps, eps_changed, Full, useC
       External acfsub
       External acdfsub
@@ -103,11 +115,15 @@ c          added 'useC' for specification of conditioning
       External acdgsub
 c Francesca: added use_c and comp_c
       LOGICAL use_c, comp_c
+c Francesca added missed common/acgu/      
+      common/acgu/ Giveu, ureset
+      
       common/algprs/ nminit, iprint, idum, use_c, comp_c
       Common/acAlgprs/Maxcon,Itsaim,Uval0
       Common /acFlags/ Ifinal,Iatt,Iback,Iprec,Iucond
       Common /acConvg/ Nits
       Common /acMshvar/ Hsml,Npr,Pmax,Hord
+
 c Francesca: added counters
       integer nfunc, njac, nstep, nbound, njacbound
       common /Mcoldiagac/nfunc, njac, nstep, nbound, njacbound, maxmesh
@@ -125,6 +141,7 @@ c KS:   initialise block data
        Itsaim = 7
        Maxcon = 100
        Uval0 = 0.0d+0
+       ureset = 0
        comp_C = .TRUE.
 
 C     intialise counters
@@ -1920,10 +1937,11 @@ c
 
          If (Iprec .eq. 0) Then
             If (Iprint .ge. 0) then
-      CALL Rprint('** Warning - possibly approaching machine precision')
+            CALL Rprint('NO convergence of corrections')
+      CALL Rprint('** Warning-possibly approaching machine precision')
         CALL Rprintd1('beyond Epsilon  = ', Eps)
             end if
-            Iprec = 1
+            Iprec = 2
          Endif
 
  70      Continue
@@ -2111,10 +2129,11 @@ c      St4 --> Tmp(ncomp,16)
 
          If (Iprec .eq. 0) Then
             If (Iprint .ge. 0)  then
+              CALL Rprint('NO convergence of 8th order defcors')     
       CALL Rprint('** Warning -possibly approaching machine precision')
       CALL Rprintd1('beyond Epsilon  = ',Eps)
              end if
-            Iprec = 1
+            Iprec = 2
          Endif
 
 

@@ -764,7 +764,8 @@ bvpsolver <- function(type = 1,       # 0 = acdc, 1 = bvptwp, 2 = bvpcol, 3 = bv
    if (is.null(eps))
      eps    <- 1e-10
    if (is.null(epsini))
-     epsini <- eps
+  # Francesca Mazzia chenged initialization, now is 0.5 and not eps
+     epsini <- 0.5
    if (epsini < eps)
      stop (" eps must be smaller of equal to epsini")
   }
@@ -1024,7 +1025,8 @@ dimnames(out) <- list(NULL,nm)
    if (is.null(eps))
     eps    <- 1e-10
    if (is.null(epsini))
-     epsini <- eps
+  # Francesca Mazzia chenged initialization, now is 0.5 and not eps
+     epsini <- 0.5
    if (epsini < eps)
      stop (" eps must be smaller of equal to epsini")
   }
