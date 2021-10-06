@@ -1,5 +1,5 @@
 Package: bvpSolve
-Version: 1.4.2
+Version: 1.4.3
 Title: Solvers for Boundary Value Problems of Differential Equations
 Authors@R: c(person("Karline","Soetaert", role = c("aut","cre"), 
                      email = "karline.soetaert@nioz.nl", 
@@ -33,6 +33,6 @@ Description: Functions that solve boundary value problems ('BVP') of systems of 
              Mazzia, F., J.R. Cash and K. Soetaert, 2014. 
 License: GPL (>= 2)
 NeedsCompilation: yes
-Packaged: 2021-05-19 06:31:13 UTC; karlines
+Packaged: 2021-09-24 06:49:26 UTC; karlines
 Repository: CRAN
-Date/Publication: 2021-05-19 09:40:08 UTC
+Date/Publication: 2021-10-06 09:50:02 UTC

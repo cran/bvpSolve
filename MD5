@@ -1,12 +1,12 @@
-e0d7f7e0fbdc1a2b1a702f32a2886ea8 *DESCRIPTION
+96c1e125ff3157f7f09b76a8e5a53ebc *DESCRIPTION
 8ee5292c546805839ae9874937860b6a *NAMESPACE
 10d498d61151ecaccc70d4471c5e2d86 *R/Utilities.R
 8ce6fde61541a0ff14ae7395fed0bdaf *R/bvpshoot.R
 5268e390b122e27205b356cded607add *R/bvpsolver.R
 801b824245250af9de21b642054fa41e *R/forcings.R
-ae00c7365f90baaa03eb042e6f52ca63 *inst/CITATION
-967f21cf485193bcdf778107a0f471cf *inst/doc/bvpSolve.pdf
-73ea4349f0ce2729e151f592c44fe426 *inst/doc/bvpTests.pdf
+52013189aa095bb4541a6cf64e2d3235 *inst/CITATION
+a714980db293f928223d8737cca9c145 *inst/doc/bvpSolve.pdf
+8500c2d3d70755ea9242b0f6508e8822 *inst/doc/bvpTests.pdf
 485df5fcfc313150fbe62dca614b7639 *inst/doc/dynload/boundary_for.f
 202ee67313324e25bab1f78d6e3f433f *inst/doc/dynload/boundarydll.R
 0e5861445ca3cda2de61af62a8e1857d *inst/doc/dynload/elastica.f
@@ -50,7 +50,7 @@ d753af231f9bb03e186aa14252eec32a *inst/doc/inline/inline_funtions_new.r
 0161ced45d09007891670c1449f02aea *inst/doc/inline/swirl_inline.r
 1484232ef99f149af2b931d60f8ff5b2 *inst/doc/inline/test_inline.r
 261bdb1bdf2eb7562fca37bad933365d *inst/doc/inline/test_inline_cb.r
-16912c751e7b09c4de2131f7335d7514 *inst/doc/opuscula_math_3424.pdf
+1cfe612c05819a1cee3d823a4ff33363 *inst/doc/opuscula_math_3424.pdf
 aeca4e86259e1f6647d14ddfbed8ed3e *man/bvpSolve.Rd
 da881bd2e2834a5d37b4206e9b4c16db *man/bvpcol.Rd
 a23e5e97475e6be437df53500af365da *man/bvpshoot.Rd
@@ -60,7 +60,7 @@ a23e5e97475e6be437df53500af365da *man/bvpshoot.Rd
 376751f3f56eef446187e613535295f6 *src/R_init_bvpSolve.c
 d7be64f61ed6a6e3794b5da0960b8fc9 *src/acdcR.f
 1386d18dbd1dd2ca703c4118ae4b42e7 *src/bvpSolve.h
-1ccc2703c8d04c278c7bec6095728b4a *src/bvpSolve_utils.c
+b29c2f926c5f15813dea009d81f0787b *src/bvpSolve_utils.c
 fe1d16fc8854c81a5873ead7e32109ab *src/call_acdc.c
 5a19753c3638f04168474cb754ad8b46 *src/call_colmodsys.c
 680fd8e5d72b4f2b3141c36611fe5e0e *src/call_colnew.c
@@ -74,7 +74,7 @@ ad1ef90cff86eb84325b88c3d98c030a *src/ex_boundary.f
 512f95b9330ec25a1f80dfcfc55263c9 *src/ex_elastica.f
 04b7d81832e840a6e6b9466fab3a93e9 *src/ex_elasticaC.c
 1f77dc59e6300170c112775b427abf0b *src/externalptr.h
-2d0adab1435840f04956690165c97074 *src/forcings.c
+1a2219c84b424a7ddd99b359965e5e91 *src/forcings.c
 afa96c6d08761a35a6775186930e371d *src/rprintf.c
 86c4d47ec6531399bd15dd5afbf784fb *src/twpbvpa.f
 ccf1ffcbc304fa31d7aa2a38613c82ed *src/twpbvpc.f
