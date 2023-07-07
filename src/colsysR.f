@@ -813,7 +813,7 @@ c
       do 10 i=1,ntol
         check = dmax1 (tolin(i), check )
    10 Continue
-      falpha = dfloat(nalpha)
+      falpha = dble(nalpha)
       imesh = 1
       icon = 0
       if (nonlin .eq. 0) icon=1
@@ -1381,7 +1381,7 @@ c...       determine where the j-th fixed point should fall in the
 c...       new mesh - this is xi(iright) and the (j-1)st fixed
 c...       point is in xi(ileft)
 c
-           nmin = int((xright-aleft)/(aright-aleft)*dfloat(n) + 1.5d0)
+           nmin = int((xright-aleft)/(aright-aleft)*dble(n) + 1.5d0)
            if (nmin .gt. n-nfxpnt+j)  nmin = n - nfxpnt + j
            iright = max0 (ileft+1, nmin)
    60      xi(iright) = xright
@@ -1391,9 +1391,9 @@ c...       j-th fixed points.
 c
            nregn = iright - ileft - 1
            if ( nregn .eq. 0 )                      go to 80
-           dx = (xright - xleft) / dfloat(nregn+1)
+           dx = (xright - xleft) / dble(nregn+1)
            do 70 i = 1,nregn
-             xi(ileft+i) = xleft + dfloat(i) * dx
+             xi(ileft+i) = xleft + dble(i) * dx
    70      Continue
    80      ileft = iright
            xleft = xright
@@ -1532,7 +1532,7 @@ c
            accum(i+1) = accum(i) + temp
            iflip = - iflip
   210  Continue
-      avrg = accum(nold+1) / dfloat(nold)
+      avrg = accum(nold+1) / dble(nold)
       degequ = avrg / dmax1(slphmx,precis)
 c
 c...  naccum=expected n to achieve .1x user requested tolerances
@@ -1592,7 +1592,7 @@ c
   230      continue
   240      continue
            accr = accum(lnew) + (fixpnt(i)-xiold(lnew))*slope(lnew-1)
-           nregn = int((accr-accl) / accum(noldp1) * dfloat(n) - .5d0)
+           nregn = int((accr-accl) / accum(noldp1) * dble(n) - .5d0)
            nregn = min0(nregn, n - in - nfxp1 + i)
            xi(in + nregn + 1) = fixpnt(i)
            go to 260
@@ -1601,7 +1601,7 @@ c
            nregn = n - in
   260      if (nregn .eq. 0)                        go to 300
            temp = accl
-           tsum = (accr - accl) / dfloat(nregn+1)
+           tsum = (accr - accl) / dble(nregn+1)
            do 290 j = 1, nregn
              in = in + 1
              temp = temp + tsum
@@ -1720,7 +1720,7 @@ c
    30      continue
            jtol(i) = jcomp
            wgtmsh(i) = 1.d1 * cnsts2(koff+ltoli-mtot) / tolin(i)
-           root(i) = 1.d0 / dfloat(k+mtot-ltoli+1)
+           root(i) = 1.d0 / dble(k+mtot-ltoli+1)
    40 continue
 c
 c...  specify collocation points
@@ -1883,7 +1883,7 @@ c
              jj = 5 - j
              knew = ( 4 * (i-1) + 3 - j ) * mstar + 1
              kstore = ( 2 * (i-1) + 2 - j ) * mstar + 1
-             x = xiold(i) + dfloat(3-j)/3.d0*(xiold(i+1)-xiold(i))
+             x = xiold(i) + dble(3-j)/3.d0*(xiold(i+1)-xiold(i))
              call sysapprox (i, x, valstr(knew), vnsave(1,jj), xiold,
      1            nold, aldif, k, ncomp, m, mstar, 3,dumm,0)
              do 60 l = 1,mstar
@@ -2195,7 +2195,7 @@ c
            ia = ia + nrow * kdm
   290 continue
       if (mode .ne. 1)                              go to 300
-      rnorm = dsqrt(rnorm / dfloat(nalpha))
+      rnorm = dsqrt(rnorm / dble(nalpha))
       return
 c
 c...  solve the linear system.
@@ -2588,7 +2588,7 @@ c
 c...  initialize for subsequent evaluation of  mj-th  derivatives.
 c
       ivnhi = k * (k-1) / 2
-      dnk2 = dfloat(k) / (xi(i+1) - xi(i))
+      dnk2 = dble(k) / (xi(i+1) - xi(i))
       incomp = 0
       do 100 j=1,ncomp
         dmval(j) = 0.d0
@@ -3041,7 +3041,7 @@ c
              in = in + 1
              do 320 l=1,kmj
                lbasef = in + (l-1) * mj1
-               basef(lbasef) = basef(lbasef) * dfloat(icons)
+               basef(lbasef) = basef(lbasef) * dble(icons)
   320 continue
   322 Continue
   325 Continue
@@ -3132,7 +3132,7 @@ c
              mjr = mj - nr
              kmjr = k - mjr
              xip1 = xi(1)
-             dnk2 = dfloat(kmr) / (xi(2) - xip1)
+             dnk2 = dble(kmr) / (xi(2) - xip1)
 c
 c...         for xi(1),xi(2), the divided difference is a special case
 c
@@ -3153,8 +3153,8 @@ c
              do 100 i = 1, n
                xii = xip1
                xip1 = xi(i+1)
-               dnk1 = dfloat(kmr) / (xip1 - xii)
-               if (i .lt. n) dnk2 = dfloat(kmr) / (xi(i+2) - xii)
+               dnk1 = dble(kmr) / (xip1 - xii)
+               if (i .lt. n) dnk2 = dble(kmr) / (xi(i+2) - xii)
                if (i .eq. n) dnk2 = dnk1
 c
 c...           the actual calculations involve two loops
@@ -3232,7 +3232,7 @@ c
            kpmj1 = kpmj - 1
            do 40 nr = mj,kpmj1
              kmr = kmr - 1
-             dnk2 = dn2 * dfloat(kmr)
+             dnk2 = dn2 * dble(kmr)
              do 20 l = 1,kmr
                ar(l+nr) = dnk2 * (arm1(l+nr) - arm1(l+nr-1))
    20        Continue

@@ -1,10 +1,11 @@
 citHeader("To cite package 'bvpSolve' in publications use:")
 
-citEntry(entry="Article",
+bibentry(  bibtype      = "Article",
+
   title = "Solving boundary value problems in the open source software R: Package bvpSolve",
-  author = personList(as.person("Francesca Mazzia"), 
-                      as.person("Jeff R. Cash"),
-                      as.person("Karline Soetaert")),
+  author = c(person("Francesca Mazzia"), 
+             person("Jeff R. Cash"),
+             person("Karline Soetaert")),
   journal =	"Opuscula mathematica",
   volume =	"34",
   number =	"2",

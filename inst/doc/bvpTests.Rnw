@@ -1,0 +1,1725 @@
+\documentclass[article,nojss]{jss}
+\DeclareGraphicsExtensions{.pdf,.eps}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Add-on packages and fonts
+\usepackage{amsmath}
+\usepackage{xspace}
+\usepackage{verbatim}
+\usepackage[english]{babel}
+%\usepackage{mathptmx}
+%\usepackage{helvet}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\newcommand{\R}{\proglang{R }\xspace}
+\newcommand{\bvp}{\pkg{bvpSolve }\xspace}
+\newcommand{\ds}{\pkg{deSolve }\xspace}
+\newcommand{\rs}{\pkg{rootSolve }\xspace}
+
+\title{ Package \pkg{bvpSolve}, solving testproblems}
+
+\Plaintitle{Package bvpSolve, solving testproblems }
+
+\Keywords{ordinary differential equations, boundary value problems,
+  shooting method, mono-implicit Runge-Kutta method, \proglang{R}}
+
+\Plainkeywords{ordinary differential equations, boundary value problems,
+  shooting method, mono-implicit Runge-Kutta method, R}
+
+
+\author{Karline Soetaert\\
+  Royal Netherlands Institute of Sea Research\\
+  Yerseke, The Netherlands
+  \And
+  Jeff Cash\\
+  Department of mathematics\\
+  Imperial College London\\
+  U.K.
+  \And
+  Francesca Mazzia\\
+  Dipartimento di Matematica \\
+  Universita' di Bari \\
+  Italy   
+}
+
+\Plainauthor{Karline Soetaert, Jeff Cash and Francesca Mazzia}
+
+\Abstract{
+  This document implements several testproblems
+  that can be found on \url{http://wwwf.imperial.ac.uk/~jcash/BVP_software/readme.html},
+  using solvers from package \bvp \citep{bvpSolve}.
+}
+
+%% The address of (at least) one author should be given
+%% in the following format:
+\Address{
+  Karline Soetaert\\
+  Royal Netherlands Institute of Sea Research (NIOZ)\\
+  4401 NT Yerseke, Netherlands \\
+  E-mail: \email{karline.soetaert@nioz.nl}\\
+  URL: \url{https://www.nioz.nl/staff-detail?id=784400}\\
+   \\
+  Jeff Cash\\
+  Imperial College London\\
+  South Kensington Campus\\
+  London SW7 2AZ, U.K.\\
+  E-mail: \email{j.cash@imperial.ac.uk}\\
+  URL: \url{http://www.ma.ic.ac.uk/\~jcash}\\
+  \\
+  Francesca Mazzia           \\
+  Dipartimento di Matematica \\
+  Universita' di Bari        \\
+  Via Orabona 4,             \\
+  70125 Bari                 \\
+  Italy 
+  E-mail: \email{mazzia@dm.uniba.it}\\
+  URL: \url{http://www.dm.uniba.it/~mazzia/mazzia/}\\
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% R/Sweave specific LaTeX commands.
+%% need no \usepackage{Sweave}
+%\VignetteIndexEntry{bvpSolve: a set of 35 test Problems}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Begin of the document
+\begin{document}
+\SweaveOpts{engine=R,eps=FALSE}
+\SweaveOpts{keep.source=TRUE}
+
+<<preliminaries,echo=FALSE,results=hide>>=
+library("bvpSolve")
+options(prompt = " ")
+options(continue = "  ")
+options(width=70)
+@ 
+
+\maketitle
+
+\section{introduction}
+
+  \pkg{bvpSolve} numerically solves boundary value problems (BVP) of
+   ordinary differential equations (ODE), which for one 
+  (second-order) ODE can be written as:
+
+  \begin{eqnarray*}
+    \frac{d^2y}{dx^2}=f(x,y,\frac{dy}{dx}) \\
+    a \leq x\leq b \\
+    g_1(y) |_a = 0 \\
+    g_2(y) |_b = 0
+  \end{eqnarray*}
+  where \code{y} is the dependent, \code{x} the independent variable,
+  function \code{f} is the differential equation, $g_1(y) |_a $ and 
+  $g_2(y) |_b$ the boundary conditions at the end points a and b.
+
+  Although all solvers now accept higher-order systems, 
+  the problem can be specified as a first-order system. For instance:
+  \begin{eqnarray*}
+    \frac{d^2y}{dx^2}=f(x,y,\frac{dy}{dx})
+  \end{eqnarray*}
+  can be rewritten as:
+  \begin{eqnarray*}
+    \frac{dy}{dx}=z \\
+    \frac{dz}{dx}=f(x,y,z)
+  \end{eqnarray*}
+  
+  In this document, all boundary value problems that can be found on
+  \url{http://wwwf.imperial.ac.uk/~jcash/BVP_software/PROBLEMS.PDF}, are implemented and solved
+  using solvers from package \bvp.
+  
+  Most of the time, for each solver, the default settings are used, 
+  i.e. without providing "initial guesses" of the solution.
+  
+  With these settings, some methods cannot solve certain problems. This does
+  not mean that other settings cannot be found that do solve the problem.
+  
+  If available, then the analytical solution of the problem is plotted (as dots).
+
+  There are several other packages that solve differential equations in the 
+  open-source software \R \citep{R2010}.
+  
+  Package \ds \citep{deSolve} is designed for
+  solving initial value problems, i.e. where the boundary conditions are
+  provided at the initial boundary point only.
+
+  Package \pkg{ReacTran} \citep{ReacTran} provides numerical differences of 
+  first- and second- order derivatives and, using solvers form package \rs 
+  \citep{rootSolve}, can solve certain  boundary value problems.
+  This is usually more efficient (but less precise) than the boundary value 
+  solvers from \bvp, but many problems cannot be solved this way.
+
+  We will rewrite the uneven problems as a set of first-order equations, while
+  the even problems will be solved in higher-order form.
+\section{Linear problems}
+\subsection{problem 1}
+  This problem is:
+  \begin{eqnarray*}
+    \xi y'' -y = 0 \\
+    y_{(x=0)} = 1, y_{(x=1)} = 0
+  \end{eqnarray*}
+  which is rewritten as:
+  \begin{eqnarray*}
+    y_1' = y2 \\
+    y_2' = y_1 / \xi
+  \end{eqnarray*}
+  and implemented as:
+<<>>=
+Prob1 <- function(t, y, pars) {
+   list(c( y[2] , y[1]/xi ))
+}
+@
+This is solved for different values of $\xi$
+<<>>=
+xi <- 0.1
+print(system.time(
+  mod1 <- bvpshoot(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by=0.01),
+            func = Prob1, guess = 0)))
+print(system.time(
+  mod1 <- bvptwp(yini = c(1, NA),yend=c(0, NA),x = seq(0, 1, by = 0.01),
+            func = Prob1)))
+print(system.time(
+  mod1 <- bvpcol(yini = c(1, NA),yend=c(0, NA),x = seq(0, 1, by = 0.01),
+            func = Prob1)))
+@
+for smaller $\xi$
+<<>>=
+xi <-0.01
+mod2  <- bvptwp(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
+            func = Prob1)
+@
+and for a very small value
+<<>>=
+xi <-0.001
+mod3  <- bvptwp(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
+           func = Prob1)
+@
+and the output plotted
+<<label=prob1,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 1")
+
+# exact solution
+curve(exp(-x/sqrt(xi))-exp((x-2)/sqrt(xi))/(1-exp(-2/sqrt(xi))),
+      0, 1, add = TRUE, type = "p")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob1,fig=TRUE,echo=FALSE>>=
+<<prob1>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 1, see text for R-code}
+\label{fig:mat}
+\end{figure}
+\clearpage
+
+\subsection{problem 2}
+  \begin{eqnarray*}
+    \xi y'' -y' = 0 \\
+    y_{(x=0)} = 1, y_{(x=1)} = 0
+  \end{eqnarray*}
+It is solved in higher-order form.
+<<>>=
+Prob2 <- function(t, y, pars) {
+  list( y[2]/xi )
+}
+xi <-0.2
+mod1 <- bvpshoot(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
+                  order = 2, func = Prob2, guess = 0)
+@
+For lower values of $\xi$ (<0.1) this problem cannot be solved by the shooting
+method, but it is solvable by mono-implicit Runge-Kutta and collocation
+<<>>=
+xi <-0.1
+mod2 <- bvptwp(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
+                order = 2, func = Prob2, atol = 1e-10)
+xi <- 0.01
+mod3 <- bvptwp(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
+                order = 2, func = Prob2, atol = 1e-10)
+xi <- 0.001
+mod4 <- bvpcol(yini = c(1, NA), yend = c(0, NA), x = seq(0, 1, by = 0.01),
+                order = 2, func = Prob2, atol = 1e-10)
+@
+The solution can be compared with the analytical solution:
+<<label=prob2,include=FALSE>>=
+plot(mod1, mod2, mod3, mod4, which = 1, lty = 1, main = "test problem 2")
+xi <- 0.01
+curve((1-exp((x-1)/xi))/(1-exp(-1/xi)), 0, 1, type = "p", add = TRUE)
+@
+\setkeys{Gin}{width=0.32\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob2,fig=TRUE,echo=FALSE>>=
+<<prob2>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 2, see text for R-code}
+\label{fig:pr2}
+\end{figure}
+\clearpage
+
+\subsection{problem 3}
+  \begin{eqnarray*}
+    \xi y'' + (2+\cos(\pi x))y' -y = -(1+\xi \pi^2) \cos(\pi x) -
+    (2+\cos (\pi x)) \pi \sin(\pi x) \\
+    y_{(x=-1)} = y_{(x=1)} = -1
+  \end{eqnarray*}
+<<>>=
+Prob3 <- function(x, y, pars) {
+  list(c( y[2],
+         1/xi * (-(2+cos(pi*x)) * y[2] + y[1]-
+          (1 + xi*pi*pi) * cos(pi*x)-
+          (2 + cos(pi*x))* pi * sin(pi*x))
+      ))
+}
+@
+<<>>=
+xi <-0.1
+mod1 <- bvpshoot(yini = c(-1, NA), yend = c(-1, NA), 
+                   x = seq(-1, 1, by=0.01), func = Prob3, guess = 0)
+@
+<<>>=
+xi <-0.01
+mod2 <- bvptwp(yini = c(-1, NA), yend = c(-1, NA), 
+                 x = seq(-1, 1, by=0.01), func = Prob3)
+xi <-0.001
+mod3 <- bvpcol(yini = c(-1, NA), yend = c(-1, NA), 
+                 x = seq(-1, 1, by=0.01), func = Prob3)
+@
+<<label=prob3,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 3")
+curve(cos(pi*x), -1, 1, type = "p", add = TRUE)
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob3,fig=TRUE,echo=FALSE>>=
+<<prob3>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 3, see text for R-code}
+\label{fig:pr3}
+\end{figure}
+\clearpage
+
+\subsection{problem 4}
+  \begin{eqnarray*}
+    \xi y'' + y' -(1+\xi) y = 0 \\
+    y_{(x=-1)} = 1+ exp(-2) \\
+    y_{(x=1)} = 1 + exp(-2(1+\xi)/\xi)
+  \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob4 <- function(t, y, pars) {
+  list((-y[2] + (1+xi)*y[1])/xi )
+}
+yini <- c(1 + exp(-2), NA)
+@
+<<>>=
+xi   <- 0.5
+yend <- c(1 + exp(-2*(1+xi)/xi), NA)
+mod1  <- bvpshoot(yini = yini, yend = yend, x = seq(-1, 1, by = 0.01),
+                   order = 2, func = Prob4, guess = 0)
+xi   <- 0.1
+yend <- c(1 + exp(-2*(1+xi)/xi), NA)
+mod2  <- bvptwp(yini = yini, yend = yend, x = seq(-1, 1, by = 0.01),
+                 order = 2, func = Prob4)
+xi <- 0.01
+yend <- c(1 + exp(-2*(1+xi)/xi), NA)
+mod3  <- bvptwp(yini = yini,yend = yend,x = seq(-1, 1, by = 0.01),
+                  order = 2, func = Prob4)
+@
+<<label=prob4,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 4")
+curve(exp(x-1) + exp(-(1+xi)*(1+x)/xi), -1, 1, type = "p", add = TRUE)
+@
+\setkeys{Gin}{width=0.32\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob4,fig=TRUE,echo=FALSE>>=
+<<prob4>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 4, see text for R-code}
+\label{fig:pr4}
+\end{figure}
+\clearpage
+
+\subsection{problem 5}
+  \begin{eqnarray*}
+    \xi y'' - x y' -y = -(1+\xi \pi^2) \cos(\pi x) +
+    (\pi x)) \sin(\pi x) \\
+    y_{(x=-1)} = y_{(x=1)} = -1
+  \end{eqnarray*}
+
+<<>>=
+Prob5 <- function(x, y, pars) {
+  list(c( y[2],
+          x * y[2] + y[1] - (1+pi*pi) * cos(pi*x) + pi*x*sin(pi*x) ))
+}
+@
+<<>>=
+xi <- 0.1
+mod1 <- bvpshoot(yini = c(-1, NA), yend = c(-1, NA),
+                   x=seq(-1, 1, by = 0.01), func = Prob5, guess = 0)
+@
+<<>>=
+mod2 <- bvptwp(yini = c(-1, NA), yend = c(-1, NA),
+                 x=seq(-1, 1, by = 0.01), func = Prob5)
+@
+<<label=prob5,include=FALSE>>=
+plot(mod1, mod2, which = 1, lty = 1, main = "test problem 5")
+curve(cos(pi*x), -1, 1, type = "p", add = TRUE)
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob5,fig=TRUE,echo=FALSE>>=
+<<prob5>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 5, see text for R-code}
+\label{fig:pr5}
+\end{figure}
+\clearpage
+
+\subsection{problem 6}
+  \begin{eqnarray*}
+    \xi y'' + x y' = -\xi \pi^2 \cos(\pi x) -
+    \pi x \sin(\pi x) \\
+    y_{(x=-1)} = -2 \\
+    y_{(x=1)} = 0
+  \end{eqnarray*}
+It is solved in higher-order form.
+
+This problem cannot be solved by the shooting method, except for the largest
+value of xi
+<<>>=
+Prob6 <- function(t, y, pars) {
+  list(1/xi * (-t*y[2] - xi*pi*pi*cos(pi*t) - pi*t*sin(pi*t)) )
+}
+@
+<<>>=
+xi    <- 0.1
+mod1 <- bvpshoot(yini = c(-2, NA), yend = c(0, NA), 
+            order = 2, x = seq(-1, 1, by = 0.01), func = Prob6, guess = 0)
+xi    <- 0.01
+mod2 <- bvptwp(yini = c(-2, NA), yend = c(0, NA), 
+            order = 2, x = seq(-1, 1, by = 0.01), func = Prob6)
+xi    <- 0.001
+mod3 <- bvptwp(yini = c(-2, NA), yend = c(0, NA), 
+            order = 2, x = seq(-1, 1, by = 0.01), func = Prob6)
+@
+<<label=prob6,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 6")
+erf <- function(x) 2 * pnorm(x * sqrt(2)) - 1
+curve(cos(pi*x) + erf(x/sqrt(2*xi))/erf(1/sqrt(2*xi)), -1, 1, 
+      type = "p", add = TRUE)
+
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob6,fig=TRUE,echo=FALSE>>=
+<<prob6>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 6, see text for R-code}
+\label{fig:pr6}
+\end{figure}
+\clearpage
+
+\subsection{problem 7}
+  \begin{eqnarray*}
+    \xi y'' + x y' - y &=&  -(1 + \xi \pi ^2) \cos(\pi x) -\pi x \sin(\pi x)\\
+    y(-1) &=& -1 \\
+    y(1) &=& 1
+  \end{eqnarray*}
+This problem cannot be solved with the shooting method for small xi.
+<<>>=
+prob7 <- function(x, y, pars) {
+  list(c(y[2],
+     1/xi * (-x*y[2]+y[1] - (1+xi*pi*pi)*cos(pi*x)-pi*x*sin(pi*x)))   )
+}
+
+x  <- seq(-1, 1, by = 0.01)
+@
+<<>>=
+xi   <- 0.01
+mod1  <- bvptwp(yini = c(-1, NA), yend = c(1, NA), x = x, func = prob7)
+xi   <- 0.001
+mod2 <- bvptwp(yini = c(-1, NA), yend = c(1, NA), x = x, func = prob7)
+@
+For even smaller $\xi$, we need to provide good initial guesses:
+<<>>=
+xi <- 0.0005
+mod3  <- bvptwp(yini = c(-1, NA), yend = c(1, NA), x = x, func = prob7,
+  xguess = mod2[,1], yguess = t(mod2[,-1]))
+@
+<<label=prob7,include=FALSE>>=
+plot(mod1, mod2, mod3, which = c(2,1), type = "l", lty = 1,
+     main = c("dy", "y"), xlab = "x", ylab = "y")
+erf <- function(x) 2 * pnorm(x * sqrt(2)) - 1
+curve(cos(pi*x) + x + (x*erf(x/sqrt(2*xi))+sqrt(2*xi/pi)*exp(-x^2/2/xi))/
+         (erf(1/(2*xi))+sqrt(2*xi/pi)*exp(-1/2/xi)),
+         -1, 1, type = "p", add = TRUE)
+@
+
+\setkeys{Gin}{width=0.8\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob7,fig=TRUE,echo=FALSE, width=13, height=6>>=
+<<prob7>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 7, y and y' versus x- see text for R-code}
+\label{fig:pr7}
+\end{figure}
+
+\clearpage
+\subsection{problem 8}
+  \begin{eqnarray*}
+    \xi y'' + y'  &=&  0\\
+    y(0) &=& 1 \\
+    y(1) &=& 2
+  \end{eqnarray*}
+It is solved in higher-order form.
+<<>>=
+prob8 <- function(x, y, pars) {
+  list(-1/xi*y[2])
+}
+
+x  <- seq(0,1,by=0.01)
+@
+<<>>=
+xi    <- 0.2
+mod1 <- bvpshoot(yini = c(1, NA), yend = c(2, NA), x = x,
+                  order = 2, func = prob8, guess = 0)
+xi   <- 0.1
+mod2 <- bvptwp(yini = c(1, NA), yend = c(2, NA), x = x,
+                  order = 2, func = prob8)
+xi   <- 0.01
+mod3 <- bvptwp(yini = c(1, NA), yend = c(2, NA), x = x,
+                  order = 2, func = prob8)
+@
+<<label=prob8,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 8")
+curve(2-exp(-1/xi)-exp(-x/xi)/(1-exp(-1/xi)), 
+      0, 1, add = TRUE, type = "p")
+@
+
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob8,fig=TRUE,echo=FALSE>>=
+<<prob8>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 8, see text for R-code}
+\label{fig:pr8}
+\end{figure}
+\clearpage
+
+\subsection{problem 9}
+  \begin{eqnarray*}
+    (\xi + x^2) y'' + 4 x y' + 2 y = 0 \\
+    y_{(x=-1)} = y_{(x=1)} = 1/(1+\xi)
+  \end{eqnarray*}
+This problem cannot be solved by the shooting method
+<<>>=
+Prob9 <- function(x, y, pars) {
+  list(c( y[2], -1/(xi+x^2)*(4*x*y[2]+2*y[1]) ))
+}
+@
+<<>>=
+xi   <-0.05
+mod1 <- bvptwp(yini = c(1/(1+xi), NA), yend = c(1/(1+xi), NA),
+               x = seq(-1, 1, by = 0.01), func = Prob9)
+@
+<<>>=
+xi   <-0.02
+mod2 <- bvptwp(yini = c(1/(1+xi), NA), yend = c(1/(1+xi), NA),
+               x = seq(-1, 1, by = 0.01), func = Prob9)
+@
+<<>>=
+xi   <-0.01
+mod3 <- bvptwp(yini = c(1/(1+xi), NA), yend = c(1/(1+xi), NA),
+               x = seq(-1, 1, by = 0.01), func = Prob9)
+@
+<<label=prob9,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 9")
+# exact
+curve(1/(xi+x^2), -1, 1, type = "p", add = TRUE)
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob9,fig=TRUE,echo=FALSE>>=
+<<prob9>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 9, see text for R-code}
+\label{fig:pr9}
+\end{figure}
+\clearpage
+
+
+\subsection{problem 10}
+  \begin{eqnarray*}
+    \xi y'' + x y' = 0\\
+    y_{(x=-1)} = 0 \\
+    y_{(x= 1)} = 2
+  \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob10 <- function(x, y, pars) {
+  list( -1/xi*x*y[2] )
+}
+@
+<<>>=
+xi    <-0.1
+mod1 <- bvpshoot(yini = c(0, NA), yend = c(2, NA), 
+           order = 2, x = seq(-1, 1, by = 0.01), func=Prob10, guess = 0)
+xi   <- 0.05
+mod2 <- bvpcol(yini = c(0, NA), yend = c(2, NA), 
+           order = 2, x = seq(-1, 1, by = 0.01), func=Prob10)
+xi   <- 0.01
+mod3 <- bvptwp(yini = c(0, NA), yend = c(2, NA), 
+           order = 2, x = seq(-1, 1, by = 0.01), func=Prob10)
+@
+<<label=prob10,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 10")
+
+erf <- function(x) 2 * pnorm(x * sqrt(2)) - 1
+curve(1+erf(x/sqrt(2*xi))/erf(1/sqrt(2*xi)),
+      -1, 1, type = "p", add = TRUE)
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob10,fig=TRUE,echo=FALSE>>=
+<<prob10>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 10, see text for R-code}
+\label{fig:pr10}
+\end{figure}
+\clearpage
+
+\subsection{problem 11}
+  \begin{eqnarray*}
+    \xi y''- y = -(\xi \pi^2 +1) cos(\pi x)\\
+    y_{(x=-1)} = -1 \\
+    y_{(x= 1)} = -1
+  \end{eqnarray*}
+All xi give the same result
+<<>>=
+Prob11 <- function(x, y, pars) {
+  list(c(y[2], 1/xi * (y[1]-(xi*pi*pi+1)*cos(pi*x)) ))
+}
+@
+<<>>=
+xi <-0.1
+print(system.time(
+mod1 <- bvpshoot(yini = c(-1, NA), yend = c(-1, NA), guess = 0,
+                   x = seq(-1, 1, by=0.01), func = Prob11, atol = 1e-10)
+))
+print(system.time(
+mod2 <- bvptwp(yini = c(-1, NA), yend = c(-1, NA),
+               x = seq(-1, 1, by=0.01), func = Prob11, atol = 1e-10)
+))
+@
+<<label=prob11,include=FALSE>>=
+plot(mod1, mod2, which = 1, lty = 1, main = "test problem 11")
+curve(cos(pi*x), -1, 1, type = "p", add= TRUE)
+@
+\setkeys{Gin}{width=0.32\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob11,fig=TRUE,echo=FALSE>>=
+<<prob11>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 11, see text for R-code}
+\label{fig:pr11}
+\end{figure}
+\clearpage
+
+\subsection{problem 12}
+  The same as problem 11, but with different boundary values:
+  \begin{eqnarray*}
+    \xi y''= y = -(\xi \pi^2 +1) cos(\pi x)\\
+    y_{(x=-1)} = -1 \\
+    y_{(x= 1)} = 0
+  \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob12 <- function(x, y, pars) {
+  list(1/xi * (y[1]-(xi*pi*pi+1)*cos(pi*x)))
+}
+@
+<<>>=
+xi    <- 0.01
+mod1 <- bvpshoot(yini = c(-1, NA), yend = c(0, NA),
+           order = 2, x = seq(-1, 1, by = 0.01), func = Prob12, guess = 0)
+@
+<<>>=
+xi   <- 0.0025
+mod2 <- bvptwp(yini = c(-1, NA), yend = c(0, NA),
+           order = 2, x = seq(-1, 1, by = 0.01), func = Prob12)
+@
+<<>>=
+xi   <- 0.0001
+mod3 <- bvptwp(yini = c(-1, NA), yend = c(0, NA),
+           order = 2, x = seq(-1, 1, by = 0.01), func = Prob12)
+@
+<<label=prob12,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 12")
+curve(cos(pi*x)+exp((x-1)/sqrt(xi)), 
+      -1, 1, type = "p", add = TRUE)
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob12,fig=TRUE,echo=FALSE>>=
+<<prob12>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 12, see text for R-code}
+\label{fig:pr12}
+\end{figure}
+\clearpage
+
+
+\subsection{problem 13}
+  The same as problem 11, but with different boundary values:
+  \begin{eqnarray*}
+    \xi y''= y = -(\xi \pi^2 +1) cos(\pi x)\\
+    y_{(x=-1)} = 0 \\
+    y_{(x= 1)} = -1
+  \end{eqnarray*}
+
+<<>>=
+Prob13 <- function(x, y, pars)  {
+  list(c( y[2], 1/xi*(y[1]-(xi*pi*pi+1)*cos(pi*x)) ))
+}
+@
+<<>>=
+xi    <- 0.01
+mod1 <- bvpshoot(yini = c(0, NA), yend = c(-1, NA),
+                  x = seq(-1, 1, by=0.01), func = Prob13, guess = 0)
+@
+<<>>=
+xi   <- 0.0025
+mod2 <- bvptwp(yini = c(0, NA), yend = c(-1, NA),
+               x = seq(-1, 1, by=0.01), func = Prob13)
+@
+<<>>=
+xi    <- 0.0001
+mod3 <- bvptwp(yini = c(0, NA), yend = c(-1, NA),
+                x = seq(-1, 1, by=0.01), func = Prob13)
+@
+<<label=prob13,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 13")
+curve(cos(pi*x)+exp(-(x+1)/sqrt(xi)), 
+      -1, 1, type = "p", add = TRUE)
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob13,fig=TRUE,echo=FALSE>>=
+<<prob13>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 13, see text for R-code}
+\label{fig:pr13}
+\end{figure}
+\clearpage
+
+\subsection{problem 14}
+  The same as problem 11, but with different boundary values:
+  \begin{eqnarray*}
+    \xi y''= y = -(\xi \pi^2 +1) cos(\pi x)\\
+    y_{(x=-1)} = 0 \\
+    y_{(x= 1)} = 0
+  \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob14 <- function(x, y, pars)  {
+  list(1/xi*(y[1]-(xi*pi*pi+1)*cos(pi*x)))
+}
+@
+<<>>=
+xi    <- 0.01
+mod1 <- bvpshoot(yini = c(0, NA), yend = c(0, NA), 
+         order = 2, x = seq(-1, 1, by = 0.01), func = Prob14, guess = 0)
+@
+<<>>=
+xi   <- 0.0025
+mod2 <- bvptwp(yini = c(0, NA), yend = c(0, NA), 
+            order = 2, x = seq(-1, 1, by = 0.01), func = Prob14)
+@
+<<>>=
+xi    <- 0.0001
+mod3 <- bvptwp(yini = c(0, NA), yend = c(0, NA), 
+            order = 2, x = seq(-1, 1, by = 0.01), func = Prob14)
+@
+<<label=prob14,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 14")
+curve(cos(pi*x)+exp((x-1)/sqrt(xi))+exp(-(x+1)/sqrt(xi)),
+      -1, 1, type = "p", add = TRUE)
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob14,fig=TRUE,echo=FALSE>>=
+<<prob14>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 14, see text for R-code}
+\label{fig:pr14}
+\end{figure}
+\clearpage
+\subsection{problem 15}
+  \begin{eqnarray*}
+    \xi y'' - x y = 0\\
+    y_{(x=-1)} = y_{(x=1)} = 1
+  \end{eqnarray*}
+<<>>=
+Prob15 <- function(x, y, pars)  {
+  list(c( y[2], 1/xi*x*y[1] ))
+}
+@
+<<>>=
+xi <-0.003
+print(system.time(
+mod1 <- bvpshoot(yini = c(1, NA), yend = c(1, NA),
+                   x = seq(-1, 1, by = 0.01), func = Prob15, guess = 0)
+))
+@
+<<>>=
+xi <- 0.005
+print(system.time(
+mod2 <- bvptwp(yini = c(1, NA), yend = c(1, NA),
+               x = seq(-1, 1, by = 0.01), func = Prob15)
+))
+xi <- 0.005
+print(system.time(
+mod3 <- bvpcol(yini = c(1, NA), yend = c(1, NA),
+               x = seq(-1, 1, by = 0.01), func = Prob15)
+))
+@
+<<>>=
+xi <- 0.01
+print(system.time(
+mod4 <- bvptwp(yini = c(1, NA), yend = c(1, NA),
+            x = seq(-1, 1, by = 0.01), func = Prob15)
+))
+@
+<<label=prob15,include=FALSE>>=
+plot(mod1, mod2, mod3, mod4, which = 1, lty = 1, main = "test problem 15")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob15,fig=TRUE,echo=FALSE>>=
+<<prob15>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 15, see text for R-code}
+\label{fig:pr15}
+\end{figure}
+\clearpage
+
+\subsection{problem 16}
+  \begin{eqnarray*}
+    \xi^2 y'' +\pi^2 y/4 = 0\\
+    y_{(x=0)} = 0 \\
+    y_{(x=1)} = \sin(\pi / (2 \xi))
+  \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob16 <- function(x, y, pars) {
+  list(-1/xi^2*pi^2*y[1]/4 )
+}
+@
+<<>>=
+xi <-0.11
+print(system.time(
+mod1 <- bvpshoot(yini = c(0,NA),yend = c(sin(pi/2/xi), NA),
+                   x = seq(0, 1, by=0.01), func = Prob16, guess = 0, 
+                   order = 2, atol = 1e-10)
+))
+@
+<<label=prob16,include=FALSE>>=
+plot(mod1, which = 1, main = "test problem 16", col = "blue")
+curve(sin(pi*x/2/xi), 0, 1, type = "p", add = TRUE)
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob16,fig=TRUE,echo=FALSE>>=
+<<prob16>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 16, see text for R-code}
+\label{fig:pr16}
+\end{figure}
+\clearpage
+ \subsection{problem 17}
+  \begin{eqnarray*}
+   y'' =-3 \xi y/(\xi +x^2)^2\\
+   y_{(x=0.1)} = -y(-0.1) = \frac{0.1}{\sqrt(\xi + 0.01)}
+  \end{eqnarray*}
+only bvptwp works.
+<<>>=
+Prob17 <- function(x, y, pars)  {
+  list(c( y[2], -3*xi*y[1]/(xi+x^2)^2 ))
+}
+
+xseq <- seq(-0.1, 0.1, by = 0.001)
+@
+<<>>=
+xi   <- 0.01
+mod1 <- bvptwp(yini = c(-0.1/sqrt(xi+0.01), NA),
+                yend = c(0.1/sqrt(xi+0.01), NA), x = xseq,
+                func = Prob17, atol = 1e-10)
+xi   <- 0.001
+mod2 <- bvptwp(yini = c(-0.1/sqrt(xi+0.01), NA),
+                yend = c(0.1/sqrt(xi+0.01), NA), x = xseq,
+                func = Prob17, atol = 1e-8)
+xi   <- 0.0001
+mod3 <- bvptwp(yini = c(-0.1/sqrt(xi+0.01), NA),
+                yend = c(0.1/sqrt(xi+0.01), NA), x = xseq,
+                func = Prob17, atol = 1e-8)
+@
+<<label=prob17,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 17")
+curve(x/sqrt(xi+x^2), -0.1, 0.1, type = "p", add = TRUE)
+@
+\setkeys{Gin}{width=0.32\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob17,fig=TRUE,echo=FALSE>>=
+<<prob17>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 17, see text for R-code}
+\label{fig:pr17}
+\end{figure}
+\clearpage
+ \subsection{problem 18}
+  \begin{eqnarray*}
+   \xi y'' =-y'\\
+   y_{(x=0)} = 1\\
+   y_{(x=1)} = exp(-1 / \xi)
+   \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob18 <- function(x, y, pars) {
+  list( -1/xi*y[2])  
+}
+
+xseq<-seq(0,1,by=0.01)
+@
+<<>>=
+xi <-0.2
+mod1 <- bvpshoot(yini = c(1, NA), yend = c(exp(-1/xi), NA), x = xseq,
+              order = 2, func = Prob18, guess = 0, atol = 1e-10)
+@
+<<>>=
+xi <- 0.1
+mod2 <- bvptwp(yini = c(1, NA), yend = c(exp(-1/xi), NA), x = xseq,
+              order = 2, func = Prob18, atol = 1e-10)
+@
+<<>>=
+xi <- 0.01
+mod3 <- bvptwp(yini = c(1, NA), yend = c(exp(-1/xi), NA), x = xseq,
+              order = 2, func = Prob18, atol = 1e-10)
+@
+<<label=prob18,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 18")
+curve(exp(-x/xi), 0, 1, type = "p", add = TRUE)
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob18,fig=TRUE,echo=FALSE>>=
+<<prob18>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 18, see text for R-code}
+\label{fig:pr18}
+\end{figure}
+\clearpage
+
+\section{nonlinear problems}
+For the nonlinear problems, the analytical solution is often not known.
+\subsection{problem 19}
+  \begin{eqnarray*}
+    \xi y'' + exp(y) y' -\frac{\pi}{2} sin(\pi x/2) exp(2y)= 0 \\
+    y_{(x=0)} = y_{(x=1)} = 0
+  \end{eqnarray*}
+<<>>=
+Prob19 <- function(t, y, pars, ksi) {
+  pit = pi*t
+  list(c(y[2],(pi/2*sin(pit/2)*exp(2*y[1])-exp(y[1])*y[2])/ksi))
+}
+@
+<<>>=
+xi    <- 0.05
+mod1 <- bvpshoot(yini = c(0, NA), yend = c(0, NA), 
+         x = seq(0, 1, by = 0.01), func = Prob19, guess = 0, ksi = xi)
+xi <- 0.03
+mod2 <- bvptwp(yini = c(0, NA), yend = c(0, NA), 
+               x = seq(0, 1, by = 0.01), func = Prob19, ksi = xi, 
+               atol = 1e-15)
+xi <- 0.005
+mod3 <- bvptwp(yini = c(0, NA), yend = c(0, NA), 
+                x = seq(0, 1, by = 0.01), func = Prob19, ksi = xi, 
+                atol = 1e-10)
+@
+<<label=prob19,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 19")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob19,fig=TRUE,echo=FALSE>>=
+<<prob19>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 19, see text for R-code}
+\label{fig:pr19}
+\end{figure}
+\clearpage
+\subsection{problem 20}
+  \begin{eqnarray*}
+    \xi y'' + y'^2 =1 \\
+    y_{x=0} = 1 + \xi ln (cosh(0.745/\xi))\\
+    y_{x=1} = 1 + \xi ln (cosh(0.255/\xi))
+  \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob20 <- function(x, y, pars) {
+  list( 1/xi *(1-y[2]^2) )
+}
+@
+<<>>=
+xi  <- 0.5
+ini <- c(1+xi * log(cosh(0.745/xi)), NA)
+end <- c(1+xi * log(cosh(0.255/xi)), NA)
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by=0.01),
+            order = 2, func = Prob20)
+xi  <- 0.3
+ini <- c(1+xi * log(cosh(0.745/xi)), NA)
+end <- c(1+xi * log(cosh(0.255/xi)), NA)
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by=0.01),
+            order = 2, func = Prob20)
+xi  <- 0.01
+ini <- c(1+xi * log(cosh(0.745/xi)), NA)
+end <- c(1+xi * log(cosh(0.255/xi)), NA)
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by=0.01),
+                order = 2, func = Prob20)
+@
+<<label=prob20,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 20")
+curve(1+xi * log(cosh((x-0.745)/xi)), 0, 1, add = TRUE, type = "p")
+@
+\setkeys{Gin}{width=0.32\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob20,fig=TRUE,echo=FALSE>>=
+<<prob20>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 20, see text for R-code}
+\label{fig:pr20}
+\end{figure}
+\clearpage
+\subsection{problem 21}
+  \begin{eqnarray*}
+    \xi y'' = y + y^2 -\exp(-2 x/\sqrt(\xi)) \\
+    y_{x=0} = 1 \\
+    y_{x=1} = \exp(- 1/\sqrt(\xi))
+  \end{eqnarray*}
+<<>>=
+Prob21 <- function(x, y, pars, xi) {
+  list(c( y[2], 1/xi *(y[1]+y[1]^2-exp(-2*x/sqrt(xi))) ))
+}
+ini <- c(1, NA)
+@
+<<>>=
+xi  <- 0.2
+end <- c(exp(-1/sqrt(xi)), NA)
+mod1 <- bvpshoot(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+                   func = Prob21, guess = 0, xi = xi)
+xi  <- 0.1
+end <- c(exp(-1/sqrt(xi)), NA)
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob21, xi = xi)
+xi  <- 0.01
+end <- c(exp(-1/sqrt(xi)), NA)
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+                func = Prob21, xi = xi)
+@
+<<label=prob21,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 21")
+curve(exp(-x/sqrt(xi)), 0, 1, add = TRUE, type = "p")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob21,fig=TRUE,echo=FALSE>>=
+<<prob21>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 21, see text for R-code}
+\label{fig:pr21}
+\end{figure}
+\clearpage
+\subsection{problem 22}
+  \begin{eqnarray*}
+    \xi y'' + y' + y^2 = 0 \\
+    y_{x=0} = 0 \\
+    y_{x=1} = 1/2
+  \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob22 <- function(t, y, pars, xi) {
+  list( -1/xi *(y[2]+y[1]^2) )
+}
+
+ini <- c(0, NA)
+end <- c(1/2, NA)
+@
+<<>>=
+xi <-0.1
+mod1 <- bvpshoot(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+              order = 2, func = Prob22, guess = 0, xi = xi)
+@
+<<>>=
+xi <-0.05
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+              order = 2, func = Prob22, xi = xi)
+@
+<<>>=
+xi <- 0.01
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+              order = 2, func = Prob22, xi = xi)
+@
+<<label=prob22,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 22")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob22,fig=TRUE,echo=FALSE>>=
+<<prob22>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 22, see text for R-code}
+\label{fig:pr22}
+\end{figure}
+\clearpage
+
+\subsection{problem 23}
+This is a difficult problem that cannot be solved with bvpshoot
+  \begin{eqnarray*}
+     y''= \mu sinh(\mu y) \\
+    y_{(x=0)} = y_{(x=1)} = 1
+  \end{eqnarray*}
+<<>>=
+Prob23 <- function(t, y, pars, xi) {
+  list(c( y[2], sinh(y[1]/xi)/xi) )
+}
+
+ini <- c(0, NA)
+end <- c(1, NA)
+@
+<<>>=
+xi <- 1/5
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+                func = Prob23, xi = xi)
+@
+<<>>=
+xi <- 1/7
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob23, xi = xi)
+@
+<<>>=
+xi <- 1/9
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+                func = Prob23, xi = xi)
+@
+<<label=prob23,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 23")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob23,fig=TRUE,echo=FALSE>>=
+<<prob23>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 23, see text for R-code}
+\label{fig:pr23}
+\end{figure}
+\clearpage
+
+\subsection{problem 24}
+This is a particularly difficult problem to solve
+  \begin{eqnarray*}
+    \xi A(x) y y'' - (\frac{1+1.4}{2} - \xi A'(x)) y y' + \frac{y'}{y}
+    + \frac{A'(x)}{A(x)}(1-\frac{1.4-1}{2}y^2)=0 \\
+    A(x) = 1+x^2 \\
+    y_{(x=0)} = 0.9129 \\
+    y_{(x=1)} = 0.375
+  \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob24 <- function(t, y, pars, xi) {
+  A <- 1+t*t
+  AA <- 2*t
+  ga <- 1.4
+  list((((1+ga)/2 -xi*AA)*y[1]*y[2]-y[2]/y[1]-
+       (AA/A)*(1-(ga-1)*y[1]^2/2))/(xi*A*y[1])  )
+}
+
+ini <- c(0.9129, NA)
+end <- c(0.375, NA)
+@
+<<>>=
+xi   <- 0.05
+mod1 <- bvpshoot(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+            order = 2, func = Prob24, guess = 0.9, xi = xi)
+@
+<<>>=
+xi <- 0.02
+mod2 <- bvpshoot(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+            order = 2,  func = Prob24, guess = 0.9, xi = xi)
+attributes(mod2)$roots         # has FAILED: f.root too large!
+@
+Function \code{bvpshoot} cannot solve this problem for small $\xi$
+
+Function \code{bvptwp} can solve it for small $\xi$ if initiated with good
+initial guesses:
+<<>>=
+xi <- 0.02
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+                order = 2, func = Prob24, xi = xi, 
+                xguess = mod2[,1], yguess = t(mod2[,2:3]))
+xi <- 0.01
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+                order = 2, func = Prob24, xi = xi,
+                xguess = mod2[,1], yguess = t(mod2[,2:3]))
+@
+<<label=prob24,include=FALSE>>=
+plot(mod1, mod2, mod3,  which = 1, lty = 1, main = "test problem 24")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob24,fig=TRUE,echo=FALSE>>=
+<<prob24>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 24, see text for R-code}
+\label{fig:pr24}
+\end{figure}
+
+\clearpage
+\subsection{problem 25}
+Now come a series of similar problems (problem 25-30), that differ only
+by their boundary conditions:
+
+The differential equation is:
+  \begin{eqnarray*}
+    \xi y'' + y y' - y = 0 \\
+  \end{eqnarray*}
+For problem 25, the  boundary conditions are:
+  \begin{eqnarray*}
+    y_{x=0} = -1/3 \\
+    y_{x=1} = 1/3
+  \end{eqnarray*}
+These problems are most easily solved with \code{bvptwp}
+<<>>=
+Prob25 <- function(t, y, pars, xi) {
+  list(c( y[2], -1/xi *(y[1]*y[2]-y[1]) ))
+}
+
+ini <- c(-1/3 ,NA)
+end <- c(1/3, NA)
+@
+<<>>=
+xi   <- 0.1
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob25, xi = xi)
+xi   <- 0.01
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob25, xi = xi)
+xi   <- 0.001
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob25, xi = xi)
+@
+<<label=prob25,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 25")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob25,fig=TRUE,echo=FALSE>>=
+<<prob25>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 25, see text for R-code}
+\label{fig:pr25}
+\end{figure}
+\clearpage
+
+\subsection{problem 26}
+This problem equals previous problem, but with different boundary conditions:
+  \begin{eqnarray*}
+    y_{x=0} = 1 \\
+    y_{x=1} = -1/3
+  \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob26 <- function(t, y, pars, xi)  {
+  list(  -1/xi *(y[1]*y[2]-y[1]) )
+}
+
+ini <- c(1, NA)
+end <- c(-1/3, NA)
+@
+<<>>=
+xi   <- 0.1
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               order = 2, func = Prob26, xi = xi)
+@
+<<>>=
+xi   <- 0.02
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               order = 2, func = Prob26, xi = xi)
+@
+<<>>=
+xi   <- 0.005
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               order = 2, func = Prob26, xi = xi)
+@
+<<label=prob26,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 26")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob26,fig=TRUE,echo=FALSE>>=
+<<prob26>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 26, see text for R-code}
+\label{fig:pr269}
+\end{figure}
+\clearpage
+\subsection{problem 27}
+This problem equals previous problem, but with different boundary conditions:
+  \begin{eqnarray*}
+    y_{x=0} = 1 \\
+    y_{x=1} = 1/3
+  \end{eqnarray*}
+<<>>=
+Prob27 <- function(t, y, pars, xi) {
+  list(c( y[2], -1/xi *(y[1]*y[2]-y[1]) ))
+}
+
+ini <- c(1, NA)
+end <- c(1/3, NA)
+@
+<<>>=
+xi   <- 0.1
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob27, xi = xi)
+@
+<<>>=
+xi   <- 0.02
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob27, xi = xi)
+@
+<<>>=
+xi   <- 0.005
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob27, xi = xi)
+@
+<<label=prob27,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 27")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob27,fig=TRUE,echo=FALSE>>=
+<<prob27>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 27, see text for R-code}
+\label{fig:pr27}
+\end{figure}
+\clearpage
+\subsection{problem 28}
+This problem equals previous problem, but with different boudnary conditions:
+  \begin{eqnarray*}
+    y_{x=0} = 1 \\
+    y_{x=1} = 3/2
+  \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob28 <- function(t, y, pars, xi)  {
+  list(  -1/xi *(y[1]*y[2]-y[1]))
+}
+
+ini <- c(1, NA)
+end <- c(3/2, NA)
+@
+<<>>=
+xi   <- 0.1
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               order = 2, func = Prob28, xi = xi)
+@
+<<>>=
+xi   <-0.02
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               order = 2, func = Prob28, xi = xi)
+@
+<<>>=
+xi <-0.005
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               order = 2, func = Prob28, xi = xi)
+@
+<<label=prob28,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 28")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob28,fig=TRUE,echo=FALSE>>=
+<<prob28>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 28, see text for R-code}
+\label{fig:pr28}
+\end{figure}
+\clearpage
+\subsection{problem 29}
+This problem equals previous problem, but with different boundary conditions:
+  \begin{eqnarray*}
+    y_{x=0} = 0 \\
+    y_{x=1} = 3/2
+  \end{eqnarray*}
+<<>>=
+Prob29 <- function(t, y, pars, xi)  {
+  list(c( y[2], -1/xi *(y[1]*y[2]-y[1]) ))
+}
+
+ini <- c(0,NA)
+end <- c(3/2,NA)
+@
+<<>>=
+xi   <- 0.1
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob29, xi = xi)
+@
+<<>>=
+xi   <- 0.02
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob29, xi = xi)
+@
+<<>>=
+xi   <- 0.005
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob29, xi = xi)
+@
+<<label=prob29,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 29")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob29,fig=TRUE,echo=FALSE>>=
+<<prob29>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 29, see text for R-code}
+\label{fig:pr29}
+\end{figure}
+\clearpage
+
+\subsection{problem 30}
+Similar to previous problems, with different boundary conditions:
+  \begin{eqnarray*}
+    y_{x=0} = -7/6 \\
+    y_{x=1} = 3/2
+  \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob30 <- function(t, y, pars, xi)  {
+  list( -1/xi *(y[1]*y[2]-y[1]) )
+}
+ini <- c(-7/6, NA)
+end <- c(3/2, NA)
+@
+<<>>=
+xi   <- 0.1
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               order = 2, func = Prob30, xi = xi)
+xi   <- 0.02
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               order = 2, func = Prob30, xi = xi)
+xi   <- 0.01
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               order = 2, func = Prob30, xi = xi)
+@
+<<label=prob30,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 30")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob30,fig=TRUE,echo=FALSE>>=
+<<prob30>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 30, see text for R-code}
+\label{fig:pr30}
+\end{figure}
+\clearpage
+\subsection{problem 31}
+  \begin{eqnarray*}
+    y' &=& \sin(\theta) \\
+    \theta ' &=& M \\
+    \xi M' &=& -Q \\
+    \xi Q' &=& (y-1) \cos(\theta) - M T\\
+    T &=& \sec(\theta) + \xi Q \tan(\theta)
+  \end{eqnarray*}
+  where
+  \[
+   y_{x=0}=y_{x=1}=  M_{x=0} =M_{x=1}=0
+  \]
+<<>>=
+Prob31 <- function(t, Y, pars)  {
+  with (as.list(Y), {
+    dy    <- sin(Tet)
+    dTet  <- M
+    dM    <- -Q/xi
+    T     <- 1/cos (Tet) +xi*Q*tan(Tet)
+    dQ    <- 1/xi*((y-1)*cos(Tet)-M*T)
+    list(c( dy, dTet, dM, dQ))
+  })
+}
+
+ini <- c(y = 0, Tet = NA, M = 0, Q = NA)
+end <- c(y = 0, Tet = NA, M = 0, Q = NA)
+@
+Shooting does not work...
+But the mono-implicit Runge-Kutta method does...
+<<>>=
+xi <-0.1
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob31, atol = 1e-10)
+xi <- 0.05
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob31, atol = 1e-10)
+xi <- 0.01
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+               func = Prob31, atol = 1e-10)
+@
+<<label=prob31,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 31")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob31,fig=TRUE,echo=FALSE>>=
+<<prob31>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 31, see text for R-code}
+\label{fig:pr31}
+\end{figure}
+\clearpage
+\subsection{problem 32}
+  \begin{eqnarray*}
+   y'''' &=& 1/\xi(y'y'' - y y''') \\
+   y_{x=0}=y'_{x=0}= 0\\
+   y_{x=1}=1\\
+   y'_{x=1}= 0
+  \end{eqnarray*}
+  It is solved in higher-order form.
+<<>>=
+Prob32 <- function(t, y, pars, xi) {
+  list(1/xi*(y[2]*y[3]-y[1]*y[4]))
+}
+ini <- c(0, 0, NA, NA)
+end <- c(1, 0, NA, NA)
+@
+<<>>=
+xi  <- 0.01
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+              order = 4, func = Prob32, xi = xi)
+xi   <- 0.002
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+              order = 4, func = Prob32, xi = xi)
+xi   <- 0.0001
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+              order = 4, func = Prob32, xi = xi)
+@
+<<label=prob32,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 32")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob32,fig=TRUE,echo=FALSE>>=
+<<prob32>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 32, see text for R-code}
+\label{fig:pr32}
+\end{figure}
+\clearpage
+\subsection{problem 33}
+  \begin{eqnarray*}
+    \xi z'''' &=& -z\cdot z''' -y \cdot y' \\
+    \xi y'' &=& y\cdot z' -z \cdot y'
+  \end{eqnarray*}
+  where
+  \[
+   y_{x=0}=-1\\
+   y_{x=1}=1\\
+   z_{x=0}=z'_{x=0}=z_{x=1}=z'_{x=1}=0\\  \]
+<<>>=
+Prob33 <- function(t, z, pars, xi) {
+  list(c( z[2], z[3], z[4], 1/xi*(z[1]*z[4]-z[5]*z[6]),
+          z[6], 1/xi*(z[5]*z[2]-z[1]*z[6])))
+}
+ini <- c(0, 0, NA, NA, -1, NA)
+end <- c(0, 0, NA, NA,  1, NA)
+@
+<<>>=
+xi  <- 0.1
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+              func = Prob33, xi = xi)
+xi  <- 0.01
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+              func = Prob33, xi = xi)
+xi  <- 0.001
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+              func = Prob33, xi = xi)
+@
+<<label=prob33,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 33")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob33,fig=TRUE,echo=FALSE>>=
+<<prob33>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 33, see text for R-code}
+\label{fig:pr33}
+\end{figure}
+\clearpage
+
+\subsection{problem 34}
+  \begin{eqnarray*}
+    y'' &=& -\xi \cdot exp(y)
+  \end{eqnarray*}
+  where
+  \[
+   y_{x=0}=y_{x=1}=0
+  \]
+  It is solved in higher-order form.
+<<>>=
+Prob34 <- function(t, y, pars, xi) {
+  list(-xi*exp(y[1]))
+}
+ini <- c(0, NA)
+end <- c(0, NA)
+@
+<<>>=
+xi  <- 0.1
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+              order = 2, func = Prob34, xi = xi)
+@
+<<>>=
+xi   <- 0.01
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+              order = 2, func = Prob34, xi = xi)
+@
+<<>>=
+xi   <- 0.001
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(0, 1, by = 0.01),
+              order = 2, func = Prob34, xi = xi)
+@
+<<label=prob34,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 34")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob34,fig=TRUE,echo=FALSE>>=
+<<prob34>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 34, see text for R-code}
+\label{fig:pr34}
+\end{figure}
+\clearpage
+
+\subsection{problem 35}
+  \begin{eqnarray*}
+   \xi  y'' &=& x y' -y
+  \end{eqnarray*}
+  where
+  \[
+   y_{x=-1}=1; y_{x=1}=2
+  \]
+<<>>=
+Prob35 <- function(x, y, pars, xi) {
+  list(c( y[2], 1/xi*(x * y[2]-y[1])))
+}
+ini <- c(1, NA)
+end <- c(2, NA)
+@
+<<>>=
+xi  <- 1
+mod1 <- bvptwp(yini = ini, yend = end, x = seq(-1, 1, by = 0.05),
+              func = Prob35, xi = xi)
+@
+<<>>=
+xi   <- 0.1
+mod2 <- bvptwp(yini = ini, yend = end, x = seq(-1, 1, by = 0.05),
+              func = Prob35, xi = xi)
+@
+<<>>=
+xi   <- 0.01
+mod3 <- bvptwp(yini = ini, yend = end, x = seq(-1, 1, by = 0.05),
+              func = Prob35, xi = xi)
+@
+<<label=prob35,include=FALSE>>=
+plot(mod1, mod2, mod3, which = 1, lty = 1, main = "test problem 35")
+@
+\setkeys{Gin}{width=0.35\textwidth}
+\begin{figure}
+\begin{center}
+<<label=prob35,fig=TRUE,echo=FALSE>>=
+<<prob35>>
+@
+\end{center}
+\caption{Solution of the BVP ODE problem 35, see text for R-code}
+\label{fig:pr35}
+\end{figure}
+\clearpage
+
+\bibliography{docs}
+
+\end{document}
+

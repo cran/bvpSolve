@@ -1918,7 +1918,7 @@ C
       Do 190 I = 1, Ndmz
          Anscl = Anscl + (Deldmz(I) * Dscale(I))**2
  190  Continue
-      Anscl = Sqrt(Anscl / Dfloat(Nz+Ndmz))
+      Anscl = Sqrt(Anscl / Dble(Nz+Ndmz))
 C
 C.... Find A Newton Direction
 C
@@ -1939,7 +1939,7 @@ C
       Do 210 I = 1, Ndmz
          Andif = Andif + ((Dqdmz(I) - Deldmz(I)) * Dscale(I))**2
  210  Continue
-      Andif = Sqrt(Andif/Dfloat(Nz+Ndmz) + Precis)
+      Andif = Sqrt(Andif/Dble(Nz+Ndmz) + Precis)
       Relax = Relax * Anscl / Andif
       If ( Relax .gt. 1.d0 )  Relax = 1.d0
  220  Rlxold = Relax
@@ -1976,8 +1976,8 @@ C
          Anorm = Anorm  +  (Deldmz(I) * Dscale(I))**2
          Anfix = Anfix  +  (Dqdmz(I) * Dscale(I))**2
  270  Continue
-      Anorm = Sqrt(Anorm / Dfloat(Nz+Ndmz))
-      Anfix = Sqrt(Anfix / Dfloat(Nz+Ndmz))
+      Anorm = Sqrt(Anorm / Dble(Nz+Ndmz))
+      Anfix = Sqrt(Anfix / Dble(Nz+Ndmz))
       If ( Icor .eq. 1 )                         Go To 280
       If (Iprint .lt. 0)  Then
       CALL Rprintid('Iteration = , Relaxation factor = ', Iter, Relax)
@@ -2208,7 +2208,7 @@ C
         Iz = 1
         H = Xi(J+1) - Xi(J)
         Do 10 L = 1, Mmax
-          Basm(L+1) = Basm(L) * H / Dfloat(L)
+          Basm(L+1) = Basm(L) * H / Dble(L)
   10    Continue
         Do 40 Icomp = 1, Ncomp
           Scal = (Abs(Z(Iz,J)) + Abs(Z(Iz,J+1))) * .5d0 + 1.d0
@@ -2386,9 +2386,9 @@ C....     J-Th Fixed Points.
 C
            Nregn = Iright - Ileft - 1
            If ( Nregn .eq. 0 )                      Go To 80
-           Dx = (Xright - Xleft) / Dfloat(Nregn+1)
+           Dx = (Xright - Xleft) / Dble(Nregn+1)
            Do 70 I = 1, Nregn
-             Xi(Ileft+I) = Xleft  +  Dfloat(I) * Dx
+             Xi(Ileft+I) = Xleft  +  Dble(I) * Dx
    70      Continue
    80      Ileft = Iright
            Xleft = Xright
@@ -2634,7 +2634,7 @@ C
       Endif
  228  Continue
 
-      Avrg = Accum(Nold+1)/Dfloat(Nold)
+      Avrg = Accum(Nold+1)/Dble(Nold)
       Degequ = Avrg/Max(Slphmx,Precis)
 C
 C.... Naccum = Expected N To Achieve .1x User Requested Tolerances
@@ -2695,7 +2695,7 @@ C
            Nregn = N - In
   260      If ( Nregn .eq. 0 )                      Go To 300
            Temp = Accl
-           Tsum = (Accr - Accl) / Dfloat(Nregn+1)
+           Tsum = (Accr - Accl) / Dble(Nregn+1)
            Lcarry = Lold
            Do 290 J = 1, Nregn
              In = In + 1
@@ -2942,7 +2942,7 @@ C
    30      Continue
            Jtol(I) = Jcomp
            Wgtmsh(I) = 1.d1 * Cnsts2(Koff+Ltoli-Mtot) / Tolin(I)
-           Root(I) = 1.d0 / Dfloat(K+Mtot-Ltoli+1)
+           Root(I) = 1.d0 / Dble(K+Mtot-Ltoli+1)
    40 Continue
 C
 C.... Specify Collocation Points
@@ -3446,7 +3446,7 @@ C
 C....     Assembly Process Completed
 C
       If ( Mode .eq. 0 .or. Mode .eq. 3 )           Go To 300
-      Rnorm = Sqrt(Rnorm / Dfloat(Nz+Ndmz))
+      Rnorm = Sqrt(Rnorm / Dble(Nz+Ndmz))
       If ( Mode .ne. 2 )                            Go To 300
       Return
 C
@@ -3660,7 +3660,7 @@ C.... Calculate Local Basis
 C
    30        Fact = 1.d0
              Do 151 L = 1,Mmax
-                Fact = Fact * Hrho / Dfloat(L)
+                Fact = Fact * Hrho / Dble(L)
                 Basm(L) = Fact
                 Do 150 J = 1,K
                    Ha(J,L) = Fact * Acol(J,L)
@@ -3791,7 +3791,7 @@ C
       Fact = 1.d0
       Basm(1) = 1.d0
       Do 30 L = 1,Mmax
-         Fact = Fact * H / Dfloat(L)
+         Fact = Fact * H / Dble(L)
          Basm(L+1) = Fact
          Do 20 J = 1,K
            Hb(J,L) = Fact * B(J,L)
@@ -3983,7 +3983,7 @@ C
    90 Continue
       Bm(1) = X - Xi(I)
       Do 95 L = 2, Mmax
-         Bm(L) = Bm(1) / Dfloat(L)
+         Bm(L) = Bm(1) / Dble(L)
    95 Continue
 C
 C.... Evaluate  Z( U(X) ).
@@ -4051,7 +4051,7 @@ C
       If ( K .eq. 1 )                            Go To 70
       Kpm1 = K + M - 1
       Do 10 I = 1, Kpm1
-        T(I) = S / Dfloat(I)
+        T(I) = S / Dble(I)
    10 Continue
       Do 40 L = 1, M
          Lb = K + L + 1
@@ -4104,10 +4104,10 @@ C
          Do 30 J = 2, Kmi
            Coef(J) = Coef(J) - Rho(J+I-1) * Coef(J-1)
   30     Continue
-         Coef(Kmi) = Dfloat(Ifac) * Coef(Kmi)
+         Coef(Kmi) = Dble(Ifac) * Coef(Kmi)
          Ifac = Ifac * I
   40  Continue
-      Coef(1) = Dfloat(Ifac) * Coef(1)
+      Coef(1) = Dble(Ifac) * Coef(1)
       Return
       End
       Subroutine MHorder (I, Uhigh, Hi, Dmz, Ncomp, K)

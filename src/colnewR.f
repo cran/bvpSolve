@@ -1063,7 +1063,7 @@ C
            DO 190 I = 1, NDMZ
              ANSCL = ANSCL + (DELDMZ(I) * DSCALE(I))**2
   190      CONTINUE
-           ANSCL = DSQRT(ANSCL / DFLOAT(NZ+NDMZ))
+           ANSCL = DSQRT(ANSCL / DBLE(NZ+NDMZ))
 C
 C...       find a newton direction
 C
@@ -1084,7 +1084,7 @@ C
            DO 210 I = 1, NDMZ
              ANDIF = ANDIF + ((DQDMZ(I) - DELDMZ(I)) * DSCALE(I))**2
   210      CONTINUE
-           ANDIF = DSQRT(ANDIF/DFLOAT(NZ+NDMZ) + PRECIS)
+           ANDIF = DSQRT(ANDIF/DBLE(NZ+NDMZ) + PRECIS)
            RELAX = RELAX * ANSCL / ANDIF
            IF ( RELAX .GT. 1.D0 )  RELAX = 1.D0
   220      RLXOLD = RELAX
@@ -1121,8 +1121,8 @@ C
              ANORM = ANORM  +  (DELDMZ(I) * DSCALE(I))**2
              ANFIX = ANFIX  +  (DQDMZ(I) * DSCALE(I))**2
   270      CONTINUE
-           ANORM = DSQRT(ANORM / DFLOAT(NZ+NDMZ))
-           ANFIX = DSQRT(ANFIX / DFLOAT(NZ+NDMZ))
+           ANORM = DSQRT(ANORM / DBLE(NZ+NDMZ))
+           ANFIX = DSQRT(ANFIX / DBLE(NZ+NDMZ))
            IF ( ICOR .EQ. 1 )                         GO TO 280
            IF (IPRINT .LT. 0)  THEN
       CALL Rprintid('Iteration = , Relaxation factor = ', Iter, Relax)
@@ -1315,7 +1315,7 @@ C
         IZ = 1
         H = XI(J+1) - XI(J)
         DO 10 L = 1, MMAX
-          BASM(L+1) = BASM(L) * H / DFLOAT(L)
+          BASM(L+1) = BASM(L) * H / DBLE(L)
   10    CONTINUE
         DO 40 ICOMP = 1, NCOMP
           SCAL = (DABS(Z(IZ,J)) + DABS(Z(IZ,J+1))) * .5D0 + 1.D0
@@ -1494,7 +1494,7 @@ C...       determine where the j-th fixed point should fall in the
 C...       new mesh - this is xi(iright) and the (j-1)st fixed
 C...       point is in xi(ileft)
 C
-           NMIN = int((XRIGHT-ALEFT)/(ARIGHT-ALEFT)*DFLOAT(N) + 1.5D0)
+           NMIN = int((XRIGHT-ALEFT)/(ARIGHT-ALEFT)*DBLE(N) + 1.5D0)
            IF (NMIN .GT. N-NFXPNT+J)  NMIN = N - NFXPNT + J
            IRIGHT = MAX0 (ILEFT+1, NMIN)
    60      XI(IRIGHT) = XRIGHT
@@ -1504,9 +1504,9 @@ C...       j-th fixed points.
 C
            NREGN = IRIGHT - ILEFT - 1
            IF ( NREGN .EQ. 0 )                      GO TO 80
-           DX = (XRIGHT - XLEFT) / DFLOAT(NREGN+1)
+           DX = (XRIGHT - XLEFT) / DBLE(NREGN+1)
            DO 70 I = 1, NREGN
-             XI(ILEFT+I) = XLEFT  +  DFLOAT(I) * DX
+             XI(ILEFT+I) = XLEFT  +  DBLE(I) * DX
    70      CONTINUE
    80      ILEFT = IRIGHT
            XLEFT = XRIGHT
@@ -1646,7 +1646,7 @@ C
            ACCUM(I+1) = ACCUM(I) + TEMP
          IFLIP = - IFLIP
   210  CONTINUE
-      AVRG = ACCUM(NOLD+1) / DFLOAT(NOLD)
+      AVRG = ACCUM(NOLD+1) / DBLE(NOLD)
       DEGEQU = AVRG / DMAX1(SLPHMX,PRECIS)
 C
 C...  naccum=expected n to achieve .1x user requested tolerances
@@ -1707,7 +1707,7 @@ C
   230      CONTINUE
   240      CONTINUE
            ACCR = ACCUM(LNEW) + (FIXPNT(I)-XIOLD(LNEW))*SLOPE(LNEW-1)
-           NREGN = int((ACCR-ACCL) / ACCUM(NOLDP1) * DFLOAT(N) - .5D0)
+           NREGN = int((ACCR-ACCL) / ACCUM(NOLDP1) * DBLE(N) - .5D0)
            NREGN = MIN0(NREGN, N - IN - NFXP1 + I)
            XI(IN + NREGN + 1) = FIXPNT(I)
            GO TO 260
@@ -1716,7 +1716,7 @@ C
            NREGN = N - IN
   260      IF ( NREGN .EQ. 0 )                      GO TO 300
            TEMP = ACCL
-           TSUM = (ACCR - ACCL) / DFLOAT(NREGN+1)
+           TSUM = (ACCR - ACCL) / DBLE(NREGN+1)
            DO 290 J = 1, NREGN
              IN = IN + 1
              TEMP = TEMP + TSUM
@@ -1824,7 +1824,7 @@ C
    30      CONTINUE
            JTOL(I) = JCOMP
            WGTMSH(I) = 1.D1 * CNSTS2(KOFF+LTOLI-MTOT) / TOLIN(I)
-           ROOT(I) = 1.D0 / DFLOAT(K+MTOT-LTOLI+1)
+           ROOT(I) = 1.D0 / DBLE(K+MTOT-LTOLI+1)
    40 CONTINUE
 C
 C...  specify collocation points
@@ -2328,7 +2328,7 @@ C
 C...       assembly process completed
 C
       IF ( MODE .EQ. 0 .OR. MODE .EQ. 3 )           GO TO 300
-      RNORM = DSQRT(RNORM / DFLOAT(NZ+NDMZ))
+      RNORM = DSQRT(RNORM / DBLE(NZ+NDMZ))
       IF ( MODE .NE. 2 )                            GO TO 300
       RETURN
 C
@@ -2539,7 +2539,7 @@ C...  calculate local basis
 C
    30        FACT = 1.D0
              DO 151 L=1,MMAX
-                FACT = FACT * HRHO / DFLOAT(L)
+                FACT = FACT * HRHO / DBLE(L)
                 BASM(L) = FACT
                 DO 150 J=1,K
                    HA(J,L) = FACT * ACOL(J,L)
@@ -2670,7 +2670,7 @@ C
       FACT = 1.D0
       BASM(1) = 1.D0
       DO 30 L=1,MMAX
-         FACT = FACT * H / DFLOAT(L)
+         FACT = FACT * H / DBLE(L)
          BASM(L+1) = FACT
          DO 20 J=1,K
            HB(J,L) = FACT * B(J,L)
@@ -2864,7 +2864,7 @@ C
    90 CONTINUE
       BM(1) = X - XI(I)
       DO 95 L = 2, MMAX
-         BM(L) = BM(1) / DFLOAT(L)
+         BM(L) = BM(1) / DBLE(L)
    95 CONTINUE
 C
 C...  evaluate  z( u(x) ).
@@ -2932,7 +2932,7 @@ C
       IF ( K .EQ. 1 )                            GO TO 70
       KPM1 = K + M - 1
       DO 10 I = 1, KPM1
-        T(I) = S / DFLOAT(I)
+        T(I) = S / DBLE(I)
    10 Continue
       DO 40 L = 1, M
          LB = K + L + 1
@@ -2985,10 +2985,10 @@ C
          DO 30 J = 2, KMI
            COEF(J) = COEF(J) - RHO(J+I-1) * COEF(J-1)
   30     CONTINUE
-         COEF(KMI) = DFLOAT(IFAC) * COEF(KMI)
+         COEF(KMI) = DBLE(IFAC) * COEF(KMI)
          IFAC = IFAC * I
   40  CONTINUE
-      COEF(1) = DFLOAT(IFAC) * COEF(1)
+      COEF(1) = DBLE(IFAC) * COEF(1)
       RETURN
       END
       SUBROUTINE HORDER (I, UHIGH, HI, DMZ, NCOMP, K)
