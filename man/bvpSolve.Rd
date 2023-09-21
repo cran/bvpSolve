@@ -18,11 +18,6 @@
   and (3) also implement a shooting method.
 }
 \details{
-  \tabular{ll}{
-    Package: \tab bvpSolve\cr
-    Type:    \tab Package\cr
-    License: \tab GNU Public License 2 or above\cr
-  }
 
   The system of ODE's can be written as an \R function, or in compiled code
   (FORTRAN, C), similar as the initial value problems that are solved by

@@ -473,7 +473,7 @@ C     may be replaced when solving problems on vector processors
 C     or when solving large scale sparse jacobian problems.
 C
 C----------------------------------------------------------------------
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION M(*), ZETA(*), ISET(*), LTOL(*), TOL(*), DUMMY(1),
      1  FIXPNT(*), ISPACE(*), FSPACE(*), ipar(*), rpar(*), icount(*)
 C
@@ -814,7 +814,7 @@ C                 previous mesh
 C
 C**********************************************************************
 C
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION XI(*), XIOLD(*), Z(*), DMZ(*), RHS(*)
       DIMENSION G(*), W(*), V(*), VALSTR(*), SLOPE(*), ACCUM(*)
       DIMENSION DELZ(*), DELDMZ(*), DQZ(*), DQDMZ(*) , FIXPNT(*)
@@ -1304,7 +1304,7 @@ C            dscale = scaling vector for dmz
 C
 C**********************************************************************
 C
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION Z(MSTAR,*), SCALE(MSTAR,*), DSCALE(KD,*)
       DIMENSION XI(*), BASM(5)
 C
@@ -1415,7 +1415,7 @@ C            valstr - is assigned values needed in  errchk  for the
 C                     error estimate.
 C**********************************************************************
 C
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION D1(40), D2(40), SLOPE(*), ACCUM(*), VALSTR(*)
       DIMENSION XI(*), XIOLD(*), Z(*), DMZ(*), FIXPNT(*), DUMMY(1)
 C
@@ -1777,7 +1777,7 @@ C              points
 C
 C**********************************************************************
 C
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION RHO(7), COEF(K,*), CNSTS1(28), CNSTS2(28), DUMMY(1)
 C
       COMMON /COLORD/ KDUM, NCOMP, MSTAR, KD, MMAX, M(20)
@@ -1933,7 +1933,7 @@ C                 the array valstr. (0 for no, 1 for yes)
 C
 C**********************************************************************
 C
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION ERR(40), ERREST(40), DUMMY(1)
       DIMENSION XI(*), Z(*), DMZ(*), VALSTR(*)
 C
@@ -2064,7 +2064,7 @@ C      iguess = 1 when current soln is user specified via  guess
 C             = 0 otherwise
 C
 C*********************************************************************
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION  Z(*), DMZ(*), DELZ(*), DELDMZ(*), XI(*), XIOLD(*)
       DIMENSION  G(*), W(*), V(*),  RHS(*) , DMZO(*), DUMMY(1)
       DIMENSION  IPAR(*), RPAR(*)
@@ -2440,7 +2440,7 @@ C      zval   - z(xi)
 C      dg     - the derivatives of the side condition.
 C
 C**********************************************************************
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION GI(NROW,*), ZVAL(*), DGZ(*), DG(40), RPAR(*), IPAR(*)
 C
       COMMON /COLORD/ KDUM, NDUM, MSTAR, KD, MMAX, M(20)
@@ -2519,7 +2519,7 @@ C      df     - the jacobian at xcol .
 C      jcomp  - counter for the component being dealt with.
 C
 C**********************************************************************
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION WI(KD,*), VI(KD,*), ZVAL(*), DMZO(*), DF(NCOMP,*)
       DIMENSION IPVTW(*),  HA(7,4), ACOL(7,4), BASM(5), ipar(*), rpar(*)
 C
@@ -2657,7 +2657,7 @@ C      nrow   - no. of rows in gi.
 C      irow   - the first row in gi to be used for equations.
 C
 C**********************************************************************
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION HB(7,4), BASM(5)
       DIMENSION GI(NROW,*), WI(*), VI(KD,*)
       DIMENSION RHSZ(*), RHSDMZ(*), IPVTW(*)
@@ -2762,7 +2762,7 @@ C           from the work arrays  ispace  and  fspace .
 C
 C*****************************************************************
 C
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION Z(*), FSPACE(*), ISPACE(*), A(28), DUMMY(1)
       IS6 = ISPACE(6)
       IS5 = ISPACE(1) + 2
@@ -2799,7 +2799,7 @@ C            = 1  retrieve  z=z(u(x(i)))  directly
 C
 C**********************************************************************
 C
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION ZVAL(*), DMVAL(*), XI(*), M(*), A(7,*), DM(7)
       DIMENSION Z(*), DMZ(*), BM(4), COEF(*)
 C
@@ -2926,7 +2926,7 @@ C     dm     - basis elements for m-th derivative
 C
 C**********************************************************************
 C
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION COEF(K,*), RKB(7,*), DM(*), T(10)
 C
       IF ( K .EQ. 1 )                            GO TO 70
@@ -3011,7 +3011,7 @@ C                          j
 C
 C**********************************************************************
 C
-      IMPLICIT REAL(kind=8) (A-H,O-Z)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION UHIGH(*), DMZ(*)
 C
       COMMON /COLLOC/ RHO(7), COEF(49)

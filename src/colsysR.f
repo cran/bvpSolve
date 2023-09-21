@@ -462,7 +462,7 @@ c     of de boor and weiss (to appear in toms).
 c
 c
 c----------------------------------------------------------------------
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       common /order/ k,nc,mstar,kd,kdm,mnsum,mt(20)
       common /appr/ n,nold,nmax,nalpha,mshflg,mshnum,mshlmt,mshalt
       common /side/ tzeta(40),tleft,tright,izeta
@@ -786,7 +786,7 @@ c     imesh  - a control variable for subroutines sysnewmsh and syserrchk
 c
 c***********************************************************************
 c
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       external fsub, dfsub, gsub, dgsub, guess
       dimension xi(*), xiold(*), xij(*), alpha(*), aldif(*), rhs(*)
       dimension a(*), valstr(*), slope(*), accum(*), ipiv(*), integs(*)
@@ -1302,7 +1302,7 @@ c            valstr - is assigned values needed in  syserrchk  for the
 c                     error estimate.
 c***********************************************************************
 c
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       common /order/k,ncomp,mstar,kd,kdm,mnsum,m(20)
       common /appr/ n,nold,nmax,nalpha,mshflg,mshnum,mshlmt,mshalt
       common /errors/ tol(40),wgtmsh(40),tolin(40),root(40),
@@ -1673,7 +1673,7 @@ c              points
 c
 c***********************************************************************
 c
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       common /collocs/ rho(7),wgterr(40)
       common /order/ k,ncomp,mstar,kd,kdm,mnsum,m(20)
       common /bsplin/ vncol(66,7), vnsave(66,5), vn(66)
@@ -1831,7 +1831,7 @@ c                 the array valstr. (0 for no, 1 for yes)
 c
 c**********************************************************************
 c
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       dimension err(40),z(40),errest(40)
       common /order/k,ncomp,mstr,kd,kdm,mnsum,m(20)
       common /appr/ n,nold,nmax,nalpha,mshflg,mshnum,mshlmt,mshalt
@@ -1966,7 +1966,7 @@ c      iguess = 1 when current soln is user specified
 c             = 0 otherwise
 c
 c*********************************************************************
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       common /order/ k, ncomp, mstar, kd, kdm, mnsum, m(20)
       common /side/  zeta(40), aleft, aright, izeta
       common /bsplin/  vncol(66,7), vnsave(66,5), vn(66)
@@ -2278,7 +2278,7 @@ c               bsplines representing u     .
 c                                      jcomp
 c
 c**********************************************************************
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       common /appr/ n,nold,nmax,nalpha,mshflg,mshnum,mshlmt,mshalt
       common /order/  k, nd, mstar, kd, kdm, mnsum, m(20)
       common /side/   zeta(40), aleft, aright, izeta
@@ -2477,7 +2477,7 @@ c           from the work arrays  ispace  and  fspace .
 c
 c*****************************************************************
 c
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
 C Karline: added dumm(1)      
       dimension z(*), fspace(*), ispace(*), dumm(1)
       is6 = ispace(6) + 1
@@ -2519,7 +2519,7 @@ c              uj (evaluated if modhi=1)
 c
 c***********************************************************************
 c
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       common /nonln/ precis,nonlin,iter,limit,icare,iprint,iguess,ifreez
       common /side/  zeta(40), aleft, aright, izeta
       dimension z(*), vn(*), xi(*), aldif(*), m(*), dmval(*)
@@ -2645,7 +2645,7 @@ c     rhox   = (xi(i+1)-x)/(xi(i+1)-xi(i))
 c
 c***********************************************************************
 c
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       dimension vn(*), m(*)
       xrho = 1.d0 - rhox
       ivn = 0
@@ -2696,7 +2696,7 @@ c     x     - satisfies xi(i) .le. x .le. xi(i+1)
 c
 c**********************************************************************
 c
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       dimension vn(*), xi(*), m(*)
       md1 = m(ncomp) -1
       if(md1 .le. 0)                                return
@@ -2773,7 +2773,7 @@ c                 dent constants
 c
 c***********************************************************************
 c
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       common /order/ k, ncomp, mstar, kd, kdm, mnsum, m(20)
       common /hi/    dn1, dn2, dn3
       common /eqord/ ind(5), ineq(20), mnd(5), nd, neq
@@ -3083,7 +3083,7 @@ c                             i=r,...,k+n+mj; r=1,...,mj; j=1,...,ncomp
 c
 c***********************************************************************
 c
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       dimension aldif(*), alpha(*), xi(*), m(*)
       kd = k * ncomp
       incomp = 0
@@ -3200,7 +3200,7 @@ c                          j
 c
 c***********************************************************************
 c
-      implicit real(kind=8) (a-h,o-z)
+      implicit double precision (a-h,o-z)
       common /appr/ n,nold,nmax,nalpha,mshflg,mshnum,mshlmt,mshalt
       common /order/ k,ncomp,mstar,kd,kdm,mnsum,m(20)
       dimension uhigh(*) , ar(20), arm1(20)
